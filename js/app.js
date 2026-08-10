@@ -85,6 +85,7 @@ audioPromocao.volume = AUDIO_CONFIG.volumes.promotion;
 
 let audioMissaoAtual = null;
 let audioChamadaAtual = null;
+const CACHE_AUDIO_MISSAO=new Map();
 
 function pararAudioObj(audio) {
   if (!audio) return;
@@ -123,9 +124,26 @@ function tocarChamada(id, callback) {
   setTimeout(prosseguir, AUDIO_CONFIG.dispatchFallbackMs);
 }
 
+function precarregarAudioMissao(id) {
+  const chave=chaveAudioMissao('musica',id);
+  const src=audioSrc(chave);
+  if(!src)return null;
+  if(CACHE_AUDIO_MISSAO.has(chave))return CACHE_AUDIO_MISSAO.get(chave);
+  const audio=new Audio();
+  audio.preload='auto';
+  audio.src=src;
+  audio.loop=true;
+  audio.volume=AUDIO_CONFIG.volumes.mission;
+  try{audio.load();}catch(_erro){}
+  CACHE_AUDIO_MISSAO.set(chave,audio);
+  return audio;
+}
+
 function tocarMusicaMissao(id) {
   pararAudioObj(audioMissaoAtual);
-  audioMissaoAtual = new Audio(audioSrc(chaveAudioMissao('musica',id)));
+  const chave=chaveAudioMissao('musica',id);
+  audioMissaoAtual = CACHE_AUDIO_MISSAO.get(chave) || precarregarAudioMissao(id) || new Audio(audioSrc(chave));
+  audioMissaoAtual.currentTime=0;
   audioMissaoAtual.loop = true;
   audioMissaoAtual.volume = AUDIO_CONFIG.volumes.mission;
   audioMissaoAtual.play().catch(() => {});
@@ -447,7 +465,7 @@ function restaurarNivelPersistido(nivel,lista){
 }
 function restaurarProgressoLocal(entrada=lerProgressoLocal()){
   const dados=normalizarProgressoLocal(entrada);if(!validarEstruturaProgressoLocal(dados))return false;restauracaoLocalEmAndamento=true;
-  try{pararTimerMissao();nomeJogador=dados.player.name.trim();missaoAtual=null;animando=false;nivelAtual=null;NIVEIS_ATIVOS.forEach(n=>{const c=dados.progression?.careers?.[n]||dados.progression?.careers?.[String(n)]||CARREIRA_INICIAL;CARREIRAS_POR_NIVEL[n]=carreiraParaPersistencia(c);restaurarNivelPersistido(n,dados.levels[n].missions);});ativarNivel(Number(dados.progression?.currentLevel)||NIVEL_PADRAO);const nomeDisplay=document.getElementById('nome-display');if(nomeDisplay)nomeDisplay.textContent=nomeJogador;const nomeInput=document.getElementById('nome-guerra');if(nomeInput)nomeInput.value=nomeJogador;atualizarPatenteDisplay();atualizarContador();esconderTodas();const mapa=document.getElementById('tela-mapa');if(mapa)mapa.style.display='block';ultimoSalvamentoLocal=dados.savedAt||null;tocarMenuMusica();return true;}finally{restauracaoLocalEmAndamento=false;}
+  try{pararTimerMissao();nomeJogador=dados.player.name.trim();missaoAtual=null;animando=false;nivelAtual=null;NIVEIS_ATIVOS.forEach(n=>{const c=dados.progression?.careers?.[n]||dados.progression?.careers?.[String(n)]||CARREIRA_INICIAL;CARREIRAS_POR_NIVEL[n]=carreiraParaPersistencia(c);restaurarNivelPersistido(n,dados.levels[n].missions);});ativarNivel(Number(dados.progression?.currentLevel)||NIVEL_PADRAO);const nomeDisplay=document.getElementById('nome-display');if(nomeDisplay)nomeDisplay.textContent=nomeJogador;const nomeInput=document.getElementById('nome-guerra');if(nomeInput)nomeInput.value=nomeJogador;atualizarPatenteDisplay();atualizarContador();esconderTodas();const mapa=document.getElementById('tela-mapa');if(mapa)mapa.style.display='block';if(typeof agendarPrecarregamentoInsigniasCarreira==='function')agendarPrecarregamentoInsigniasCarreira();ultimoSalvamentoLocal=dados.savedAt||null;tocarMenuMusica();return true;}finally{restauracaoLocalEmAndamento=false;}
 }
 function formatarDataSalvamentoLocal(valor){if(!valor)return 'data não informada';try{return new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(valor));}catch{return String(valor);}}
 function oferecerRetomadaProgressoLocal(){const dados=lerProgressoLocal();if(!dados)return;const nivel=Number(dados.progression?.currentLevel)||NIVEL_PADRAO,lista=dados.levels?.[nivel]?.missions||dados.levels?.[String(nivel)]?.missions||[],concluidas=lista.filter(item=>item.resolved).length,rotulo=nivel===1?'Ensino Fundamental':'Ensino Médio';abrirModalInterface({titulo:'Continuar operação salva?',subtitulo:'Progresso encontrado neste dispositivo',icone:'💾',tipo:'success',mensagem:`Foi encontrado um progresso seguro no mapa.<br><br><strong>Nome de guerra:</strong> ${dados.player.name}<br><strong>Nível:</strong> ${rotulo}<br><strong>Missões concluídas:</strong> ${concluidas}/${MISSOES_POR_NIVEL_TOTAL}<br><strong>Último salvamento:</strong> ${formatarDataSalvamentoLocal(dados.savedAt)}.<br><br>Uma missão interrompida deverá ser iniciada novamente.`,textoConfirmar:'Continuar do mapa',textoCancelar:'Agora não',aoConfirmar:()=>restaurarProgressoLocal(dados)});}
@@ -646,7 +664,7 @@ function salvarCarreiraNivelAtivo(){const c=carreiraDoNivel();if(!c)return false
 function carregarCarreiraNivel(nivel){const c=carreiraDoNivel(nivel)||CARREIRA_INICIAL;patenteIndex=Math.max(0,Math.min(PATENTES.length-1,Math.floor(c.rankIndex||0)));pontosCarreira=Math.max(0,Math.floor(c.careerPoints||0));pontosCarreiraTotal=Math.max(0,Math.floor(c.totalCareerPoints||0));return c;}
 function resetarCarreirasPorNivel(){NIVEIS_ATIVOS.forEach(n=>{CARREIRAS_POR_NIVEL[n]={...CARREIRA_INICIAL};});patenteIndex=0;pontosCarreira=0;pontosCarreiraTotal=0;}
 function atualizarPatenteDisplay(){ document.getElementById('patente-display').textContent=PATENTES[patenteIndex]; const badge=document.getElementById('pontos-carreira-badge'); if(badge)badge.textContent=`${pontosCarreira}/${PONTOS_PROMOCAO}`; const total=document.getElementById('pontos-total-display'); if(total)total.textContent=pontosCarreira; const fill=document.getElementById('promotion-track-fill'); if(fill)fill.style.width=Math.min(100,(pontosCarreira/PONTOS_PROMOCAO)*100)+'%'; const mini=document.getElementById('patente-badge-mini'); if(mini)mini.innerHTML=insigniaSVG(patenteIndex); }
-function abrirCarreira(){ renderCarreiraLista(); document.getElementById('modal-carreira').classList.add('mostrar'); }
+function abrirCarreira(){ if(typeof priorizarPrecarregamentoInsigniasCarreira==='function')priorizarPrecarregamentoInsigniasCarreira(); renderCarreiraLista(); document.getElementById('modal-carreira').classList.add('mostrar'); }
 function fecharCarreira(){ document.getElementById('modal-carreira').classList.remove('mostrar'); }
 function renderCarreiraLista(){ const lista=document.getElementById('carreira-lista'); lista.innerHTML=''; PATENTES.forEach((nome,idx)=>{ const div=document.createElement('div'); let cls='carreira-item'; if(idx===patenteIndex)cls+=' atual'; else if(idx<patenteIndex)cls+=' conquistada'; div.className=cls; const conquistado = idx<patenteIndex; const atual = idx===patenteIndex; div.innerHTML = `<div class="carreira-insignia">${insigniaSVG(idx)}</div><div class="carreira-nome">${nome}${atual?' (atual)':''}</div>${conquistado?'<div class="carreira-check">✓</div>':''}`; lista.appendChild(div); }); document.getElementById('carreira-progresso-fill').style.width = Math.min(100,(pontosCarreira/PONTOS_PROMOCAO)*100)+'%'; }
 function mostrarPromocao(novoIdx){ pararMenuMusica(); audioPromocao.currentTime=0; audioPromocao.play().catch(()=>{}); document.getElementById('promocao-insignia').innerHTML = insigniaSVG(novoIdx); document.getElementById('promocao-texto').textContent = `Parabéns, o senhor foi promovido à patente de ${PATENTES[novoIdx]}. Vamos prosseguir nas missões, senhor(a) ${PATENTES[novoIdx]} ${nomeJogador}.`; document.getElementById('overlay-promocao').classList.add('mostrar'); }
@@ -978,6 +996,49 @@ function moverCaminhaoPara(id){
    Portal de acesso, modo individual, estrutura do modo pelotão,
    seleção de nível, saída e toasts.
    ========================================================= */
+
+/* FASE 30 — pré-carregamento seletivo da carreira.
+   As insígnias são baixadas e decodificadas em segundo plano depois que
+   o mapa já está visível. O cache evita repetir trabalho em novas aberturas. */
+const CACHE_PRELOAD_INSIGNIAS=new Map();
+let PRELOAD_INSIGNIAS_AGENDADO=false;
+
+function precarregarImagemDecodificada(src,prioridade='low'){
+  if(!src)return Promise.resolve(false);
+  if(CACHE_PRELOAD_INSIGNIAS.has(src))return CACHE_PRELOAD_INSIGNIAS.get(src);
+  const promessa=new Promise(resolve=>{
+    const img=new Image();
+    try{img.decoding='async';img.fetchPriority=prioridade;}catch(_erro){}
+    const finalizar=async ok=>{
+      if(ok&&typeof img.decode==='function'){try{await img.decode();}catch(_erro){}}
+      resolve(ok);
+    };
+    img.addEventListener('load',()=>finalizar(true),{once:true});
+    img.addEventListener('error',()=>finalizar(false),{once:true});
+    img.src=src;
+    if(img.complete&&img.naturalWidth>0)finalizar(true);
+  });
+  CACHE_PRELOAD_INSIGNIAS.set(src,promessa);
+  return promessa;
+}
+
+function precarregarInsigniasCarreira(prioridade='low'){
+  const fontes=Object.values(typeof PATENTE_IMGS==='object'&&PATENTE_IMGS?PATENTE_IMGS:{}).filter(Boolean);
+  return Promise.allSettled(fontes.map(src=>precarregarImagemDecodificada(src,prioridade)));
+}
+
+function agendarPrecarregamentoInsigniasCarreira(){
+  if(PRELOAD_INSIGNIAS_AGENDADO)return;
+  PRELOAD_INSIGNIAS_AGENDADO=true;
+  const executar=()=>precarregarInsigniasCarreira('low').catch(()=>{});
+  if(typeof requestIdleCallback==='function')requestIdleCallback(executar,{timeout:1400});
+  else setTimeout(executar,320);
+}
+
+function priorizarPrecarregamentoInsigniasCarreira(){
+  PRELOAD_INSIGNIAS_AGENDADO=true;
+  return precarregarInsigniasCarreira('high');
+}
 function mostrarTelaAcesso(id){
   esconderTodas();
   const tela=document.getElementById(id);
@@ -1082,6 +1143,7 @@ function ativarNivel(n){
 function selecionarNivel(n){
   if(!ativarNivel(n))return;
   trocarTela('tela-nivel','tela-mapa');
+  agendarPrecarregamentoInsigniasCarreira();
   tocarMenuMusica();
   salvarProgressoLocal('mudanca-de-nivel');
 }
@@ -1416,7 +1478,7 @@ function redefinirVisibilidadeSenhaPelotao(){const campo=document.getElementById
 function prepararNovoPerfilPelotao(sessao){
   prepararEstadoNovaOperacaoIndividual();sessaoPelotaoAtiva=sessao;nomeJogador=sessao.warName;ativarNivel(nivelNumericoPelotao(sessao.levelId||sessao.level));
   const nomeDisplay=document.getElementById('nome-display');if(nomeDisplay)nomeDisplay.textContent=nomeJogador;
-  aplicarRestricoesMissoesPelotao();atualizarPatenteDisplay();desenharRuas();posicionarOcorrencias();esconderTodas();const mapa=document.getElementById('tela-mapa');if(mapa)mapa.style.display='block';tocarMenuMusica();salvarProgressoLocal('entrada-perfil-pelotao');atualizarAcoesResultadoPelotao();
+  aplicarRestricoesMissoesPelotao();atualizarPatenteDisplay();desenharRuas();posicionarOcorrencias();esconderTodas();const mapa=document.getElementById('tela-mapa');if(mapa)mapa.style.display='block';if(typeof agendarPrecarregamentoInsigniasCarreira==='function')agendarPrecarregamentoInsigniasCarreira();tocarMenuMusica();salvarProgressoLocal('entrada-perfil-pelotao');atualizarAcoesResultadoPelotao();
 }
 function entrarEmServicoPelotao(){
   const err=document.getElementById('platoon-login-error');if(err)err.hidden=true;
@@ -1753,6 +1815,9 @@ function obterOuCriarFrame(id){
 }
 function precarregarSimulador(id){
   if(id===null||id===undefined||!SIM_URLS[id])return;
+  // Fase 30: enquanto o briefing está sendo lido, prepara em paralelo
+  // o HTML/iframe do simulador, seus assets internos e a trilha da missão.
+  try{if(typeof precarregarAudioMissao==='function')precarregarAudioMissao(id);}catch(erro){console.warn('Não foi possível pré-carregar o áudio da missão:',erro);}
   try{obterOuCriarFrame(id);}catch(erro){console.warn('Não foi possível pré-carregar o simulador:',erro);}
 }
 function mostrarFrameMissao(id){
