@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação Salvamento — Missões Integradas</title>
+<link rel="stylesheet" href="./css/game.css">
+</head>
+<body>
+<div id="tela-inicial">
+  <div class="logo-area logo-area-portal"><div class="escudo-bombeiro"><img src="./assets/embedded/29d423909822d7c89224.png" alt="Emblema Operação Salvamento"></div><h1>Operação <span>Salvamento</span></h1><p>Matemática aplicada às atividades do Corpo de Bombeiros</p></div>
+  <main class="access-hub access-hub-simple" aria-labelledby="accessHubTitle">
+    <div class="access-hub-heading"><h2 id="accessHubTitle">Escolha como deseja acessar o jogo</h2></div>
+    <div class="access-primary-action">
+      <button class="access-play-button" type="button" onclick="abrirModoIndividual()"><span class="access-play-icon">▶</span><strong>Jogar</strong></button>
+    </div>
+    <div class="access-secondary-actions">
+      <button class="access-secondary-button" type="button" onclick="abrirModoPelotao()"><span class="access-secondary-image-wrap"><img class="access-secondary-icon-image" src="./assets/embedded/b2fc295209c2b55c6175.png" alt="" aria-hidden="true"></span><strong>Participar de um pelotão</strong></button>
+      <button class="access-secondary-button" type="button" onclick="abrirAreaProfessor()"><span>📋</span><strong>Área do professor</strong></button>
+    </div>
+  </main>
+</div>
+
+<div id="tela-modo-individual">
+  <section class="mode-shell" aria-labelledby="individualTitle">
+    <button class="mode-back" type="button" onclick="voltarAreaProfessorContextual()">← Voltar</button>
+    <header class="mode-header"><span class="mode-icon">🎮</span><div><span class="mode-kicker">Modo individual</span><h2 id="individualTitle">Apresente-se para o serviço</h2><p>Informe seu nome de guerra para iniciar uma nova operação ou continue um progresso já salvo.</p></div></header>
+    <div id="individual-saved-card" class="saved-operation-card" hidden>
+      <div><span class="saved-operation-label">Operação encontrada neste dispositivo</span><strong id="individual-saved-name">---</strong><p id="individual-saved-summary">---</p></div>
+      <button class="btn-continue-operation" type="button" onclick="continuarOperacaoSalvaIndividual()">Continuar do mapa</button>
+    </div>
+    <div class="individual-new-card">
+      <h3>Entrar de serviço</h3><label for="nome-guerra">Nome de guerra</label><input type="text" id="nome-guerra" placeholder="Ex.: Falcão 07" maxlength="20" autocomplete="off"><button class="btn-entrar" onclick="entrarNoJogo()">🔥 Entrar em serviço</button>
+    </div>
+    <div class="individual-portability">
+      <div><strong>Cópia e transferência do progresso</strong><p>Exporte uma cópia para guardar ou continuar em outro navegador ou dispositivo.</p></div>
+      <div class="progress-tools" aria-label="Cópia e restauração do progresso"><button class="btn-progress-tool" type="button" onclick="exportarProgressoIndividual()">📤 Exportar progresso</button><button class="btn-progress-tool" type="button" onclick="selecionarArquivoProgressoIndividual()">📥 Importar progresso</button></div>
+      <input id="input-importar-progresso" type="file" accept=".operacao-salvamento,application/json" class="native-file-input">
+    </div>
+  </section>
+</div>
+
+<div id="tela-modo-pelotao">
+  <section class="mode-shell mode-shell-narrow" aria-labelledby="platoonTitle">
+    <button class="mode-back" type="button" onclick="voltarAoPortalInicial()">← Voltar</button>
+    <header class="mode-header"><span class="mode-icon mode-icon-image"><img src="./assets/embedded/b2fc295209c2b55c6175.png" alt=""></span><div><span class="mode-kicker">Modo pelotão</span><h2 id="platoonTitle">Participar de uma atividade</h2><p>Abra o arquivo coletivo recebido do professor e acesse seu perfil com usuário e senha.</p></div></header>
+    <div id="platoon-access-import" class="platoon-access-card">
+      <span class="platoon-access-step">1. Arquivo da atividade</span>
+      <h3>Importar arquivo do pelotão</h3>
+      <p>Selecione o arquivo <strong>.os-pelotao</strong> distribuído pelo professor.</p>
+      <button class="platoon-access-primary" type="button" onclick="selecionarArquivoColetivoPelotao()">📂 Escolher arquivo</button>
+      <input id="input-arquivo-coletivo-pelotao" type="file" accept=".os-pelotao,application/json" class="native-file-input">
+    </div>
+    <div id="platoon-access-login" class="platoon-access-card" hidden>
+      <div class="platoon-loaded-heading"><span class="platoon-access-step">2. Identificação</span><button type="button" class="platoon-change-file" onclick="trocarArquivoColetivoPelotao()">Trocar arquivo</button></div>
+      <h3 id="platoon-loaded-name">Pelotão</h3>
+      <p id="platoon-loaded-summary"></p>
+      <label>Usuário<input id="platoon-login-user" autocomplete="username" maxlength="40" placeholder="Ex.: GS-001"></label>
+      <label>Senha
+        <span class="platoon-password-field">
+          <input id="platoon-login-password" type="password" autocomplete="current-password" maxlength="30" placeholder="Senha recebida">
+          <button id="platoon-password-toggle" class="platoon-password-toggle" type="button" onclick="alternarVisibilidadeSenhaPelotao()" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha">👁️</button>
+        </span>
+      </label>
+      <div id="platoon-login-error" class="platoon-login-error" role="alert" hidden></div>
+      <button class="platoon-access-primary" type="button" onclick="entrarEmServicoPelotao()">Entrar em serviço</button>
+    </div>
+    <div id="platoon-known-profiles" class="platoon-known-profiles" hidden>
+      <h3>Perfis deste dispositivo</h3><div id="platoon-known-profiles-list"></div>
+    </div>
+  </section>
+</div>
+
+<div id="tela-area-professor">
+  <section class="mode-shell teacher-shell" aria-labelledby="teacherTitle">
+    <button class="mode-back" type="button" onclick="voltarAreaProfessorContextual()">← Voltar</button>
+    <header class="mode-header"><span class="mode-icon">📋</span><div><span class="mode-kicker">Área do professor</span><h2 id="teacherTitle">Organização de atividades</h2><p>Crie uma atividade com pseudônimos, sem cadastrar dados pessoais.</p></div></header>
+    <div id="teacher-home" class="teacher-action-grid"><button type="button" onclick="iniciarCriacaoPelotao()"><span>＋</span><strong>Criar novo pelotão</strong><small>Assistente guiado para configurar a atividade.</small></button><button type="button" onclick="selecionarArquivoGestaoPelotao()"><span>📂</span><strong>Abrir pelotão existente</strong><small>Importe o arquivo administrativo para receber resultados.</small></button><input id="input-arquivo-gestao-pelotao" type="file" accept=".os-gestao,application/json" class="native-file-input"><input id="input-resultados-pelotao" type="file" accept=".os-resultado,application/json" multiple class="native-file-input"></div>
+    <div id="teacher-pedagogical-link" class="teacher-pedagogical-link"><button type="button" onclick="abrirOrientacoesPedagogicas()">📘 Orientações pedagógicas</button></div>
+
+    <section id="platoon-results-manager" class="platoon-results-manager" hidden>
+      <div class="results-manager-heading"><div><span class="platoon-menu-icon-wrap"><img src="./assets/embedded/b2fc295209c2b55c6175.png" alt=""></span><div><p>Painel pedagógico local</p><h3 id="results-manager-title">Pelotão</h3><small id="results-manager-summary"></small></div></div></div>
+      <div class="results-manager-actions"><button type="button" onclick="selecionarResultadosPelotao()">Importar resultados dos alunos</button><button type="button" class="secondary" onclick="baixarGestaoPelotaoAtualizada()">Salvar gestão atualizada</button><button type="button" class="secondary" onclick="exportarRelatorioPelotaoCSV()">Exportar CSV</button><button type="button" class="secondary" onclick="imprimirRelatorioPelotao()">Imprimir relatório</button></div>
+
+      <div id="results-dashboard-cards" class="results-dashboard-cards" aria-label="Resumo do pelotão"></div>
+
+      <div class="results-dashboard-grid">
+        <section class="results-dashboard-panel">
+          <div class="results-section-heading"><div><span>👥</span><div><h4>Componentes</h4><p>Acompanhamento individual das entregas.</p></div></div><label>Filtrar<select id="results-status-filter" onchange="renderizarGestaoResultadosPelotao()"><option value="todos">Todos</option><option value="final">Concluídos</option><option value="parcial">Parciais</option><option value="nao-entregue">Não entregues</option></select></label></div>
+          <div class="credentials-table-wrap results-table-wrap"><table><thead><tr><th>Nome de guerra</th><th>Usuário</th><th>Progresso</th><th>Pontos acumulados</th><th>Tempo</th><th>Erros</th><th>Dicas</th><th>Situação</th><th>Atualização</th><th>Detalhes</th></tr></thead><tbody id="results-manager-body"></tbody></table></div>
+        </section>
+
+        <section class="results-dashboard-panel">
+          <div class="results-section-heading"><div><span>🎯</span><div><h4>Desempenho por missão</h4><p>Indicadores consolidados das entregas recebidas.</p></div></div></div>
+          <div id="results-mission-cards" class="results-mission-cards"></div>
+        </section>
+      </div>
+
+      <section class="results-dashboard-panel results-pending-panel">
+        <div class="results-section-heading"><div><span>📌</span><div><h4>Pendências</h4><p>Componentes sem entrega ou com percurso incompleto.</p></div></div></div>
+        <div id="results-pending-list" class="results-pending-list"></div>
+      </section>
+
+      <p class="results-dashboard-note">Os indicadores apoiam o acompanhamento pedagógico e não devem ser interpretados isoladamente como nota ou medida direta de aprendizagem.</p>
+
+
+      <section id="student-result-detail" class="student-result-detail" hidden aria-labelledby="student-detail-title">
+        <header class="student-detail-header">
+          <div><span class="mode-kicker">Acompanhamento individual</span><h3 id="student-detail-title">Detalhes do componente</h3><p id="student-detail-subtitle"></p></div>
+          <div class="student-detail-actions"><button type="button" class="secondary" onclick="imprimirRelatorioIndividualPelotao()">🖨️ Imprimir</button><button type="button" onclick="fecharDetalhesComponentePelotao()">✕ Fechar</button></div>
+        </header>
+        <div id="student-detail-overview" class="student-detail-overview"></div>
+        <section class="student-detail-section"><div class="results-section-heading"><div><span>📈</span><div><h4>Comparação com o pelotão</h4><p>Indicadores de referência, sem caráter classificatório.</p></div></div></div><div id="student-detail-comparison" class="student-detail-comparison"></div></section>
+        <section class="student-detail-section"><div class="results-section-heading"><div><span>🚒</span><div><h4>Desempenho por missão</h4><p>Tempo, tentativas, dicas, penalidades e situação.</p></div></div></div><div class="credentials-table-wrap student-mission-table-wrap"><table><thead><tr><th>Missão</th><th>Situação</th><th>Tempo</th><th>Tentativas</th><th>Dicas</th><th>Penalidades</th><th>Relatório</th></tr></thead><tbody id="student-detail-missions"></tbody></table></div></section>
+        <section class="student-detail-section"><div class="results-section-heading"><div><span>🔎</span><div><h4>Indicadores de atenção</h4><p>Sinais para apoiar a observação do professor.</p></div></div></div><div id="student-detail-alerts" class="student-detail-alerts"></div></section>
+        <section id="student-detail-report-section" class="student-detail-section" hidden><div class="results-section-heading"><div><span>📄</span><div><h4 id="student-detail-report-title">Relatório da missão</h4><p>Registro exportado pelo estudante.</p></div></div></div><div id="student-detail-report" class="student-detail-report"></div></section>
+        <p class="results-dashboard-note">Os indicadores descrevem o percurso realizado no jogo. Tempo, tentativas, dicas, penalidades e pontuação devem ser analisados em conjunto com os relatórios, as estratégias e outras evidências de aprendizagem.</p>
+      </section>
+
+      <div class="package-actions"><button type="button" class="secondary" onclick="fecharGestaoResultadosPelotao()">Voltar</button></div>
+    </section>
+    <div id="platoon-wizard" class="platoon-wizard" hidden>
+      <div class="wizard-topbar"><button type="button" class="wizard-close" onclick="cancelarCriacaoPelotao()">← Área do professor</button><span id="wizard-step-label">Etapa 1 de 4</span></div><div class="wizard-progress"><span id="wizard-progress-fill"></span></div><h3>Criar novo pelotão</h3>
+      <div class="wizard-step" data-wizard-step="1"><h4>Identificação da atividade</h4><p>Use apenas nomes fictícios. Não informe escola, turma ou nomes reais.</p><label>Nome fictício do pelotão<input id="platoon-name" maxlength="50" placeholder="Ex.: Guardiões da Serra" oninput="salvarRascunhoPelotao()"></label><label>Título da atividade<input id="platoon-activity-title" maxlength="80" placeholder="Ex.: Revisão Matemática — Ensino Fundamental" oninput="salvarRascunhoPelotao()"></label><fieldset><legend>Etapa de conhecimentos matemáticos</legend><div class="wizard-option-grid two-columns"><label class="wizard-choice"><input type="radio" name="platoon-level" value="fundamental" onchange="alterarNivelPelotao()"><span><strong>Ensino Fundamental</strong><small>Conhecimentos matemáticos do Ensino Fundamental, organizados em progressão de complexidade.</small></span></label><label class="wizard-choice"><input type="radio" name="platoon-level" value="ensino-medio" onchange="alterarNivelPelotao()"><span><strong>Ensino Médio</strong><small>Conteúdos do Ensino Médio articulados aos conhecimentos anteriores.</small></span></label></div></fieldset></div>
+      <div class="wizard-step" data-wizard-step="2" hidden><h4>Componentes do pelotão</h4><p>Insira um nome de guerra por linha ou gere pseudônimos automaticamente.</p><div class="wizard-inline-actions"><button type="button" onclick="gerarNomesGuerraPelotao(10)">Gerar 10 nomes</button><button type="button" onclick="limparNomesGuerraPelotao()">Limpar lista</button></div><label>Nomes de guerra<textarea id="platoon-members" rows="9" placeholder="Falcão 07&#10;Lince 12&#10;Cometa Azul" oninput="atualizarResumoNomesPelotao();salvarRascunhoPelotao()"></textarea></label><div id="platoon-members-summary" class="wizard-feedback">Nenhum componente informado.</div></div>
+      <div class="wizard-step" data-wizard-step="3" hidden><h4>Configuração pedagógica</h4><fieldset><legend>Forma de aplicação</legend><div class="wizard-option-grid two-columns"><label class="wizard-choice"><input type="radio" name="platoon-route" value="completo" checked onchange="alternarSelecaoMissoesPelotao();salvarRascunhoPelotao()"><span><strong>Percurso completo</strong><small>Revisão geral e integradora da etapa.</small><button type="button" class="pedagogy-inline-help" onclick="event.preventDefault();event.stopPropagation();abrirAjudaFormaAplicacao('completo')">ⓘ Entenda esta forma de aplicação</button></span></label><label class="wizard-choice"><input type="radio" name="platoon-route" value="especificas" onchange="alternarSelecaoMissoesPelotao();salvarRascunhoPelotao()"><span><strong>Missões específicas</strong><small>Selecione missões conforme o objetivo.</small><button type="button" class="pedagogy-inline-help" onclick="event.preventDefault();event.stopPropagation();abrirAjudaFormaAplicacao('especificas')">ⓘ Entenda esta forma de aplicação</button></span></label></div></fieldset><div id="platoon-mission-selection" class="mission-selection" hidden><p>Selecione ao menos uma missão:</p><div id="mission-pedagogy-grid" class="mission-check-grid pedagogy-mission-grid"></div></div></div>
+      <div class="wizard-step" data-wizard-step="4" hidden><h4>Revisão</h4><div id="platoon-review" class="platoon-review"></div><div class="wizard-notice">Ao confirmar, serão gerados usuários, senhas e os arquivos locais da atividade. Guarde o arquivo administrativo e distribua aos estudantes apenas o arquivo coletivo e suas credenciais individuais.</div></div>
+
+      <section id="platoon-package-result" class="platoon-package-result" hidden>
+        <div class="package-success"><span>✅</span><div><h4>Pacote da atividade gerado</h4><p id="platoon-package-summary"></p></div></div>
+        <div class="package-download-grid">
+          <button type="button" onclick="baixarArquivoColetivoPelotao()"><strong>Arquivo coletivo dos alunos</strong><small>Distribua este arquivo para todos os componentes.</small></button>
+          <button type="button" onclick="baixarArquivoAdministrativoPelotao()"><strong>Arquivo administrativo</strong><small>Guarde com o professor; contém as credenciais.</small></button>
+          <button type="button" onclick="baixarCredenciaisPelotao()"><strong>Planilha de credenciais</strong><small>CSV para impressão ou organização externa.</small></button>
+          <button type="button" onclick="baixarInstrucoesPelotao()"><strong>Instruções da atividade</strong><small>Orientações para professor e estudantes.</small></button>
+          <button type="button" onclick="baixarGuiaPedagogicoPelotao()"><strong>Guia pedagógico</strong><small>Orientações completas para aplicação e acompanhamento.</small></button>
+          <button class="package-main-download" type="button" onclick="baixarPacoteCompletoPelotao()"><strong>Baixar pacote completo</strong><small>Reúne todos os dados em um único arquivo local.</small></button>
+        </div>
+        <div class="credentials-preview"><div class="credentials-heading"><h4>Credenciais geradas</h4><p>Entregue a cada estudante apenas a linha correspondente ao seu nome de guerra.</p></div><div class="credentials-table-wrap"><table><thead><tr><th>Nome de guerra</th><th>Usuário</th><th>Senha</th></tr></thead><tbody id="platoon-credentials-body"></tbody></table></div></div>
+        <div class="package-actions"><button type="button" class="secondary" onclick="voltarEdicaoPelotao()">Voltar à revisão</button><button type="button" onclick="criarOutroPelotao()">Criar outro pelotão</button></div>
+      </section>
+      <div id="wizard-error" class="wizard-error" role="alert" hidden></div><div class="wizard-footer"><button id="wizard-prev" type="button" class="secondary" onclick="etapaAnteriorPelotao()" hidden>Voltar</button><button id="wizard-next" type="button" onclick="proximaEtapaPelotao()">Continuar</button><button id="wizard-finish" type="button" onclick="concluirRascunhoPelotao()" hidden>Gerar credenciais e arquivos</button></div>
+    </div>
+  </section>
+</div>
+
+<div id="pedagogical-guide-overlay" class="pedagogical-guide-overlay" hidden onclick="fecharOrientacoesPedagogicas(event)">
+  <section class="pedagogical-guide-dialog" role="dialog" aria-modal="true" aria-labelledby="pedagogicalGuideTitle" onclick="event.stopPropagation()">
+    <header><div><span class="mode-kicker">Apoio ao professor</span><h2 id="pedagogicalGuideTitle">Orientações pedagógicas</h2></div><button type="button" class="pedagogical-guide-close" onclick="fecharOrientacoesPedagogicas()" aria-label="Fechar">✕</button></header>
+    <nav class="pedagogical-guide-tabs" aria-label="Seções do guia"><button type="button" class="active" data-pedagogy-tab="visao-geral" onclick="abrirAbaOrientacaoPedagogica('visao-geral')">Visão geral</button><button type="button" data-pedagogy-tab="aplicacao" onclick="abrirAbaOrientacaoPedagogica('aplicacao')">Aplicação</button><button type="button" data-pedagogy-tab="avaliacao" onclick="abrirAbaOrientacaoPedagogica('avaliacao')">Acompanhamento</button><button type="button" data-pedagogy-tab="privacidade" onclick="abrirAbaOrientacaoPedagogica('privacidade')">Funcionamento local</button></nav>
+    <div id="pedagogical-guide-content" class="pedagogical-guide-content"></div>
+    <footer><button type="button" class="secondary" onclick="imprimirOrientacoesPedagogicas()">🖨️ Imprimir</button><button type="button" onclick="fecharOrientacoesPedagogicas()">Fechar</button></footer>
+  </section>
+</div>
+<div id="tela-nivel">
+  <div class="nivel-header"><h2>Selecione o Nível</h2><p>Escolha sua base de treinamento</p></div>
+  <div class="niveis-lista niveis-lista-dois">
+    <div class="nivel-card" onclick="selecionarNivel(1)"><div class="nivel-num">1</div><div class="nivel-info"><strong>Ensino Fundamental</strong><span>Missões em progressão de complexidade</span></div><div class="nivel-badge">14 missões</div></div>
+    <div class="nivel-card" onclick="selecionarNivel(2)"><div class="nivel-num">2</div><div class="nivel-info"><strong>Ensino Médio</strong><span>Situações matemáticas mais complexas</span></div><div class="nivel-badge">14 missões</div></div>
+  </div>
+  <button class="btn-voltar-nivel" onclick="voltarDeNivel()">← Voltar</button>
+</div>
+<div id="toast-nivel" class="toast-em-breve"></div>
+<div id="tela-mapa">
+  <div id="toast-mapa" class="toast-em-breve"></div>
+  <div class="mapa-hud-lines" aria-hidden="true"></div>
+  <div class="mapa-decor decor-despacho" aria-hidden="true"><span class="decor-icon">▦</span><strong>Central de despacho</strong><small>Canal 04 · pronto</small></div>
+  <div class="mapa-decor decor-incendio" aria-hidden="true"><span class="decor-icon">♨</span><strong>Combate a incêndio</strong><small>Área urbana</small></div>
+  <div class="mapa-decor decor-aquatico" aria-hidden="true"><span class="decor-icon">≋</span><strong>Resgate aquático</strong><small>Equipe em prontidão</small></div>
+  <div class="mapa-decor decor-mata" aria-hidden="true"><span class="decor-icon">⌁</span><strong>Busca em mata</strong><small>Setor de rastreamento</small></div>
+  <div class="mapa-decor decor-galeria" aria-hidden="true"><span class="decor-icon">◉</span><strong>Galeria subterrânea</strong><small>Acesso controlado</small></div>
+  <div class="top-bar">
+    <div class="header-player">
+      <div class="escudo-mini" id="escudo-mini"><img src="./assets/embedded/29d423909822d7c89224.png" alt="Emblema Operação Salvamento"></div>
+      <div class="header-player-text"><span id="patente-display">Recruta</span><strong id="nome-display">---</strong></div>
+      <span class="patente-badge-mini" id="patente-badge-mini"></span>
+    </div>
+    <div class="header-center-title">
+      <div class="header-sirene-wrap" aria-label="Sirene da central">
+        <div class="sirene-luz" id="sireneLuz">🚨</div>
+        <div class="sirene-raio" id="sireneRaio" style="display:none;"></div>
+      </div>
+      <strong>Central de Ocorrências</strong>
+    </div>
+    <div class="header-score header-missions"><span class="header-kicker">MISSÕES</span><strong>⭐ <span id="contador-missoes">0/14</span></strong></div>
+    <div class="header-progress"><span class="header-kicker">PROMOÇÃO</span><button class="btn-carreira" onclick="abrirCarreira()" title="Ver progressão da carreira"><span class="promotion-value"><span id="pontos-carreira-badge">0/15</span> 🎖️</span><span class="promotion-track"><span id="promotion-track-fill"></span></span></button></div>
+    <button class="btn-voltar" onclick="voltarTelaInicial()"><span class="exit-icon">⇢</span> Sair</button>
+  </div>
+  <div id="pelotao-map-actions" class="pelotao-map-actions" hidden>
+    <button id="btn-entregar-resultado-pelotao" class="btn-entregar-resultado" type="button" onclick="exportarResultadoPelotao()">📤 Entregar resultado</button>
+  </div>
+  <div class="titulo-mapa" aria-hidden="true"></div>
+  <div class="mapa-wrapper"><div class="mapa-container" id="mapa-container"><svg class="ruas-svg" id="ruas-svg" viewBox="0 0 900 900" preserveAspectRatio="xMidYMid meet"></svg><div id="caminhao"><svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;"><rect x="5" y="12" width="55" height="36" rx="4" fill="#c62828" stroke="#8b0000" stroke-width="2"/><rect x="58" y="8" width="32" height="40" rx="6" fill="#d32f2f" stroke="#8b0000" stroke-width="2"/><rect x="62" y="14" width="22" height="16" rx="3" fill="#81d4fa" stroke="#5d4037" stroke-width="1.5"/><rect x="88" y="18" width="6" height="20" rx="1" fill="#555"/><rect x="5" y="28" width="85" height="4" fill="#ffd700"/><rect x="10" y="14" width="4" height="28" rx="1" fill="#888"/><rect x="10" y="18" width="20" height="3" rx="1" fill="#888"/><rect x="10" y="26" width="20" height="3" rx="1" fill="#888"/><rect x="10" y="34" width="20" height="3" rx="1" fill="#888"/><circle cx="22" cy="50" r="8" fill="#333" stroke="#111" stroke-width="2"/><circle cx="22" cy="50" r="4" fill="#888"/><circle cx="70" cy="50" r="8" fill="#333" stroke="#111" stroke-width="2"/><circle cx="70" cy="50" r="4" fill="#888"/><ellipse cx="50" cy="6" rx="8" ry="4" fill="#ff0000" stroke="#8b0000" stroke-width="1"/><circle cx="90" cy="38" r="3" fill="#fff" stroke="#ffd700" stroke-width="1"/></svg></div><div class="quartel" title="Quartel dos Bombeiros"><img src="./assets/embedded/4f751751b63ef23e51fb.webp" alt="Quartel"></div><div class="ocorrencia" id="ocorrencia-0" data-missao="0" onclick="selecionarMissao(0)" title="🐄 Missão 1: Resgate Animal"><img src="./assets/embedded/fe75d4c51a991a6aab1b.webp" alt="Missão 1" class="ocorrencia-img"></div><div class="ocorrencia" id="ocorrencia-1" data-missao="1" onclick="selecionarMissao(1)" title="🌊 Missão 2: Resgate na Água"><img src="./assets/embedded/583a6b3cf5ff88bbf2bb.webp" alt="Missão 2" class="ocorrencia-img"></div><div class="ocorrencia" id="ocorrencia-2" data-missao="2" onclick="selecionarMissao(2)" title="🕳️ Missão 3: Galeria Subterrânea"><img src="./assets/embedded/fdf555f326aba05ddefa.webp" alt="Missão 3" class="ocorrencia-img"></div><div class="ocorrencia" id="ocorrencia-3" data-missao="3" onclick="selecionarMissao(3)" title="🌲 Missão 4: Buscas na Mata"><img src="./assets/embedded/928e66d5b66cae808878.webp" alt="Missão 4" class="ocorrencia-img"></div><div class="ocorrencia" id="ocorrencia-4" data-missao="4" onclick="selecionarMissao(4)" title="🔥 Missão 5: Combate ao Incêndio"><img src="./assets/embedded/62557de5ef01c9706345.webp" alt="Missão 5" class="ocorrencia-img"></div><div class="ocorrencia" id="ocorrencia-5" data-missao="5" onclick="selecionarMissao(5)" title="💧 Missão 6: Busca Aquática em Cachoeira"><img src="./assets/embedded/e452288a35c91fd5e945.webp" alt="Missão 6" class="ocorrencia-img"></div><div class="ocorrencia pendente" id="ocorrencia-6" data-missao="6" onclick="selecionarMissao(6)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div><div class="ocorrencia pendente" id="ocorrencia-7" data-missao="7" onclick="selecionarMissao(7)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div><div class="ocorrencia pendente" id="ocorrencia-8" data-missao="8" onclick="selecionarMissao(8)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div><div class="ocorrencia pendente" id="ocorrencia-9" data-missao="9" onclick="selecionarMissao(9)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div><div class="ocorrencia pendente" id="ocorrencia-10" data-missao="10" onclick="selecionarMissao(10)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div><div class="ocorrencia pendente" id="ocorrencia-11" data-missao="11" onclick="selecionarMissao(11)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div><div class="ocorrencia pendente" id="ocorrencia-12" data-missao="12" onclick="selecionarMissao(12)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div><div class="ocorrencia pendente" id="ocorrencia-13" data-missao="13" onclick="selecionarMissao(13)" title="Em breve"><div class="oc-pendente-inner"><span class="oc-plus">+</span></div></div></div></div><div class="instrucao-mapa">🚨 Selecione uma ocorrência para acionar a sirene e enviar a viatura.</div></div>
+<div id="modal-carreira">
+  <div class="carreira-header"><h2>🎖️ Carreira</h2><p>Acompanhe sua progressão de patente</p></div>
+  <div class="carreira-progresso"><div class="carreira-progresso-fill" id="carreira-progresso-fill" style="width:0%"></div></div>
+  <div class="carreira-lista" id="carreira-lista"></div>
+  <button class="btn-fechar-carreira" onclick="fecharCarreira()">Fechar</button>
+</div>
+<div id="overlay-promocao">
+  <div class="promocao-insignia" id="promocao-insignia"></div>
+  <div class="promocao-titulo">Parabéns!</div>
+  <div class="promocao-texto" id="promocao-texto"></div>
+  <button class="btn-continuar-promocao" onclick="fecharPromocao()">Continuar em serviço</button>
+</div>
+
+<div id="tela-briefing" aria-labelledby="briefingTitle">
+  <main class="briefing-shell briefing-shell-tabs">
+    <header class="briefing-header">
+      <div>
+        <div class="briefing-kicker">📟 Ordem de missão · leitura antes do atendimento</div>
+        <h2 class="briefing-title" id="briefingTitle">Briefing da ocorrência</h2>
+      </div>
+      <div class="briefing-header-metrics" aria-label="Acompanhamento da missão">
+        <span class="status-pill mission-stage-pill">Etapa: <strong id="briefingMissionStage">Enunciado e dados</strong></span>
+        <span class="status-pill">⏱ Tempo da missão: <strong id="briefingMissionTimer">00:00:00</strong></span>
+        <span class="status-pill">❌ Tentativas: <strong id="briefingMissionAttempts">0</strong></span>
+        <span class="status-pill mission-penalty-pill">⚠ Penalidades: <strong id="briefingMissionPenalties">0</strong></span>
+        <span class="status-pill">Status: <strong id="briefingMissionStatus">Lendo o enunciado</strong></span>
+      </div>
+    </header>
+
+    <div class="briefing-content briefing-content-tabs">
+      <div class="briefing-hero briefing-hero-tabs" id="briefingHero">
+        <img id="briefingHeroImg" src="" alt="Ilustração da ocorrência">
+        <div class="briefing-hero-overlay"></div>
+        <div class="briefing-hero-badge">
+          <span class="briefing-hero-icon" id="briefingHeroIcon">🚒</span>
+          <span class="briefing-hero-label" id="briefingHeroLabel"></span>
+        </div>
+      </div>
+
+      <nav class="briefing-tabs" aria-label="Seções do briefing" role="tablist">
+        <button class="briefing-tab ativo" id="tabSituacao" type="button" role="tab" aria-selected="true" aria-controls="panelSituacao" onclick="abrirAbaBriefing('situacao')">🚨 <span>Situação</span></button>
+        <button class="briefing-tab" id="tabDados" type="button" role="tab" aria-selected="false" aria-controls="panelDados" onclick="abrirAbaBriefing('dados')">📋 <span>Dados</span></button>
+        <button class="briefing-tab" id="tabObjetivo" type="button" role="tab" aria-selected="false" aria-controls="panelObjetivo" onclick="abrirAbaBriefing('objetivo')">🎯 <span>Objetivo</span></button>
+        <button class="briefing-tab" id="tabReferencia" type="button" role="tab" aria-selected="false" aria-controls="panelReferencia" onclick="abrirAbaBriefing('referencia')">📖 <span>Referência</span></button>
+      </nav>
+
+      <div class="briefing-tab-panels">
+        <section class="briefing-tab-panel ativo" id="panelSituacao" role="tabpanel" aria-labelledby="tabSituacao">
+          <article class="briefing-card briefing-context-card briefing-card-wide">
+            <h3>🚨 Situação da ocorrência</h3>
+            <p id="briefingContext"></p>
+          </article>
+        </section>
+
+        <section class="briefing-tab-panel" id="panelDados" role="tabpanel" aria-labelledby="tabDados" hidden>
+          <article class="briefing-card briefing-data-card briefing-card-wide">
+            <h3>📋 Dados disponíveis</h3>
+            <ul class="briefing-data" id="briefingData"></ul>
+          </article>
+          <article class="briefing-card briefing-note briefing-note-tabs" id="briefingNote"></article>
+        </section>
+
+        <section class="briefing-tab-panel" id="panelObjetivo" role="tabpanel" aria-labelledby="tabObjetivo" hidden>
+          <article class="briefing-card briefing-objective-card briefing-card-wide">
+            <h3>🎯 Objetivo operacional</h3>
+            <p id="briefingObjective"></p>
+          </article>
+        </section>
+
+        <section class="briefing-tab-panel" id="panelReferencia" role="tabpanel" aria-labelledby="tabReferencia" hidden>
+          <div class="briefing-reference-grid">
+            <article class="briefing-card briefing-model briefing-reference-card">
+              <h3>🧮 Referência matemática</h3>
+              <div id="briefingModel"></div>
+              <p class="briefing-reference-warning">A referência apresenta ferramentas de apoio, mas não revela o resultado final da missão.</p>
+            </article>
+
+            <aside class="briefing-card briefing-hints" aria-live="polite">
+              <h3>💡 Orientação progressiva</h3>
+              <p class="briefing-hint-intro">Use as dicas apenas quando precisar. Elas são apresentadas gradualmente, sem entregar diretamente a resposta.</p>
+              <button class="briefing-hint-btn" id="btnDica" type="button" onclick="mostrarProximaDica()">💡 Preciso de uma dica</button>
+              <div class="briefing-hint-box" id="briefingHintBox" hidden>
+                <div class="briefing-hint-counter" id="briefingHintCounter"></div>
+                <p id="briefingHintText"></p>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+
+      <article class="briefing-card briefing-task briefing-task-fixed">
+        <h3>✅ Sua missão</h3>
+        <p id="briefingTask"></p>
+      </article>
+    </div>
+
+    <footer class="briefing-actions">
+      <button class="briefing-btn secondary" type="button" onclick="solicitarVoltaAoMapa()">← Mapa</button>
+      <div class="briefing-actions-right">
+        <button class="briefing-btn primary" id="btnBriefingAvancar" type="button" onclick="iniciarMissaoDoBriefing()">Avançar para o simulador →</button>
+      </div>
+    </footer>
+  </main>
+</div>
+<div id="tela-missao">
+  <div class="mission-toolbar">
+    <div class="mission-title" id="missionTitle">Missão</div>
+    <div class="mission-status">
+      <span class="status-pill mission-stage-pill">Etapa: <strong id="missionStage">Simulador</strong></span>
+      <span class="status-pill">⏱ Tempo da missão: <strong id="missionTimer">00:00:00</strong></span>
+      <span class="status-pill">❌ Tentativas: <strong id="missionAttempts">0</strong></span>
+      <span class="status-pill mission-penalty-pill">⚠ Penalidades: <strong id="missionPenalties">0</strong></span>
+      <span class="status-pill">Status: <strong id="missionSolvedStatus">Em andamento</strong></span>
+    </div>
+    <div class="mission-actions">
+      <button class="mission-btn secondary" onclick="voltarAoBriefing()">← Enunciado e dados</button>
+      <button class="mission-btn secondary" onclick="solicitarVoltaAoMapa()">Mapa</button>
+      <button class="mission-btn secondary" id="btnReiniciarSimulador" onclick="reiniciarSimulador()">↻ Reiniciar simulador</button>
+      <button class="mission-btn success" id="btnConcluir" onclick="resolverMissao(missaoAtual)" disabled>✓ Concluir</button>
+    </div>
+  </div>
+  <div id="missionFrameContainer" aria-live="polite">
+    <div id="missionFrameLoading" class="mission-frame-loading" hidden aria-live="polite">
+      <div class="mission-frame-loading-spinner" aria-hidden="true"></div>
+      <strong>Preparando o simulador...</strong>
+      <span>Carregando o pátio e as viaturas.</span>
+    </div>
+  </div>
+</div>
+
+<div id="mission-report-overlay" class="mission-report-overlay" role="dialog" aria-modal="true" aria-labelledby="missionReportHeading">
+  <section class="mission-report-dialog">
+    <header class="mission-report-header">
+      <div>
+        <div class="mission-report-eyebrow" id="reportModeBadge">Missão concluída — revise os resultados</div>
+        <h2 id="missionReportHeading">🏅 Relatório da Missão e Reflexões</h2>
+        <p id="reportMissionTitle"></p>
+      </div>
+      <div class="mission-report-status">✅ MISSÃO CUMPRIDA</div>
+    </header>
+    <div class="mission-report-metrics" aria-label="Desempenho da missão">
+      <article><span>Tempo</span><strong id="reportMissionTime">00:00:00</strong></article>
+      <article><span>Erros</span><strong id="reportMissionAttempts">0</strong></article>
+      <article><span>Penalidades</span><strong id="reportMissionPenalties">0</strong></article>
+      <article><span>Pontos por erros</span><strong id="reportMissionAttemptPoints">0</strong></article>
+      <article><span>Pontos por tempo</span><strong id="reportMissionTimePoints">0</strong></article>
+      <article><span>Dicas utilizadas</span><strong id="reportMissionHintsUsed">0</strong></article>
+      <article><span>Desconto por dicas</span><strong id="reportMissionHintDiscount">-0</strong></article>
+      <article class="mission-report-total"><span>Total</span><strong id="reportMissionTotalPoints">0</strong></article>
+    </div>
+    <nav class="mission-report-tabs" role="tablist" aria-label="Seções do relatório">
+      <button class="mission-report-tab ativo" data-report-tab="resultado" type="button" onclick="abrirAbaRelatorio('resultado')">Desempenho</button>
+      <button class="mission-report-tab" data-report-tab="reflexoes" type="button" onclick="abrirAbaRelatorio('reflexoes')">Reflexões</button>
+      <button class="mission-report-tab" data-report-tab="conteudos" type="button" onclick="abrirAbaRelatorio('conteudos')">Matemática e interdisciplinaridade</button>
+      <button class="mission-report-tab" data-report-tab="limites" type="button" onclick="abrirAbaRelatorio('limites')">Limites do modelo</button>
+      <button class="mission-report-tab" data-report-tab="seguranca" type="button" onclick="abrirAbaRelatorio('seguranca')">Segurança</button>
+    </nav>
+    <div class="mission-report-body">
+      <section class="mission-report-panel ativo" data-report-panel="resultado">
+        <article class="mission-report-card"><h3>🚒 Contexto operacional</h3><p id="reportOperationalContext"></p></article>
+        <article class="mission-report-card"><h3>📊 Leitura do desempenho</h3><p>O tempo e os erros registram o desempenho nesta representação didática. Eles ajudam a acompanhar a aprendizagem, mas não medem competência para atuação em emergências reais.</p></article>
+      </section>
+      <section class="mission-report-panel" data-report-panel="reflexoes" hidden>
+        <article class="mission-report-card"><h3>💭 Reflexões da missão</h3><ul id="reportReflections"></ul></article>
+        <article class="mission-report-card"><h3>✂️ Delimitações e simplificações</h3><ul id="reportSimplifications"></ul></article>
+      </section>
+      <section class="mission-report-panel" data-report-panel="conteudos" hidden>
+        <article class="mission-report-card"><h3>🧮 Matemática mobilizada</h3><ul id="reportMathematics"></ul></article>
+        <article class="mission-report-card"><h3>🔗 Interdisciplinaridade</h3><ul id="reportInterdisciplinarity"></ul></article>
+      </section>
+      <section class="mission-report-panel" data-report-panel="limites" hidden>
+        <article class="mission-report-card"><h3>🔎 Limites do modelo</h3><ul id="reportModelLimits"></ul><p class="mission-report-final-reflection" id="reportModelLimitsIntro"></p></article>
+      </section>
+      <section class="mission-report-panel" data-report-panel="seguranca" hidden>
+        <article class="mission-report-card mission-report-safety"><h3>🛡️ Segurança e cidadania</h3><ul id="reportSafety"></ul><p><strong>Em emergências, ligue 193.</strong></p></article>
+      </section>
+    </div>
+    <footer class="mission-report-footer"><button id="missionReportAction" type="button" onclick="acionarBotaoRelatorio()">✓ Concluir missão</button></footer>
+  </section>
+</div>
+
+<div id="modal-saida-missao" class="mission-exit-modal" role="dialog" aria-modal="true" aria-labelledby="missionExitTitle" aria-describedby="missionExitText">
+  <div class="mission-exit-dialog">
+    <div class="mission-exit-head">
+      <div class="mission-exit-icon">⚠️</div>
+      <div>
+        <h3 id="missionExitTitle">Voltar ao mapa principal?</h3>
+        <p>Esta missão já está em andamento.</p>
+      </div>
+    </div>
+    <div class="mission-exit-body" id="missionExitText">
+      O tempo, o número de tentativas e o progresso registrado serão preservados.
+      <div class="mission-exit-warning"><strong>Atenção:</strong> ao confirmar a saída, serão acrescentados <strong>20 minutos</strong> ao tempo decorrido da missão.</div>
+      <div class="mission-exit-summary">
+        <div>Tempo atual<strong id="missionExitCurrentTime">00:00:00</strong></div>
+        <div>Tempo após a penalidade<strong id="missionExitPenalizedTime">00:20:00</strong></div>
+      </div>
+    </div>
+    <div class="mission-exit-actions">
+      <button class="mission-exit-cancel" type="button" onclick="fecharModalSaidaMissao()">Cancelar</button>
+      <button class="mission-exit-confirm" type="button" onclick="confirmarVoltaAoMapaComPenalidade()">Voltar ao mapa e aplicar penalidade</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="modal-interface" class="interface-modal" role="dialog" aria-modal="true" aria-labelledby="interfaceModalTitle" aria-describedby="interfaceModalMessage">
+  <div class="interface-modal-dialog" role="document">
+    <div class="interface-modal-head">
+      <div class="interface-modal-icon" id="interfaceModalIcon">⚠️</div>
+      <div>
+        <h3 id="interfaceModalTitle">Confirmação</h3>
+        <p id="interfaceModalSubtitle">Central de Operações</p>
+      </div>
+    </div>
+    <div class="interface-modal-body" id="interfaceModalMessage"></div>
+    <div class="interface-modal-actions">
+      <button id="interfaceModalCancel" class="interface-modal-cancel" type="button">Cancelar</button>
+      <button id="interfaceModalConfirm" class="interface-modal-confirm" type="button">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

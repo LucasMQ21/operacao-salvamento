@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Enigma da Galeria Subterrânea</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1208;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            text-align: center;
+            color: #ffcc00;
+            margin: 15px 0 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1.6;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #ccc;
+            margin-bottom: 10px;
+            text-align: center;
+            max-width: 800px;
+            padding: 0 15px;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: min(900px, 95vw, calc((100vh - 190px) * 1200 / 1050));
+            aspect-ratio: 1200/1050;
+            border: 4px solid #5a4a2a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            background: #2a1f0f;
+        }
+
+        #bgImage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .ui-panel {
+            width: 900px;
+            max-width: 95vw;
+            background: linear-gradient(180deg, #3a2e1a 0%, #2a1f0f 100%);
+            border: 3px solid #5a4a2a;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 15px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-group label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+
+        .input-group input {
+            width: 70px;
+            padding: 8px 12px;
+            font-size: 18px;
+            text-align: center;
+            border: 2px solid #5a4a2a;
+            border-radius: 6px;
+            background: #1a1208;
+            color: #fff;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #ffcc00;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, #ffaa00, #cc7700);
+            color: #1a1208;
+            box-shadow: 0 4px 0 #885500;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #885500;
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #885500;
+        }
+
+        .btn-danger {
+            background: linear-gradient(180deg, #ff4444, #aa0000);
+            color: #fff;
+            box-shadow: 0 4px 0 #660000;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #660000;
+        }
+
+        .btn-danger:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #660000;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat-item {
+            background: #1a1208;
+            border: 2px solid #5a4a2a;
+            border-radius: 8px;
+            padding: 8px 16px;
+            text-align: center;
+        }
+
+        .stat-item .label {
+            font-size: 10px;
+            color: #aaa;
+            text-transform: uppercase;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .stat-item .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+
+        .path-display {
+            font-size: 14px;
+            color: #ccc;
+            background: #1a1208;
+            border: 2px solid #5a4a2a;
+            border-radius: 8px;
+            padding: 8px 16px;
+            min-width: 200px;
+        }
+
+        .path-display span {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+
+        /* Overlay Messages */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: linear-gradient(180deg, #3a2e1a, #1a1208);
+            border: 4px solid #ffcc00;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(255,204,0,0.3);
+            animation: popIn 0.4s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .modal h2 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .modal p {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .success .modal-icon { color: #00ff66; }
+        .success h2 { color: #00ff66; }
+        .fail .modal-icon { color: #ff4444; }
+        .fail h2 { color: #ff4444; }
+
+        .hint-box {
+            background: rgba(255, 204, 0, 0.1);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ffcc00;
+        }
+
+        /* Pulse animation for current position */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 { font-size: 12px; }
+            .subtitle { font-size: 11px; }
+            .ui-panel { padding: 10px; gap: 10px; justify-content: center; }
+            .btn { padding: 8px 16px; font-size: 8px; }
+        }
+</style>
+</head>
+<body>
+<h1>🚨 O ENIGMA DA GALERIA SUBTERRÂNEA 🚨</h1>
+    <p class="subtitle">
+        <strong>Missão:</strong> Percorra TODAS as tubulações exatamente UMA VEZ para resgatar o cachorro.<br>
+        Primeiro, escolha o poço de acesso (onde o tripé será posicionado). Depois, digite o próximo poço para se mover.
+    </p>
+
+    <div id="gameContainer">
+        <img id="bgImage" src="../assets/embedded/03772770e813b39103cc.webp" alt="Planta da Galeria">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="ui-panel">
+        <div class="input-group">
+            <label for="nextNode">Próximo Poço:</label>
+            <input type="number" id="nextNode" min="1" max="7" placeholder="?" onkeypress="handleKey(event)">
+            <button class="btn btn-primary" onclick="makeMove()">Mover</button>
+        </div>
+
+        <div class="path-display">
+            Rota: <span id="pathText">---</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="label">Tentativas</div>
+                <div class="value" id="attemptCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="label">Tubos</div>
+                <div class="value" id="pipeCount">0/10</div>
+            </div>
+        </div>
+
+        <button class="btn btn-danger" onclick="resetGame()">🔄 Reiniciar</button>
+    </div>
+
+    <!-- Success Overlay -->
+    <div id="successOverlay" class="overlay success">
+        <div class="modal">
+            <div class="modal-icon">🏆</div>
+            <h2>MISSÃO CONCLUÍDA COM SUCESSO!</h2>
+            <p>
+                Parabéns! Você percorreu todas as 10 tubulações sem repetir nenhuma!<br>
+                O cachorro foi resgatado com sucesso. 🐕
+            </p>
+            <div class="hint-box">
+                Você descobriu um <strong>Caminho Euleriano</strong>!<br>
+                Sempre deve começar (ou terminar) em vértices de grau ímpar.
+            </div>
+            <br>
+            <button class="btn btn-primary" onclick="resetGame()" style="margin-top:10px;">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <!-- Fail Overlay -->
+    <div id="failOverlay" class="overlay fail">
+        <div class="modal">
+            <div class="modal-icon">💥</div>
+            <h2>FALHA NA MISSÃO!</h2>
+            <p id="failMessage">
+                Você ficou sem movimentos possíveis antes de percorrer todas as tubulações.
+            </p>
+            <div class="hint-box" id="failHint">
+                Tente outra rota. Lembre-se: cada tubulação só pode ser usada uma vez!
+            </div>
+            <br>
+            <button class="btn btn-danger" onclick="resetGame()" style="margin-top:10px;">Tentar Novamente</button>
+        </div>
+    </div>
+<script>
+// ================== CONFIGURAÇÕES DO GRAFO ==================
+    // Coordenadas dos poços na imagem (percentual 0-100)
+    const nodes = {
+        1: { x: 14.5,  y: 20.5, label: '1' },
+        2: { x: 50.0,  y: 17.0, label: '2' },
+        3: { x: 29.5,  y: 50.0, label: '3' },
+        4: { x: 66.0,  y: 43.0, label: '4' },
+        5: { x: 47.0,  y: 80.5, label: '5' },
+        6: { x: 87.5,  y: 47.5, label: '6' },
+        7: { x: 77.0,  y: 81.0, label: '7' }
+    };
+
+    // Arestas (tubulações) - definidas como pares ordenados para identificação única
+    const allEdges = [
+        [1, 2], [1, 3],
+        [2, 3], [2, 4],
+        [3, 4], [3, 5],
+        [4, 5], [4, 6],
+        [5, 7], [6, 7]
+    ];
+
+    // Adjacência
+    const adj = {
+        1: [2, 3],
+        2: [1, 3, 4],
+        3: [1, 2, 4, 5],
+        4: [2, 3, 5, 6],
+        5: [3, 4, 7],
+        6: [4, 7],
+        7: [5, 6]
+    };
+
+    // ================== ESTADO DO JOGO ==================
+    let currentNode = null;
+    let usedEdges = new Set();
+    let path = [];
+    let attempts = 0;
+    let gameState = 'selecting'; // 'selecting', 'playing', 'won', 'lost'
+    let animationFrame = null;
+    let firefighterPos = null; // {x, y} animado
+    let targetPos = null;
+    let animProgress = 0;
+
+    // ================== CANVAS SETUP ==================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('gameContainer');
+
+    function resizeCanvas() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        draw();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // ================== DESENHO ==================
+    function getPos(nodeId) {
+        const n = nodes[nodeId];
+        return {
+            x: (n.x / 100) * canvas.width,
+            y: (n.y / 100) * canvas.height
+        };
+    }
+
+    function edgeKey(a, b) {
+        return a < b ? `${a}-${b}` : `${b}-${a}`;
+    }
+
+    function drawPipe(a, b, used) {
+        const p1 = getPos(a);
+        const p2 = getPos(b);
+
+        ctx.save();
+        if (used) {
+            // Tubulação desativada (escura/transparente)
+            ctx.strokeStyle = 'rgba(60, 50, 30, 0.35)';
+            ctx.lineWidth = 14;
+            ctx.setLineDash([8, 6]);
+        } else {
+            // Tubulação ativa (brilhante)
+            // Glow
+            ctx.shadowColor = 'rgba(100, 200, 255, 0.5)';
+            ctx.shadowBlur = 12;
+            ctx.strokeStyle = 'rgba(160, 210, 240, 0.6)';
+            ctx.lineWidth = 10;
+        }
+
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+
+        // Linha interna mais fina para destaque
+        if (!used) {
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'rgba(200, 230, 255, 0.4)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawNode(id, highlight) {
+        const p = getPos(id);
+        const radius = Math.min(canvas.width, canvas.height) * 0.038;
+
+        ctx.save();
+
+        // Sombra do buraco
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 4;
+
+        // Círculo externo (borda do poço)
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#4a4a4a';
+        ctx.fill();
+        ctx.strokeStyle = '#777';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Interior escuro do poço
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius * 0.78, 0, Math.PI * 2);
+        ctx.fillStyle = '#1a0f00';
+        ctx.fill();
+
+        // Destaque se for o nó atual
+        if (highlight) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, radius * 1.15, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 50, 50, 0.6)';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        ctx.restore();
+
+        // Número do poço
+        ctx.save();
+        ctx.font = `bold ${Math.floor(radius * 0.9)}px 'Press Start 2P', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffcc00';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(id, p.x, p.y - radius * 1.55);
+        ctx.fillText(id, p.x, p.y - radius * 1.55);
+        ctx.restore();
+    }
+
+    function drawFirefighter() {
+        if (!firefighterPos) return;
+
+        const radius = Math.min(canvas.width, canvas.height) * 0.025;
+
+        ctx.save();
+
+        // Brilho vermelho ao redor
+        ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+        ctx.shadowBlur = 20;
+
+        // Corpo do bombeiro (círculo vermelho)
+        ctx.beginPath();
+        ctx.arc(firefighterPos.x, firefighterPos.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff2222';
+        ctx.fill();
+        ctx.strokeStyle = '#ffaaaa';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Capacete (pequeno reflexo)
+        ctx.beginPath();
+        ctx.arc(firefighterPos.x - radius * 0.3, firefighterPos.y - radius * 0.3, radius * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fill();
+
+        // Label "Bombeiro"
+        ctx.font = `bold ${Math.floor(radius * 0.7)}px Roboto, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.strokeText('🚒', firefighterPos.x, firefighterPos.y + radius * 2.2);
+        ctx.fillText('🚒', firefighterPos.x, firefighterPos.y + radius * 2.2);
+
+        ctx.restore();
+    }
+
+    function drawTripod(nodeId) {
+        const p = getPos(nodeId);
+        const size = Math.min(canvas.width, canvas.height) * 0.04;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(255, 200, 0, 0.6)';
+        ctx.shadowBlur = 15;
+
+        // Tripé simplificado (triângulo amarelo)
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - size * 1.5);
+        ctx.lineTo(p.x - size * 0.7, p.y - size * 0.3);
+        ctx.lineTo(p.x + size * 0.7, p.y - size * 0.3);
+        ctx.closePath();
+        ctx.fillStyle = '#ffcc00';
+        ctx.fill();
+        ctx.strokeStyle = '#aa8800';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Label
+        ctx.font = `bold ${Math.floor(size * 0.5)}px Roboto, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffcc00';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.strokeText('TRIPÉ', p.x, p.y - size * 2);
+        ctx.fillText('TRIPÉ', p.x, p.y - size * 2);
+
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Desenha todas as tubulações
+        for (const [a, b] of allEdges) {
+            drawPipe(a, b, usedEdges.has(edgeKey(a, b)));
+        }
+
+        // Desenha os poços
+        for (let id = 1; id <= 7; id++) {
+            drawNode(id, id === currentNode);
+        }
+
+        // Desenha o tripé no primeiro poço
+        if (path.length > 0) {
+            drawTripod(path[0]);
+        }
+
+        // Desenha o bombeiro
+        drawFirefighter();
+    }
+
+    // ================== ANIMAÇÃO ==================
+    function animateMove(fromId, toId) {
+        const from = getPos(fromId);
+        const to = getPos(toId);
+        targetPos = to;
+        animProgress = 0;
+
+        function step() {
+            animProgress += 0.04;
+            if (animProgress >= 1) {
+                firefighterPos = targetPos;
+                draw();
+                animationFrame = null;
+                checkGameState();
+                return;
+            }
+
+            // Easing suave
+            const t = animProgress;
+            const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+            firefighterPos = {
+                x: from.x + (to.x - from.x) * ease,
+                y: from.y + (to.y - from.y) * ease
+            };
+
+            draw();
+            animationFrame = requestAnimationFrame(step);
+        }
+
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        step();
+    }
+
+    // ================== LÓGICA DO JOGO ==================
+    function handleKey(e) {
+        if (e.key === 'Enter') makeMove();
+    }
+
+    function makeMove() {
+        const input = document.getElementById('nextNode');
+        const val = parseInt(input.value);
+
+        if (!val || val < 1 || val > 7) {
+            alert('Digite um número de poço válido (1 a 7).');
+            input.value = '';
+            return;
+        }
+
+        // Fase de seleção do ponto de acesso
+        if (gameState === 'selecting') {
+            currentNode = val;
+            path = [val];
+            firefighterPos = getPos(val);
+            gameState = 'playing';
+            document.querySelector('.input-group label').textContent = 'Próximo Poço:';
+            input.value = '';
+            updateUI();
+            draw();
+            return;
+        }
+
+        // Fase de movimentação
+        if (gameState !== 'playing') return;
+
+        // Verifica se é vizinho
+        if (!adj[currentNode].includes(val)) {
+            alert(`Poço ${val} não está conectado diretamente ao poço ${currentNode}!`);
+            input.value = '';
+            return;
+        }
+
+        // Verifica se a aresta já foi usada
+        const eKey = edgeKey(currentNode, val);
+        if (usedEdges.has(eKey)) {
+            alert('Essa tubulação já foi percorrida! Escolha outra.');
+            input.value = '';
+            return;
+        }
+
+        // Move!
+        usedEdges.add(eKey);
+        path.push(val);
+        const fromNode = currentNode;
+        currentNode = val;
+        input.value = '';
+        updateUI();
+        animateMove(fromNode, val);
+    }
+
+    function checkGameState() {
+        // Verifica vitória
+        if (usedEdges.size === allEdges.length) {
+            gameState = 'won';
+            if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao();
+            return;
+        }
+
+        // Verifica se há movimentos possíveis
+        const neighbors = adj[currentNode];
+        let hasMove = false;
+        for (const n of neighbors) {
+            if (!usedEdges.has(edgeKey(currentNode, n))) {
+                hasMove = true;
+                break;
+            }
+        }
+
+        if (!hasMove) {
+            gameState = 'lost';
+            attempts++;
+            document.getElementById('attemptCount').textContent = attempts;
+            const msg = document.getElementById('failMessage');
+            const hint = document.getElementById('failHint');
+            msg.innerHTML = `Você ficou preso no poço <strong>${currentNode}</strong>!<br>
+                Tubulações percorridas: ${usedEdges.size} de ${allEdges.length}.`;
+            if (path[0] !== 2 && path[0] !== 5) {
+                hint.innerHTML = '<strong>Dica:</strong> Para um Caminho Euleriano, o ponto de partida deve ser um vértice de <em>grau ímpar</em> (poço 2 ou poço 5).';
+            } else {
+                hint.innerHTML = 'Você escolheu o poço de partida correto, mas a rota precisa ser melhor planejada. Tente novamente!';
+            }
+            document.getElementById('failOverlay').classList.add('active');
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('pathText').textContent = path.join(' → ');
+        document.getElementById('pipeCount').textContent = `${usedEdges.size}/${allEdges.length}`;
+
+        if (gameState === 'selecting') {
+            document.querySelector('.input-group label').textContent = 'Colocar Tripé no Poço:';
+        }
+    }
+
+    function resetGame() {
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        currentNode = null;
+        usedEdges.clear();
+        path = [];
+        firefighterPos = null;
+        gameState = 'selecting';
+        animProgress = 0;
+        document.getElementById('attemptCount').textContent = attempts;
+        document.getElementById('successOverlay').classList.remove('active');
+        document.getElementById('failOverlay').classList.remove('active');
+        document.querySelector('.input-group label').textContent = 'Colocar Tripé no Poço:';
+        document.getElementById('nextNode').value = '';
+        document.getElementById('pathText').textContent = '---';
+        document.getElementById('pipeCount').textContent = '0/10';
+
+        draw();
+    }
+
+    // ================== INICIALIZAÇÃO ==================
+    // Aguarda a imagem carregar para redimensionar corretamente
+    const bgImg = document.getElementById('bgImage');
+    bgImg.onload = function() {
+        resizeCanvas();
+    };
+    if (bgImg.complete) {
+        resizeCanvas();
+    }
+
+    // Inicializa UI
+    updateUI();
+</script>
+<script>
+// Ponte comum entre cada simulador e o jogo principal.
+// O build substitui 2 pelo índice da missão.
+(function () {
+  const MISSION_ID = 2;
+  let sucessoJaReportado = false;
+  function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
+  function lerTentativas(){
+    for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
+      const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
+    }
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+  }
+  function reportarEstado(pedirConclusao=false){
+    try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
+  }
+  window.atualizarTentativasPadrao=function(total){
+    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+  };
+  window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
+  ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
+  setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
+})();
+</script>
+</body>
+</html>

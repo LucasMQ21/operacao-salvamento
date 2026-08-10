@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador - Protocolo Quadrado Crescente</title>
+<style>
+* { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; }
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #08131d;
+    color: #fff;
+    padding: 14px;
+  }
+  #simulator-shell {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 28px);
+    border-radius: 22px;
+    overflow: hidden;
+    background: #08131d;
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.38);
+  }
+  #bg {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    background-image: url('../assets/embedded/f37e2fea47e678cd33c7.webp');
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 10, 0, 0.45);
+    z-index: 1;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+  }
+  #info-panel {
+    position: absolute;
+    top: 20px; left: 20px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 18px 22px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.7;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    max-width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #info-panel strong {
+    color: #2ecc71;
+    font-size: 15px;
+  }
+  #status {
+    display: block;
+    margin-top: 8px;
+    color: #f1c40f;
+    font-weight: 600;
+  }
+  #attempts-display {
+    display: block;
+    margin-top: 6px;
+    color: #e74c3c;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  #controls {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 18px 28px;
+    border-radius: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #controls label {
+    font-size: 13px;
+    color: #ddd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  #controls input {
+    width: 76px;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 18px;
+    text-align: center;
+    font-weight: 700;
+    background: rgba(255,255,255,0.95);
+    color: #222;
+  }
+  #controls input:disabled {
+    background: rgba(200,200,200,0.6);
+    color: #666;
+  }
+  #controls button {
+    padding: 12px 26px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s, background 0.2s;
+  }
+  #controls button:active { transform: scale(0.96); }
+  #controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  #btn-start { background: #2ecc71; color: #fff; }
+  #btn-start:hover:not(:disabled) { background: #27ae60; }
+  #btn-reset { background: #e74c3c; color: #fff; }
+  #btn-reset:hover:not(:disabled) { background: #c0392b; }
+  #message {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    background: rgba(46, 204, 113, 0.95);
+    color: #fff;
+    padding: 35px 55px;
+    border-radius: 24px;
+    font-size: 30px;
+    font-weight: 800;
+    text-align: center;
+    display: none;
+    box-shadow: 0 12px 50px rgba(0,0,0,0.6);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes popIn {
+    from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+    to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  #legend {
+    position: absolute;
+    top: 20px; right: 20px;
+    z-index: 10;
+    background: rgba(0,0,0,0.7);
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    line-height: 1.8;
+  }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; border: 2px solid #fff; }
+  .dot.blue { background: #3498db; }
+  .dot.red { background: #e74c3c; }
+  .dot.cyan { background: #00e5ff; }
+
+  @media (max-width: 900px) {
+    body { padding: 10px; overflow: auto; }
+    #simulator-shell { height: min(58vh, 520px); min-height: 360px; border-radius: 16px; }
+    #info-panel {
+      top: 12px; left: 12px;
+      max-width: calc(100% - 24px);
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    #info-panel strong { font-size: 14px; }
+    #legend {
+      top: auto;
+      right: 12px;
+      bottom: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 170px;
+    }
+    #controls.controls-below {
+      position: static;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      transform: none;
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px 16px;
+      gap: 10px;
+      border-radius: 16px;
+    }
+    #controls input { width: 88px; }
+    #controls button { width: 100%; }
+    #message {
+      left: 14px;
+      right: 14px;
+      top: 50%;
+      bottom: auto;
+      transform: translateY(-50%);
+      max-width: none;
+      padding: 22px 18px;
+      font-size: 22px;
+      border-radius: 20px;
+    }
+    @keyframes popIn {
+      from { transform: translateY(-50%) scale(0.7); opacity: 0; }
+      to   { transform: translateY(-50%) scale(1); opacity: 1; }
+    }
+  }
+
+
+  /* Caixa padronizada do simulador em telas maiores. */
+  @media (min-width: 901px) {
+    body {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      background:#08131d;
+    }
+    #simulator-shell {
+      width:min(1320px, calc(100vw - 32px));
+      height:min(742px, calc(100vh - 32px));
+      border-radius:20px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="simulator-shell">
+  <div id="bg"></div>
+  <div id="overlay"></div>
+  <canvas id="simCanvas"></canvas>
+
+  <div id="info-panel">
+    <strong>🧭 Protocolo Quadrado Crescente</strong><br>
+    Origem (último contato): <b>(0, 0)</b><br>
+    Posição da vítima: <b>(230, 80)</b><br>
+    Velocidade na mata: <b>0,5 m/s</b><br>
+    Espaçamento inicial: <b>10 m</b><br>
+    <span id="status">Aguardando início da missão...</span>
+    <span id="attempts-display">Tentativas: 0</span>
+  </div>
+
+  <div id="legend">
+    <div><span class="dot blue"></span>Origem (0, 0)</div>
+    <div><span class="dot red"></span>Vítima (230, 80)</div>
+    <div><span class="dot cyan"></span>Equipe de busca</div>
+  </div>
+
+  <div id="message"></div>
+
+  <div id="controls" class="controls-below">
+    <label>Horas<input type="number" id="hours" min="0" value="0" step="1"></label>
+    <label>Minutos<input type="number" id="minutes" min="0" max="59" value="0" step="1"></label>
+    <button id="btn-start" onclick="startSimulation()">▶ Iniciar Simulação</button>
+  </div>
+  </div>
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const simulatorShell = document.getElementById('simulator-shell');
+const VICTIM_X = 230;
+const VICTIM_Y = 80;
+const TARGET_TIME = 11 * 3600 + 35 * 60; // 41700 s = 11h 35m
+const SPEED_REAL = 0.5; // m/s
+const SCALE_FACTOR = 30 / 86400; // 24h de missão = 30s de animação
+const IDLE_BOUNDS = Object.freeze({ minX: -50, maxX: VICTIM_X + 50, minY: -50, maxY: VICTIM_Y + 50 });
+
+let animId = null;
+let segments = [];
+let animStart = null;
+let missionTime = 0;
+let animationDuration = 0;
+let pulsePhase = 0;
+let attempts = 0;
+let isRunning = false;
+
+function resize() {
+  const maxW = Math.max(320, Math.min(1320, window.innerWidth - 32));
+  const maxH = Math.max(320, window.innerHeight - 32);
+  let w = maxW;
+  let h = w * 9 / 16;
+  if (h > maxH) { h = maxH; w = h * 16 / 9; }
+  simulatorShell.style.width = Math.floor(w) + 'px';
+  simulatorShell.style.height = Math.floor(h) + 'px';
+  canvas.width = Math.floor(w);
+  canvas.height = Math.floor(h);
+  // Alterar width/height limpa o canvas. Antes do início, redesenha imediatamente
+  // os dois referenciais fixos para que nunca desapareçam após um reflow do iframe.
+  if (!isRunning && missionTime === 0) renderInitialScene();
+  else if (!animId) drawScene(0);
+}
+window.addEventListener('resize', resize);
+
+const controls = document.getElementById('controls');
+function applyResponsiveLayout() {
+  const mobile = window.innerWidth <= 900;
+  if (mobile) {
+    document.body.classList.add('mobile-layout');
+    if (controls.parentElement === simulatorShell) simulatorShell.insertAdjacentElement('afterend', controls);
+    controls.classList.add('controls-below');
+  } else {
+    document.body.classList.remove('mobile-layout');
+    if (controls.parentElement !== simulatorShell) simulatorShell.appendChild(controls);
+    controls.classList.remove('controls-below');
+  }
+  resize();
+}
+window.addEventListener('resize', applyResponsiveLayout);
+
+
+function generateSegments(maxTime) {
+  const maxDist = maxTime * SPEED_REAL;
+  const segs = [];
+  let x = 0, y = 0;
+  let totalDist = 0;
+  let n = 1;
+  while (totalDist < maxDist - 1e-9) {
+    const fullLen = 10 * Math.ceil(n / 2);
+    const remaining = maxDist - totalDist;
+    const len = Math.min(fullLen, remaining);
+    let dx = 0, dy = 0;
+    const dir = n % 4;
+    if (dir === 1) dy = 1;       // Norte
+    else if (dir === 2) dx = 1;  // Leste
+    else if (dir === 3) dy = -1; // Sul
+    else dx = -1;                // Oeste
+    const x2 = x + dx * len;
+    const y2 = y + dy * len;
+    segs.push({ x1: x, y1: y, x2: x2, y2: y2, len, fullLen, dir });
+    x = x2; y = y2;
+    totalDist += len;
+    n++;
+  }
+  return segs;
+}
+
+function getBounds(segs) {
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+  for (const s of segs) {
+    minX = Math.min(minX, s.x1, s.x2);
+    maxX = Math.max(maxX, s.x1, s.x2);
+    minY = Math.min(minY, s.y1, s.y2);
+    maxY = Math.max(maxY, s.y1, s.y2);
+  }
+  minX = Math.min(minX, 0, VICTIM_X);
+  maxX = Math.max(maxX, 0, VICTIM_X);
+  minY = Math.min(minY, 0, VICTIM_Y);
+  maxY = Math.max(maxY, 0, VICTIM_Y);
+  const margin = 50;
+  return { minX: minX - margin, maxX: maxX + margin, minY: minY - margin, maxY: maxY + margin };
+}
+
+let transform = { scale: 1, offsetX: 0, offsetY: 0 };
+
+function computeTransform(bounds) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const bw = bounds.maxX - bounds.minX;
+  const bh = bounds.maxY - bounds.minY;
+  const scale = Math.min(w / bw, h / bh) * 0.88;
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cy = (bounds.minY + bounds.maxY) / 2;
+  const offsetX = w / 2 - cx * scale;
+  const offsetY = h / 2 + cy * scale;
+  return { scale, offsetX, offsetY };
+}
+
+function toCanvas(x, y) {
+  return {
+    x: transform.offsetX + x * transform.scale,
+    y: transform.offsetY - y * transform.scale
+  };
+}
+
+function drawPoint(x, y, color, baseRadius, label, pulse = false) {
+  const p = toCanvas(x, y);
+  const radius = pulse ? baseRadius + Math.sin(pulsePhase * 3) * 2 : baseRadius;
+
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, Math.max(4, radius), 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, Math.max(6, radius + 4), 0, Math.PI * 2);
+  ctx.fillStyle = color + '33';
+  ctx.fill();
+
+  if (label) {
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(label, p.x, p.y - baseRadius - 8);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawGrid(bounds) {
+  const step = 50;
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.font = '11px "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.textAlign = 'center';
+
+  for (let x = Math.floor(bounds.minX / step) * step; x <= bounds.maxX; x += step) {
+    const p1 = toCanvas(x, bounds.minY);
+    const p2 = toCanvas(x, bounds.maxY);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    const pLabel = toCanvas(x, bounds.minY);
+    ctx.fillText(x, pLabel.x, pLabel.y + 14);
+  }
+  for (let y = Math.floor(bounds.minY / step) * step; y <= bounds.maxY; y += step) {
+    const p1 = toCanvas(bounds.minX, y);
+    const p2 = toCanvas(bounds.maxX, y);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    const pLabel = toCanvas(bounds.minX, y);
+    ctx.textAlign = 'right';
+    ctx.fillText(y, pLabel.x - 6, pLabel.y + 4);
+  }
+}
+
+function renderInitialScene() {
+  transform = computeTransform(IDLE_BOUNDS);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid(IDLE_BOUNDS);
+  drawPoint(0, 0, '#3498db', 6, 'Origem', true);
+  drawPoint(VICTIM_X, VICTIM_Y, '#e74c3c', 6, 'Vítima', true);
+}
+
+function drawScene(progress) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const currentDist = progress * missionTime * SPEED_REAL;
+  let drawnDist = 0;
+  let posX = 0, posY = 0;
+  let reached = false;
+
+  if (segments.length > 0) {
+    const b = getBounds(segments);
+    drawGrid(b);
+  }
+
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (let i = 0; i < segments.length; i++) {
+    const s = segments[i];
+    const segStart = drawnDist;
+    const segEnd = drawnDist + s.len;
+    const p1 = toCanvas(s.x1, s.y1);
+
+    if (currentDist >= segEnd - 1e-9) {
+      const p2 = toCanvas(s.x2, s.y2);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = 'rgba(255, 235, 59, 0.75)';
+      ctx.lineWidth = Math.max(1.5, 2.2 * transform.scale);
+      ctx.stroke();
+      drawnDist = segEnd;
+    } else if (currentDist > segStart) {
+      const frac = (currentDist - segStart) / s.len;
+      posX = s.x1 + (s.x2 - s.x1) * frac;
+      posY = s.y1 + (s.y2 - s.y1) * frac;
+      const p2 = toCanvas(posX, posY);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = 'rgba(255, 235, 59, 0.95)';
+      ctx.lineWidth = Math.max(2, 2.8 * transform.scale);
+      ctx.shadowColor = 'rgba(255, 235, 59, 0.4)';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      reached = true;
+      drawnDist = currentDist;
+      break;
+    } else {
+      break;
+    }
+  }
+
+  if (!reached && segments.length > 0 && progress >= 1) {
+    const last = segments[segments.length - 1];
+    posX = last.x2;
+    posY = last.y2;
+    reached = true;
+  }
+
+  drawPoint(0, 0, '#3498db', 6, 'Origem', true);
+  drawPoint(VICTIM_X, VICTIM_Y, '#e74c3c', 6, 'Vítima', true);
+
+  if (reached || progress > 0) {
+    drawPoint(posX, posY, '#00e5ff', 7, null, true);
+  }
+
+  const h = Math.floor(progress * missionTime / 3600);
+  const m = Math.floor((progress * missionTime % 3600) / 60);
+  const s = Math.floor(progress * missionTime % 60);
+  const dist = (progress * missionTime * SPEED_REAL).toFixed(0);
+  document.getElementById('status').innerHTML =
+    `Tempo de missão: <b>${h}h ${m}min ${s}s</b><br>` +
+    `Distância: <b>${dist} m</b> | Posição: <b>(${posX.toFixed(1)}, ${posY.toFixed(1)})</b>`;
+}
+
+function setControlsEnabled(enabled) {
+  document.getElementById('hours').disabled = !enabled;
+  document.getElementById('minutes').disabled = !enabled;
+  document.getElementById('btn-start').disabled = !enabled;
+}
+
+function startSimulation() {
+  if (isRunning) return;
+  if (animId) cancelAnimationFrame(animId);
+
+  const h = parseInt(document.getElementById('hours').value) || 0;
+  const m = parseInt(document.getElementById('minutes').value) || 0;
+  missionTime = h * 3600 + m * 60;
+
+  if (missionTime <= 0) {
+    alert('Informe um tempo de missão maior que zero.');
+    return;
+  }
+
+  isRunning = true;
+  setControlsEnabled(false);
+
+  animationDuration = missionTime * SCALE_FACTOR;
+  segments = generateSegments(missionTime);
+  const bounds = getBounds(segments);
+  transform = computeTransform(bounds);
+
+  document.getElementById('message').style.display = 'none';
+  animStart = performance.now();
+
+  function loop(now) {
+    pulsePhase += 0.05;
+    const elapsed = (now - animStart) / 1000;
+    let progress = elapsed / animationDuration;
+    if (progress > 1) progress = 1;
+
+    drawScene(progress);
+
+    if (progress < 1) {
+      animId = requestAnimationFrame(loop);
+    } else {
+      isRunning = false;
+      if (missionTime === TARGET_TIME) {
+        const msg = document.getElementById('message');
+        if (msg) msg.style.display = 'none';
+        if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao();
+      } else {
+        attempts++;
+        document.getElementById('attempts-display').innerText = 'Tentativas: ' + attempts;
+      }
+    }
+  }
+  animId = requestAnimationFrame(loop);
+}
+
+function resetSimulation() {
+  if (animId) cancelAnimationFrame(animId);
+  animId = null;
+  segments = [];
+  missionTime = 0;
+  isRunning = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('status').innerText = 'Aguardando início da missão...';
+  document.getElementById('message').style.display = 'none';
+  document.getElementById('hours').value = 0;
+  document.getElementById('minutes').value = 0;
+  setControlsEnabled(true);
+  renderInitialScene();
+}
+
+applyResponsiveLayout();
+// Duplo agendamento intencional: o iframe pode sofrer um segundo reflow logo após
+// ser anexado ao jogo principal. Em ambos os casos o estado inicial é restaurado.
+requestAnimationFrame(renderInitialScene);
+setTimeout(renderInitialScene, 120);
+</script>
+<script>
+// Ponte comum entre cada simulador e o jogo principal.
+// O build substitui 3 pelo índice da missão.
+(function () {
+  const MISSION_ID = 3;
+  let sucessoJaReportado = false;
+  function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
+  function lerTentativas(){
+    for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
+      const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
+    }
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+  }
+  function reportarEstado(pedirConclusao=false){
+    try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
+  }
+  window.atualizarTentativasPadrao=function(total){
+    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+  };
+  window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
+  ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
+  setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
+})();
+</script>
+</body>
+</html>

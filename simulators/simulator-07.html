@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missão Cachoeira de Congonhas - Simulador de Varredura</title>
+<style>
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a3a 0%, #0d1b2a 100%);
+            min-height: 100vh;
+            overflow: auto;
+            padding: 10px 10px 18px;
+            color: #e0e0e0;
+        }
+
+        
+        h1, .subtitle, .info-panel, #gameContainer, .legend, .stats-bar, #controls, #progressContainer, #messageBox {
+            width: min(100%, 1040px);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #gameContainer {
+            max-height: none;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            max-height: none;
+        }
+
+        .legend, .stats-bar {
+            justify-content: center;
+        }
+
+        @media (max-width: 900px) {
+            body { padding: 8px 8px 14px; }
+            h1 { font-size: 1.35rem; }
+            .subtitle { margin-bottom: 10px; }
+            #controls { padding: 16px 18px; gap: 14px; }
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #88aabb;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        #gameContainer {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            border: 2px solid #2a4a5a;
+            background: #0d1b2a;
+            max-width: 100%;
+            max-height: calc(100vh - 160px);
+        }
+
+        canvas {
+            display: block;
+            background-size: cover;
+            background-position: center;
+            max-width: 100%;
+            max-height: calc(100vh - 160px);
+            width: auto;
+            height: auto;
+        }
+
+        #controls {
+            margin-top: 20px;
+            background: rgba(20, 35, 50, 0.9);
+            padding: 20px 30px;
+            border-radius: 12px;
+            border: 1px solid #2a4a5a;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            color: #88aabb;
+            font-weight: 600;
+        }
+
+        .control-group input[type="number"] {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #3a6a8a;
+            background: #0d1b2a;
+            color: #00d4ff;
+            font-size: 1.1rem;
+            width: 140px;
+            text-align: center;
+            outline: none;
+        }
+
+        .control-group input[type="number"]:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #btnTestar {
+            background: linear-gradient(135deg, #ff6600 0%, #cc4400 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+        }
+
+        #btnTestar:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 102, 0, 0.5);
+        }
+
+        #btnTestar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #btnResetar {
+            background: linear-gradient(135deg, #3a6a8a 0%, #2a4a6a 100%);
+            color: #e0e0e0;
+        }
+
+        #btnResetar:hover {
+            background: linear-gradient(135deg, #4a7a9a 0%, #3a5a7a 100%);
+        }
+
+        #progressContainer {
+            width: 100%;
+            margin-top: 5px;
+            max-width: 900px;
+        }
+
+        #progressLabel {
+            font-size: 0.8rem;
+            color: #88aabb;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 12px;
+            background: #0d1b2a;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #2a4a5a;
+        }
+
+        #progressFill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00d4ff 0%, #00ff88 100%);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        #messageBox {
+            margin-top: 15px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 900px;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #messageBox.show {
+            opacity: 1;
+        }
+
+        #messageBox.success {
+            background: rgba(0, 200, 100, 0.15);
+            border: 1px solid #00c864;
+            color: #00ff88;
+        }
+
+        #messageBox.error {
+            background: rgba(255, 80, 80, 0.15);
+            border: 1px solid #ff5050;
+            color: #ff6666;
+        }
+
+        #messageBox.warning {
+            background: rgba(255, 180, 0, 0.15);
+            border: 1px solid #ffaa00;
+            color: #ffcc44;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #88aabb;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .info-panel {
+            background: rgba(20, 35, 50, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            max-width: 900px;
+            width: 100%;
+            border: 1px solid #2a4a5a;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .info-panel strong {
+            color: #ff9933;
+        }
+
+        .info-panel .dim {
+            color: #88aabb;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            background: rgba(20, 35, 50, 0.8);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #2a4a5a;
+        }
+
+        .stat-item .stat-value {
+            color: #ff9933;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+    
+        /* Layout compacto: os dados e tentativas já aparecem no cabeçalho/tela de enunciado. */
+        html, body { width:100%; height:100%; overflow:hidden !important; }
+        body {
+            height:100vh !important;
+            min-height:0 !important;
+            display:flex !important;
+            flex-direction:column;
+            align-items:center;
+            justify-content:flex-start;
+            padding:8px 10px 10px !important;
+        }
+        .info-panel, .stats-bar { display:none !important; }
+        h1 { flex:0 0 auto; margin-bottom:2px; }
+        .subtitle { flex:0 0 auto; margin-bottom:8px !important; }
+        #gameContainer {
+            flex:1 1 auto;
+            min-height:240px;
+            max-height:none !important;
+            width:min(100%, 1040px) !important;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        #gameContainer canvas {
+            width:100% !important;
+            height:100% !important;
+            max-width:100% !important;
+            max-height:100% !important;
+            object-fit:contain;
+        }
+        .legend { flex:0 0 auto; margin-top:6px !important; font-size:.74rem; gap:14px; }
+        #controls {
+            flex:0 0 auto;
+            margin-top:8px !important;
+            padding:10px 18px !important;
+            gap:14px !important;
+            min-height:0;
+        }
+        #progressContainer { flex:0 0 auto; margin-top:5px !important; }
+        #messageBox {
+            flex:0 0 auto;
+            margin-top:6px !important;
+            padding:8px 15px !important;
+            min-height:34px !important;
+            font-size:.88rem !important;
+        }
+        @media (max-height:700px) {
+            h1 { font-size:1.25rem !important; }
+            .subtitle { font-size:.78rem !important; }
+            .legend { display:none !important; }
+            #controls { padding:8px 14px !important; }
+            #messageBox { min-height:28px !important; padding:5px 12px !important; }
+        }
+</style>
+</head>
+<body>
+<h1>🌊 Missão Cachoeira de Congonhas</h1>
+    <p class="subtitle">Simulador de Varredura Subaquática - Equipe de Mergulho de Resgate</p>
+
+    <div class="info-panel">
+        <strong>📋 Dados da Missão:</strong><br>
+        <span class="dim">Área de Busca:</span> <strong>80 m × 30 m</strong> (retângulo central de água cristalina)<br>
+        <span class="dim">Faixa de Varredura:</span> <strong>3 m</strong> &nbsp;|&nbsp;
+        <span class="dim">Padrão:</span> <strong>Zigue-zague completo</strong><br>
+        <span class="dim">Objetivo:</span> <strong>Informe o tempo que você acredita ser suficiente para varrer todo o poço.</strong>
+    </div>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background:#00FFFF22; border:1px solid #00FFFF;"></div>
+            <span>Retângulo de Busca (80×30 m)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background:#BBBBBB44;"></div>
+            <span>Rastro de Varredura (3 m)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background:#FF6600; border-radius:50%;"></div>
+            <span>Dupla de Bombeiros</span>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-item">
+            Tentativas: <span class="stat-value" id="contadorTentativas">0</span>
+        </div>
+    </div>
+
+    <div id="controls">
+        <div class="control-group">
+            <label for="tempoInput">⏱️ Tempo Informado (min)</label>
+            <input type="number" id="tempoInput" min="1" max="500" value="" placeholder="Informe o tempo">
+        </div>
+        <button class="btn" id="btnTestar">▶ Testar Tempo</button>
+        <button class="btn" id="btnResetar" style="display:none;">↺ Resetar</button>
+    </div>
+
+    <div id="progressContainer">
+        <div id="progressLabel">
+            <span>Progresso da Varredura</span>
+            <span id="progressText">0%</span>
+        </div>
+        <div id="progressBar">
+            <div id="progressFill"></div>
+        </div>
+    </div>
+
+    <div id="messageBox"></div>
+<script>
+/**
+ * ============================================================
+ * SIMULADOR CACHOEIRA DE CONGONHAS v3
+ * Varredura Subaquática - Padrão Zigue-Zague
+ * ============================================================
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const tempoInput = document.getElementById('tempoInput');
+const btnTestar = document.getElementById('btnTestar');
+const btnResetar = document.getElementById('btnResetar');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const messageBox = document.getElementById('messageBox');
+const contadorTentativasEl = document.getElementById('contadorTentativas');
+
+// ============================================================
+// CONSTANTES DO CENÁRIO
+// ============================================================
+const RETANGULO_LARGURA_METROS = 80;
+const RETANGULO_ALTURA_METROS = 30;
+const FAIXA_VARREDURA_METROS = 3;
+const TEMPO_MINIMO_MINUTOS = 80;
+
+// ============================================================
+// CONFIGURAÇÃO DE CORES
+// ============================================================
+const COR_RETANGULO_BUSCA = '#00FFFF';
+const COR_RETANGULO_BUSCA_ALPHA = 0.13; // ~#00FFFF22
+const COR_RASTRO = '#BBBBBB';
+const COR_RASTRO_ALPHA = 0.27; // ~#BBBBBB44
+const COR_PONTOS = '#FF6600';
+const COR_PONTOS_RAIO = 4;
+
+// ============================================================
+// IMAGEM DE FUNDO - CARREGADA DIRETAMENTE DO URL
+// ============================================================
+const bgImage = new Image();
+let imagemCarregada = false;
+let canvasWidth = 800;
+let canvasHeight = 600;
+
+// URL da imagem fornecida pelo usuário
+bgImage.crossOrigin = "anonymous";
+bgImage.src = "../assets/embedded/e8cfcf95fa654f96944d.webp";
+
+bgImage.onload = () => {
+    imagemCarregada = true;
+    canvasWidth = bgImage.width;
+    canvasHeight = bgImage.height;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    definirRetanguloBusca();
+    drawFrame();
+};
+
+bgImage.onerror = () => {
+    imagemCarregada = false;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    definirRetanguloBusca();
+    drawFrame();
+};
+
+// ============================================================
+// RETÂNGULO DE BUSCA (posição central sobre a água cristalina)
+// ============================================================
+let rx, ry, rw, rh;
+let escalaPixelsPorMetro;
+
+function definirRetanguloBusca() {
+    rw = canvasWidth * 0.60;
+    rh = canvasHeight * 0.35;
+    rx = (canvasWidth - rw) / 2;
+    ry = (canvasHeight - rh) / 2;
+    escalaPixelsPorMetro = rw / RETANGULO_LARGURA_METROS;
+}
+
+// ============================================================
+// ESTADO DA ANIMAÇÃO
+// ============================================================
+let estado = 'parado'; // 'parado', 'entrada', 'varredura', 'saida', 'erro', 'completo'
+let tempoInformado = 0;
+let progresso = 0;
+let pontos = { x: 0, y: 0 };
+let caminho = [];
+let animacaoId = null;
+let tempoInicio = 0;
+let duracaoAnimacaoMs = 0;
+let progressoMaximo = 1.0;
+let piscarPontos = false;
+let piscarContador = 0;
+let tentativas = 0;
+
+// ============================================================
+// FUNÇÕES DE DESENHO
+// ============================================================
+
+function desenharFundo() {
+    if (imagemCarregada && bgImage.complete && bgImage.naturalWidth > 0) {
+        ctx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
+        return;
+    }
+
+    // Fallback: cena procedural de cachoeira
+    const gradSky = ctx.createLinearGradient(0, 0, 0, canvasHeight * 0.3);
+    gradSky.addColorStop(0, '#1a3a2a');
+    gradSky.addColorStop(1, '#2a5a3a');
+    ctx.fillStyle = gradSky;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight * 0.3);
+
+    const cx = canvasWidth / 2;
+    const cy = canvasHeight / 2;
+    const raio = Math.min(canvasWidth, canvasHeight) * 0.42;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, raio, 0, Math.PI * 2);
+    ctx.fillStyle = '#0a2a3a';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, raio * 0.85, 0, Math.PI * 2);
+    ctx.fillStyle = '#0d3a4a';
+    ctx.fill();
+
+    const gradWater = ctx.createLinearGradient(0, canvasHeight * 0.25, 0, canvasHeight * 0.35);
+    gradWater.addColorStop(0, 'rgba(200, 230, 255, 0.6)');
+    gradWater.addColorStop(1, 'rgba(200, 230, 255, 0.1)');
+    ctx.fillStyle = gradWater;
+    ctx.fillRect(cx - raio * 0.3, canvasHeight * 0.20, raio * 0.6, canvasHeight * 0.15);
+
+    ctx.fillStyle = '#3a3a3a';
+    for (let i = 0; i < 15; i++) {
+        const px = cx - raio * 0.8 + (i / 14) * raio * 1.6 + (Math.sin(i * 3.7) - 0.5) * 20;
+        const py = cy + raio * 0.7 + Math.abs(Math.cos(i * 2.3)) * 30;
+        const pr = 8 + Math.abs(Math.sin(i * 1.7)) * 12;
+        ctx.beginPath();
+        ctx.ellipse(px, py, pr, pr * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function desenharRetanguloBusca() {
+    ctx.save();
+    ctx.fillStyle = COR_RETANGULO_BUSCA;
+    ctx.globalAlpha = COR_RETANGULO_BUSCA_ALPHA;
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.globalAlpha = 1.0;
+    ctx.strokeStyle = COR_RETANGULO_BUSCA;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    ctx.strokeRect(rx, ry, rw, rh);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = 'bold 12px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('80 m', rx + rw / 2, ry + rh + 18);
+
+    ctx.save();
+    ctx.translate(rx - 18, ry + rh / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('30 m', 0, 0);
+    ctx.restore();
+
+    ctx.restore();
+}
+
+function desenharRastro() {
+    if (caminho.length === 0) return;
+
+    const faixaLarguraPixels = FAIXA_VARREDURA_METROS * escalaPixelsPorMetro;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let i = 0; i < caminho.length; i++) {
+        const seg = caminho[i];
+        ctx.beginPath();
+        ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(seg.x2, seg.y2);
+        ctx.strokeStyle = COR_RASTRO;
+        ctx.globalAlpha = COR_RASTRO_ALPHA;
+        ctx.lineWidth = faixaLarguraPixels;
+        ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+}
+
+function desenharPontos() {
+    if (estado === 'parado') return;
+
+    const raio = COR_PONTOS_RAIO;
+
+    let alpha = 1.0;
+    if (piscarPontos) {
+        alpha = (Math.sin(piscarContador * 0.3) + 1) / 2;
+        if (alpha < 0.3) alpha = 0.3;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+
+    // Ponto 1 (ligeiramente à esquerda)
+    ctx.beginPath();
+    ctx.arc(pontos.x - 3, pontos.y, raio, 0, Math.PI * 2);
+    ctx.fillStyle = COR_PONTOS;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Ponto 2 (ligeiramente à direita)
+    ctx.beginPath();
+    ctx.arc(pontos.x + 3, pontos.y, raio, 0, Math.PI * 2);
+    ctx.fillStyle = COR_PONTOS;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function desenharZonaRasaLabel() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.font = '11px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('ZONA RASA', canvasWidth / 2, canvasHeight - 20);
+    ctx.restore();
+}
+
+function drawFrame() {
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    desenharFundo();
+    desenharRetanguloBusca();
+    desenharRastro();
+    desenharPontos();
+    desenharZonaRasaLabel();
+}
+
+// ============================================================
+// CÁLCULO DO CAMINHO ZIGUE-ZAGUE
+// ============================================================
+
+function calcularCaminhoZigueZague() {
+    const numFaixas = Math.ceil(RETANGULO_ALTURA_METROS / FAIXA_VARREDURA_METROS); // 10
+    const alturaFaixa = rh / numFaixas;
+
+    const pontosZigueZague = [];
+
+    let px = rx;
+    let py = ry + rh - alturaFaixa / 2;
+
+    pontosZigueZague.push({ x: px, y: py });
+
+    for (let f = 0; f < numFaixas; f++) {
+        py = ry + rh - (f * alturaFaixa) - alturaFaixa / 2;
+
+        if (f % 2 === 0) {
+            px = rx + rw;
+        } else {
+            px = rx;
+        }
+
+        pontosZigueZague.push({ x: px, y: py });
+
+        if (f < numFaixas - 1) {
+            const pyNext = ry + rh - ((f + 1) * alturaFaixa) - alturaFaixa / 2;
+            pontosZigueZague.push({ x: px, y: pyNext });
+        }
+    }
+
+    return pontosZigueZague;
+}
+
+function calcularDistanciaTotal(pontos) {
+    let dist = 0;
+    for (let i = 1; i < pontos.length; i++) {
+        const dx = pontos[i].x - pontos[i - 1].x;
+        const dy = pontos[i].y - pontos[i - 1].y;
+        dist += Math.sqrt(dx * dx + dy * dy);
+    }
+    return dist;
+}
+
+// ============================================================
+// ANIMAÇÃO
+// ============================================================
+
+let pontosCaminho = [];
+let distanciaTotal = 0;
+let ultimaPosX = 0, ultimaPosY = 0;
+
+function iniciarAnimacao() {
+
+    caminho = [];
+    progresso = 0;
+    piscarPontos = false;
+    progressoMaximo = 1.0;
+    atualizarProgressoUI();
+    esconderMensagem();
+
+    tempoInformado = parseFloat(tempoInput.value);
+    if (isNaN(tempoInformado) || tempoInformado <= 0) {
+        mostrarMensagem('⚠️ Informe um tempo válido em minutos!', 'warning');
+        return;
+    }
+
+    // VALIDAÇÃO: tempo superior ao mínimo
+    if (tempoInformado > TEMPO_MINIMO_MINUTOS) {
+        mostrarMensagem('⏱️ O tempo informado (' + tempoInformado + ' min) é superior ao necessário para completar a varredura. Tente um valor menor!', 'warning');
+        return;
+    }
+
+    if (tempoInformado < TEMPO_MINIMO_MINUTOS) {
+        progressoMaximo = tempoInformado / TEMPO_MINIMO_MINUTOS;
+    } else {
+        progressoMaximo = 1.0;
+    }
+
+    pontosCaminho = calcularCaminhoZigueZague();
+    distanciaTotal = calcularDistanciaTotal(pontosCaminho);
+
+    const inicioX = canvasWidth / 2;
+    const inicioY = ry + rh + 40;
+
+    pontos.x = inicioX;
+    pontos.y = inicioY;
+
+    estado = 'entrada';
+    tempoInicio = performance.now();
+
+    const duracaoBaseMs = 6000;
+    duracaoAnimacaoMs = duracaoBaseMs * (tempoInformado / TEMPO_MINIMO_MINUTOS);
+    if (duracaoAnimacaoMs < 2000) duracaoAnimacaoMs = 2000;
+    if (duracaoAnimacaoMs > 12000) duracaoAnimacaoMs = 12000;
+
+    if (tempoInformado >= TEMPO_MINIMO_MINUTOS) {
+        duracaoAnimacaoMs = duracaoBaseMs;
+    }
+
+    btnTestar.disabled = true;
+    tempoInput.disabled = true;
+
+    animacaoId = requestAnimationFrame(loopAnimacao);
+}
+
+function loopAnimacao(timestamp) {
+    if (estado === 'parado') return;
+
+    const tempoDecorrido = timestamp - tempoInicio;
+
+    if (estado === 'entrada') {
+        const destinoX = pontosCaminho[0].x;
+        const destinoY = ry + rh;
+
+        const dx = destinoX - (canvasWidth / 2);
+        const dy = destinoY - (ry + rh + 40);
+
+        const progressoEntrada = Math.min(tempoDecorrido / 500, 1);
+        pontos.x = (canvasWidth / 2) + dx * progressoEntrada;
+        pontos.y = (ry + rh + 40) + dy * progressoEntrada;
+
+        if (progressoEntrada >= 1) {
+            estado = 'varredura';
+            tempoInicio = timestamp;
+            ultimaPosX = pontosCaminho[0].x;
+            ultimaPosY = pontosCaminho[0].y;
+            pontos.x = ultimaPosX;
+            pontos.y = ultimaPosY;
+        }
+    } else if (estado === 'varredura') {
+        const progressoTemporal = Math.min(tempoDecorrido / duracaoAnimacaoMs, progressoMaximo);
+        const distanciaAlvo = progressoTemporal * distanciaTotal;
+
+        let distAcumulada = 0;
+        let encontrou = false;
+        let posX = pontosCaminho[0].x;
+        let posY = pontosCaminho[0].y;
+
+        for (let i = 0; i < pontosCaminho.length - 1; i++) {
+            const p1 = pontosCaminho[i];
+            const p2 = pontosCaminho[i + 1];
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const segDist = Math.sqrt(dx * dx + dy * dy);
+
+            if (distAcumulada + segDist >= distanciaAlvo) {
+                const resto = distanciaAlvo - distAcumulada;
+                const prog = resto / segDist;
+                posX = p1.x + dx * prog;
+                posY = p1.y + dy * prog;
+                encontrou = true;
+                break;
+            }
+            distAcumulada += segDist;
+        }
+
+        if (!encontrou) {
+            const ultimo = pontosCaminho[pontosCaminho.length - 1];
+            posX = ultimo.x;
+            posY = ultimo.y;
+        }
+
+        if (Math.abs(posX - ultimaPosX) > 0.5 || Math.abs(posY - ultimaPosY) > 0.5) {
+            caminho.push({
+                x1: ultimaPosX,
+                y1: ultimaPosY,
+                x2: posX,
+                y2: posY
+            });
+            ultimaPosX = posX;
+            ultimaPosY = posY;
+        }
+
+        pontos.x = posX;
+        pontos.y = posY;
+
+        progresso = progressoTemporal;
+        atualizarProgressoUI();
+
+        // Tempo insuficiente - para no meio
+        if (tempoInformado < TEMPO_MINIMO_MINUTOS && progressoTemporal >= progressoMaximo) {
+            tentativas++;
+            contadorTentativasEl.textContent = tentativas;
+            estado = 'erro';
+            piscarPontos = true;
+            piscarContador = 0;
+            tempoInicio = timestamp;
+            mostrarMensagem('⏱️ TEMPO INSUFICIENTE! A varredura não foi completada. A metade superior do poço permanece sem varrer! Tente novamente.', 'error');
+            setTimeout(() => fadeOutRastro(), 2000);
+            drawFrame();
+            animacaoId = requestAnimationFrame(loopAnimacao);
+            return;
+        }
+
+        // Completou com sucesso
+        if (progressoTemporal >= 1) {
+            estado = 'saida';
+            tempoInicio = timestamp;
+            ultimaPosX = posX;
+            ultimaPosY = posY;
+        }
+    } else if (estado === 'saida') {
+        const destinoX = canvasWidth / 2;
+        const destinoY = ry + rh + 40;
+        const dx = destinoX - ultimaPosX;
+        const dy = destinoY - ultimaPosY;
+
+        const progressoSaida = Math.min(tempoDecorrido / 500, 1);
+        pontos.x = ultimaPosX + dx * progressoSaida;
+        pontos.y = ultimaPosY + dy * progressoSaida;
+
+        if (caminho.length > 0) {
+            caminho.push({
+                x1: caminho[caminho.length - 1].x2,
+                y1: caminho[caminho.length - 1].y2,
+                x2: pontos.x,
+                y2: pontos.y
+            });
+        }
+
+        if (progressoSaida >= 1) {
+            estado = 'completo';
+            progresso = 1;
+            atualizarProgressoUI();
+            if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao();
+            btnTestar.disabled = false;
+            tempoInput.disabled = false;
+            drawFrame();
+            setTimeout(() => fadeOutRastro(), 3000);
+            return;
+        }
+    } else if (estado === 'erro') {
+        piscarContador++;
+        if (piscarContador > 120) {
+            estado = 'parado';
+            btnTestar.disabled = false;
+            tempoInput.disabled = false;
+            piscarPontos = false;
+            drawFrame();
+            return;
+        }
+    } else if (estado === 'completo') {
+        drawFrame();
+        return;
+    }
+
+    drawFrame();
+    animacaoId = requestAnimationFrame(loopAnimacao);
+}
+
+function fadeOutRastro() {
+    let fadeAlpha = COR_RASTRO_ALPHA;
+    function fade() {
+        fadeAlpha -= 0.02;
+        if (fadeAlpha <= 0) {
+            caminho = [];
+            drawFrame();
+            return;
+        }
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        desenharFundo();
+        desenharRetanguloBusca();
+
+        if (caminho.length > 0) {
+            const faixaLarguraPixels = FAIXA_VARREDURA_METROS * escalaPixelsPorMetro;
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            for (let i = 0; i < caminho.length; i++) {
+                const seg = caminho[i];
+                ctx.beginPath();
+                ctx.moveTo(seg.x1, seg.y1);
+                ctx.lineTo(seg.x2, seg.y2);
+                ctx.strokeStyle = COR_RASTRO;
+                ctx.globalAlpha = fadeAlpha;
+                ctx.lineWidth = faixaLarguraPixels;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.restore();
+        }
+
+        desenharPontos();
+        desenharZonaRasaLabel();
+        requestAnimationFrame(fade);
+    }
+    fade();
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+
+function atualizarProgressoUI() {
+    const pct = Math.round(progresso * 100);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = pct + '%';
+}
+
+function mostrarMensagem(texto, tipo) {
+    messageBox.textContent = texto;
+    messageBox.className = 'show ' + tipo;
+}
+
+function esconderMensagem() {
+    messageBox.className = '';
+    setTimeout(() => { messageBox.textContent = ''; }, 500);
+}
+
+function resetar() {
+    if (animacaoId) {
+        cancelAnimationFrame(animacaoId);
+        animacaoId = null;
+    }
+    estado = 'parado';
+    caminho = [];
+    progresso = 0;
+    piscarPontos = false;
+    atualizarProgressoUI();
+    btnTestar.disabled = false;
+    tempoInput.disabled = false;
+    esconderMensagem();
+    drawFrame();
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+
+btnTestar.addEventListener('click', iniciarAnimacao);
+btnResetar.addEventListener('click', resetar);
+
+tempoInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') iniciarAnimacao();
+});
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+definirRetanguloBusca();
+drawFrame();
+</script>
+<script>
+// Ponte comum entre cada simulador e o jogo principal.
+// O build substitui 5 pelo índice da missão.
+(function () {
+  const MISSION_ID = 5;
+  let sucessoJaReportado = false;
+  function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
+  function lerTentativas(){
+    for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
+      const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
+    }
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+  }
+  function reportarEstado(pedirConclusao=false){
+    try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
+  }
+  window.atualizarTentativasPadrao=function(total){
+    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+  };
+  window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
+  ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
+  setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
+})();
+</script>
+</body>
+</html>

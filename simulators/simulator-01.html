@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Missão 1 — Libere a Viatura da Oficina</title>
+<style>
+:root{color-scheme:dark;--bg:#06111b;--panel:#102331;--panel-2:#162d3e;--line:rgba(255,255,255,.1);--text:#eaf3f8;--muted:#9cb0bf;--accent:#f77f00;--accent-2:#ffb347;--danger:#ff6674;--success:#44d17b}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:radial-gradient(circle at 30% 15%,#173246 0,#07131e 48%,#040a10 100%);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text)}
+button{font:inherit}
+.simulator-app{width:100%;height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,340px);gap:12px;padding:12px}
+.yard-panel{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:17px;background:rgba(3,9,14,.72);padding:8px;overflow:hidden;box-shadow:inset 0 0 30px rgba(0,0,0,.25)}
+.yard-stage{position:relative;width:min(100%,calc((100vh - 40px)*1.333333));aspect-ratio:4/3;max-height:calc(100vh - 40px);overflow:hidden;border-radius:12px;box-shadow:0 15px 38px rgba(0,0,0,.5);background:#242525}
+.yard-background{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:fill;pointer-events:none;user-select:none}
+.grid-zone{position:absolute;left:12.35%;top:3.45%;width:71.55%;height:91.05%;overflow:visible;touch-action:none;user-select:none;-webkit-user-select:none}
+.vehicle{position:absolute;padding:2px;margin:0;border:0;background:transparent;cursor:grab;transition:left .18s ease,top .18s ease,width .18s ease,height .18s ease,filter .15s ease,transform .12s ease;z-index:4;outline:none;touch-action:none;--drag-x:0px;--drag-y:0px;--sel-scale:1;transform:translate3d(var(--drag-x),var(--drag-y),0) scale(var(--sel-scale))}
+.vehicle img{width:100%;height:100%;display:block;object-fit:fill;filter:drop-shadow(0 5px 5px rgba(0,0,0,.5));pointer-events:none}
+.vehicle:hover{filter:brightness(1.07)}
+.vehicle:focus-visible{outline:3px solid #8be7ff;outline-offset:2px}
+.vehicle.selected{--sel-scale:1.025;filter:drop-shadow(0 0 8px rgba(101,200,255,.98));z-index:7}
+.vehicle.target{filter:drop-shadow(0 0 7px rgba(255,194,51,.75))}
+.vehicle.target.selected{filter:drop-shadow(0 0 11px rgba(101,200,255,.98))}
+.vehicle.dragging{cursor:grabbing;transition:none!important;z-index:10}
+.control-panel{min-height:0;display:flex;flex-direction:column;gap:10px;overflow:auto;padding-right:2px}
+.control-card{background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.025));border:1px solid var(--line);border-radius:14px;padding:13px;box-shadow:0 9px 24px rgba(0,0,0,.18)}
+.control-card h2{margin:0 0 8px;color:var(--accent-2);font-size:.9rem}
+.selection{min-height:48px;margin:0 0 10px;display:flex;align-items:center;color:#d9e8f4;line-height:1.4;font-size:.86rem}
+.selection b{color:#7ee7ff}
+.arrows{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.arrow{min-height:52px;border-radius:12px;border:1px solid #526c83;background:#294157;color:#fff;font-size:23px;font-weight:900;cursor:pointer;transition:.18s}
+.arrow:hover:not(:disabled){background:#365773;transform:translateY(-1px)}
+.arrow:disabled{opacity:.32;cursor:not-allowed}
+.compact-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}
+.compact-stats div{padding:8px 5px;border-radius:10px;background:rgba(0,0,0,.16)}
+.compact-stats span{display:block;color:var(--muted);font-size:.68rem;line-height:1.25}
+.compact-stats strong{display:block;margin-top:3px;color:#fff;font-size:1.2rem}
+.message{margin:0;padding:12px 13px;border-radius:12px;background:#172b3d;border-left:4px solid #5fa6df;color:#e9f3fa;line-height:1.42;font-size:.82rem}
+.message.err{background:#49212a;border-left-color:var(--danger)}
+.message.ok{background:#163c2d;border-left-color:var(--success)}
+.instructions{font-size:.78rem;color:#c9d8e2}
+.instructions ul{margin:0;padding-left:19px;line-height:1.5}
+.reset-btn{margin-top:auto;min-height:44px;border-radius:11px;border:1px solid rgba(255,255,255,.16);background:#3b2730;color:#fff;font-weight:800;cursor:pointer}
+.reset-btn:hover{background:#55333e}
+@media(max-width:900px){.simulator-app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;overflow:auto}.yard-stage{width:min(100%,calc((100vh - 270px)*1.333333));max-height:calc(100vh - 270px)}.control-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.message,.instructions,.reset-btn{grid-column:1/-1}.reset-btn{margin-top:0}.selection{min-height:38px}.arrow{min-height:46px}}
+@media(max-width:600px){html,body{overflow:auto}.simulator-app{height:auto;min-height:100%;padding:6px;gap:7px}.yard-panel{padding:4px}.yard-stage{width:100%;max-height:none}.control-panel{grid-template-columns:1fr;gap:7px}.control-panel>*{grid-column:1!important}.instructions{display:none}.vehicle{padding:1px}.compact-stats{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* Ajustes para execução dentro do iframe em celulares */
+@media(max-width:600px){
+  body{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .simulator-app{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  .yard-stage{min-height:0}
+  .control-card{padding:10px}
+  .message{font-size:.76rem;padding:9px 10px}
+  .reset-btn{min-height:40px}
+}
+</style>
+</head>
+<body>
+<main class="simulator-app" aria-label="Simulador do pátio da oficina">
+  <section class="yard-panel" aria-label="Pátio de manobras">
+    <div class="yard-stage" id="yardStage">
+      <img class="yard-background" src="../assets/embedded/1e5e406ed2103b99bd34.webp" alt="Pátio da oficina organizado em uma malha de seis por seis casas">
+      <div class="grid-zone" id="board">
+        <button class="vehicle target" id="v1" type="button" aria-label="Viatura 1, veículo que deve alcançar a saída"><img src="../assets/embedded/afaee0e9ef2a62b15716.webp" alt=""></button>
+        <button class="vehicle" id="v2" type="button" aria-label="Viatura 2"><img src="../assets/embedded/d0258b604858f18c8b3a.webp" alt=""></button>
+        <button class="vehicle" id="v3" type="button" aria-label="Viatura 3"><img src="../assets/embedded/49269050f2b925ed93e0.webp" alt=""></button>
+        <button class="vehicle" id="v4" type="button" aria-label="Viatura 4"><img src="../assets/embedded/d62de28cb70fa08892b3.webp" alt=""></button>
+        <button class="vehicle" id="v5" type="button" aria-label="Viatura 5"><img src="../assets/embedded/6fea7e1782c7491db4fc.webp" alt=""></button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="control-panel" aria-label="Controles do simulador">
+    <section class="control-card">
+      <h2>🚒 Viatura selecionada</h2>
+      <p class="selection" id="selection">Nenhuma viatura selecionada.</p>
+      <div class="arrows">
+        <button class="arrow" id="backBtn" type="button" disabled aria-label="Mover para trás">◀</button>
+        <button class="arrow" id="forwardBtn" type="button" disabled aria-label="Mover para frente">▶</button>
+      </div>
+    </section>
+
+    <section class="control-card compact-stats" aria-label="Desempenho no simulador">
+      <div><span>Movimentos</span><strong id="moves">0</strong></div>
+      <div><span>Tentativas bloqueadas</span><strong id="attemptCount">0</strong></div>
+    </section>
+
+    <p class="message" id="message" role="status" aria-live="polite">Selecione uma viatura e arraste-a no sentido permitido. Você também pode usar os botões ou as setas do teclado.</p>
+
+    <section class="control-card instructions">
+      <h2>Como manobrar</h2>
+      <ul>
+        <li>Arraste com o mouse ou com o dedo.</li>
+        <li>A viatura encaixa automaticamente na malha.</li>
+        <li>Cada viatura se move apenas no próprio eixo.</li>
+        <li>Leve a viatura 1 até a saída à direita.</li>
+      </ul>
+    </section>
+
+    <button class="reset-btn" id="resetBtn" type="button">↻ Reiniciar posições</button>
+  </aside>
+</main>
+<script>
+(()=>{
+  const initial={
+    1:{id:1,row:3,col:1,len:2,axis:'h',el:'v1'},
+    2:{id:2,row:1,col:5,len:3,axis:'v',el:'v2'},
+    3:{id:3,row:4,col:6,len:3,axis:'v',el:'v3'},
+    4:{id:4,row:4,col:2,len:4,axis:'h',el:'v4'},
+    5:{id:5,row:4,col:1,len:3,axis:'v',el:'v5'}
+  };
+  const DRAG_THRESHOLD=8;
+  let vehicles=cloneInitial();
+  let selected=null;
+  let moves=0;
+  let errors=0;
+  let won=false;
+  let drag=null;
+  const $=id=>document.getElementById(id);
+
+  function cloneInitial(){return JSON.parse(JSON.stringify(initial));}
+  function setMessage(type,text){const el=$('message');el.className='message'+(type==='err'?' err':type==='ok'?' ok':'');el.textContent=text;}
+  function reportAttempts(){if(typeof window.atualizarTentativasPadrao==='function')window.atualizarTentativasPadrao(errors);}
+
+  function updateSelectionText(){
+    if(selected){
+      const v=vehicles[selected];
+      $('selection').innerHTML=`Viatura <b>${v.id}</b> selecionada — movimento ${v.axis==='h'?'horizontal':'vertical'}. Arraste no sentido permitido ou use os controles.`;
+      $('backBtn').textContent=v.axis==='h'?'◀':'▲';
+      $('forwardBtn').textContent=v.axis==='h'?'▶':'▼';
+      $('backBtn').disabled=won;
+      $('forwardBtn').disabled=won;
+    }else{
+      $('selection').textContent='Nenhuma viatura selecionada.';
+      $('backBtn').disabled=true;
+      $('forwardBtn').disabled=true;
+    }
+  }
+
+  function render(){
+    Object.values(vehicles).forEach(v=>{
+      const el=$(v.el);
+      el.classList.toggle('selected',selected===v.id);
+      el.style.left=`${(v.col-1)*100/6}%`;
+      el.style.top=`${(v.row-1)*100/6}%`;
+      el.style.width=`${(v.axis==='h'?v.len:1)*100/6}%`;
+      el.style.height=`${(v.axis==='v'?v.len:1)*100/6}%`;
+      el.disabled=won;
+      if(!drag||drag.id!==v.id){
+        el.style.setProperty('--drag-x','0px');
+        el.style.setProperty('--drag-y','0px');
+        el.classList.remove('dragging');
+      }
+    });
+    $('moves').textContent=String(moves);
+    $('attemptCount').textContent=String(errors);
+    updateSelectionText();
+  }
+
+  function cells(v,row=v.row,col=v.col){
+    const out=[];
+    for(let i=0;i<v.len;i++)out.push(v.axis==='h'?[row,col+i]:[row+i,col]);
+    return out;
+  }
+
+  function occupiedByOther(id){
+    const set=new Set();
+    Object.values(vehicles).forEach(v=>{if(v.id!==id)cells(v).forEach(([r,c])=>set.add(`${r},${c}`));});
+    return set;
+  }
+
+  function candidateBlocked(id,row,col){
+    const v=vehicles[id];
+    const occupied=occupiedByOther(id);
+    const candidate=cells(v,row,col);
+    return candidate.some(([r,c])=>r<1||r>6||c<1||c>6||occupied.has(`${r},${c}`));
+  }
+
+  function computeLimits(id){
+    const v=vehicles[id];
+    let min=0;
+    let maxInside=0;
+    while(true){
+      const nr=v.axis==='v'?v.row+min-1:v.row;
+      const nc=v.axis==='h'?v.col+min-1:v.col;
+      if(candidateBlocked(id,nr,nc))break;
+      min--;
+    }
+    while(true){
+      const nr=v.axis==='v'?v.row+maxInside+1:v.row;
+      const nc=v.axis==='h'?v.col+maxInside+1:v.col;
+      if(candidateBlocked(id,nr,nc))break;
+      maxInside++;
+    }
+    let max=maxInside;
+    let canExit=false;
+    let exitStep=null;
+    if(id===1&&v.axis==='h'&&v.row===3&&v.col+maxInside+v.len-1===6){
+      canExit=true;
+      exitStep=maxInside+1;
+      max=exitStep;
+    }
+    return {min,max,maxInside,canExit,exitStep};
+  }
+
+  function registerBlocked(message){
+    errors++;
+    reportAttempts();
+    setMessage('err',message);
+    render();
+  }
+
+  function applyMove(id,step){
+    if(won||!step)return false;
+    const v=vehicles[id];
+    const limits=computeLimits(id);
+    if(step<limits.min||step>limits.max){
+      registerBlocked('Movimento bloqueado por outra viatura ou pelo limite do pátio.');
+      return false;
+    }
+    moves+=Math.abs(step);
+    if(limits.canExit&&step===limits.exitStep){
+      vehicles[1].col=7;
+      render();
+      finishMission();
+      return true;
+    }
+    if(v.axis==='h')v.col+=step;else v.row+=step;
+    setMessage('',Math.abs(step)===1?'Movimento realizado. Observe quais caminhos foram liberados.':`Viatura deslocada ${Math.abs(step)} casas. Observe os novos caminhos.`);
+    render();
+    return true;
+  }
+
+  function select(id){
+    if(won)return;
+    selected=id;
+    render();
+  }
+
+  function clearDragStyles(id){
+    const el=$(vehicles[id].el);
+    el.style.setProperty('--drag-x','0px');
+    el.style.setProperty('--drag-y','0px');
+    el.classList.remove('dragging');
+  }
+
+  function startDrag(event,id){
+    if(won)return;
+    if(event.button!==undefined&&event.button!==0)return;
+    select(id);
+    const v=vehicles[id];
+    const board=$('board');
+    drag={
+      id,
+      pointerId:event.pointerId,
+      startX:event.clientX,
+      startY:event.clientY,
+      axis:v.axis,
+      limits:computeLimits(id),
+      cellW:board.clientWidth/6,
+      cellH:board.clientHeight/6,
+      raw:0,
+      clamped:0,
+      active:false
+    };
+    const el=$(v.el);
+    if(el.setPointerCapture)el.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  function updateDrag(event){
+    if(!drag||event.pointerId!==drag.pointerId)return;
+    const rawX=event.clientX-drag.startX;
+    const rawY=event.clientY-drag.startY;
+    const raw=drag.axis==='h'?rawX:rawY;
+    const cell=drag.axis==='h'?drag.cellW:drag.cellH;
+    const minPx=drag.limits.min*cell;
+    const maxPx=drag.limits.max*cell;
+    const clamped=Math.max(minPx,Math.min(maxPx,raw));
+    drag.raw=raw;
+    drag.clamped=clamped;
+    if(!drag.active&&Math.abs(raw)>=DRAG_THRESHOLD){
+      drag.active=true;
+      setMessage('','Arraste a viatura e solte para encaixá-la automaticamente na malha.');
+    }
+    if(drag.active){
+      const el=$(vehicles[drag.id].el);
+      el.classList.add('dragging');
+      el.style.setProperty('--drag-x',drag.axis==='h'?`${clamped}px`:'0px');
+      el.style.setProperty('--drag-y',drag.axis==='v'?`${clamped}px`:'0px');
+    }
+    event.preventDefault();
+  }
+
+  function finishDrag(event,cancelled=false){
+    if(!drag||event.pointerId!==drag.pointerId)return;
+    const current=drag;
+    drag=null;
+    const el=$(vehicles[current.id].el);
+    if(el.releasePointerCapture){try{el.releasePointerCapture(current.pointerId);}catch(_){}}
+    clearDragStyles(current.id);
+    if(cancelled||!current.active){render();return;}
+    const cell=current.axis==='h'?current.cellW:current.cellH;
+    const step=Math.round(current.clamped/cell);
+    const attemptedStep=Math.round(current.raw/cell);
+    if(step!==0){applyMove(current.id,step);return;}
+    if(attemptedStep!==0&&current.limits.min===0&&current.limits.max===0){
+      registerBlocked('Não há espaço disponível para mover essa viatura nessa direção.');
+    }else{
+      setMessage('','Movimento cancelado. A viatura permaneceu na mesma casa.');
+      render();
+    }
+  }
+
+  function finishMission(){
+    won=true;
+    setMessage('ok','Missão cumprida! A viatura 1 alcançou a saída do pátio.');
+    render();
+    if(typeof window.reportarSucessoPadrao==='function')window.reportarSucessoPadrao();
+  }
+
+  function reset(){
+    vehicles=cloneInitial();
+    selected=null;
+    moves=0;
+    errors=0;
+    won=false;
+    drag=null;
+    reportAttempts();
+    setMessage('','Posições reiniciadas. O tempo e as tentativas gerais da missão são mantidos pelo jogo.');
+    render();
+  }
+
+  $('resetBtn').addEventListener('click',reset);
+  $('backBtn').addEventListener('click',()=>selected&&applyMove(selected,-1));
+  $('forwardBtn').addEventListener('click',()=>selected&&applyMove(selected,1));
+
+  Object.keys(initial).forEach(key=>{
+    const id=Number(key);
+    const el=$(initial[id].el);
+    el.addEventListener('pointerdown',event=>startDrag(event,id));
+    el.addEventListener('pointermove',updateDrag);
+    el.addEventListener('pointerup',finishDrag);
+    el.addEventListener('pointercancel',event=>finishDrag(event,true));
+    el.addEventListener('lostpointercapture',event=>{if(drag&&event.pointerId===drag.pointerId)finishDrag(event,true);});
+    el.addEventListener('click',()=>select(id));
+  });
+
+  document.addEventListener('keydown',event=>{
+    if(!selected||won)return;
+    const v=vehicles[selected];
+    if((v.axis==='h'&&event.key==='ArrowLeft')||(v.axis==='v'&&event.key==='ArrowUp')){event.preventDefault();applyMove(selected,-1);}
+    if((v.axis==='h'&&event.key==='ArrowRight')||(v.axis==='v'&&event.key==='ArrowDown')){event.preventDefault();applyMove(selected,1);}
+  });
+
+  render();
+  reportAttempts();
+})();
+</script>
+<script>
+// Ponte comum entre cada simulador e o jogo principal.
+// O build substitui 0 pelo índice da missão.
+(function () {
+  const MISSION_ID = 0;
+  let sucessoJaReportado = false;
+  function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
+  function lerTentativas(){
+    for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
+      const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
+    }
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+  }
+  function reportarEstado(pedirConclusao=false){
+    try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
+  }
+  window.atualizarTentativasPadrao=function(total){
+    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+  };
+  window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
+  ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
+  setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
+})();
+</script>
+</body>
+</html>
