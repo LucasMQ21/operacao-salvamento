@@ -651,7 +651,7 @@ function acionarBotaoRelatorio(){
   fecharRelatorioReflexoes();resolverMissao(id);
 }
 
-const PATENTE_IMGS = {"1":"./assets/embedded/734645e838d6ac669907.png","2":"./assets/embedded/648894ffbfa8e40dc3d5.png","3":"./assets/embedded/adb85281d042e8214818.png","4":"./assets/embedded/90a74dec9af5c414bc99.png","5":"./assets/embedded/75939df1f1a687a38b04.png","6":"./assets/embedded/4459e6b01e5c1d99826a.png","7":"./assets/embedded/82ef00db0e7036fa7dd9.png","8":"./assets/embedded/40687ce77ad583fd70d3.png","9":"./assets/embedded/4e3104676a5afa1f2f50.png","10":"./assets/embedded/9324d6274381e94ff333.png","11":"./assets/embedded/556aea34fc93c6310a55.png","12":"./assets/embedded/09ac27c7d8c818fca9a3.png","13":"./assets/embedded/8aa3a8900bc2abce7af2.png"};
+const PATENTE_IMGS = {"1":"./assets/embedded/802e4bf957152df4c1c3.webp","2":"./assets/embedded/2958c1528a341184ab2d.webp","3":"./assets/embedded/98372c121463f498cabf.webp","4":"./assets/embedded/676f3d09119825b3b9db.webp","5":"./assets/embedded/296aab74a497ac4280ff.webp","6":"./assets/embedded/0730a0e6f047009bc077.webp","7":"./assets/embedded/afb2d2e7e67c50b5a7df.webp","8":"./assets/embedded/02ec900608f2fd1393c7.webp","9":"./assets/embedded/bc8f89fe4114e55aa2b8.webp","10":"./assets/embedded/2052752740aad044522f.webp","11":"./assets/embedded/ebe904c8d1075864b368.webp","12":"./assets/embedded/c4963ea62a87d061efdb.webp","13":"./assets/embedded/bc64d903cf8ca136a4e1.webp"};
 Object.assign(AUDIO_B64, {"chamada_1_0":"./assets/audio/chamada_1_0-eb7693ba4a.mp3","musica_1_0":"./assets/audio/musica_1_0-e38971e266.mp3"});
 function insigniaSVG(idx){
   if(idx<=0){ return '<span class="insig-vazia">—</span>'; }
@@ -997,19 +997,23 @@ function moverCaminhaoPara(id){
    seleção de nível, saída e toasts.
    ========================================================= */
 
-/* FASE 30 — pré-carregamento seletivo da carreira.
-   As insígnias são baixadas e decodificadas em segundo plano depois que
-   o mapa já está visível. O cache evita repetir trabalho em novas aberturas. */
+/* FASE 31 — correção do carregamento da carreira.
+   As 13 insígnias foram reduzidas para WebP transparente em resolução adequada
+   à interface. Como o conjunto agora é pequeno, o download e a decodificação
+   começam imediatamente, sem requestIdleCallback nem prioridade baixa. */
 const CACHE_PRELOAD_INSIGNIAS=new Map();
 let PRELOAD_INSIGNIAS_AGENDADO=false;
 
-function precarregarImagemDecodificada(src,prioridade='low'){
+function precarregarImagemDecodificada(src,prioridade='high'){
   if(!src)return Promise.resolve(false);
   if(CACHE_PRELOAD_INSIGNIAS.has(src))return CACHE_PRELOAD_INSIGNIAS.get(src);
   const promessa=new Promise(resolve=>{
     const img=new Image();
     try{img.decoding='async';img.fetchPriority=prioridade;}catch(_erro){}
+    let finalizado=false;
     const finalizar=async ok=>{
+      if(finalizado)return;
+      finalizado=true;
       if(ok&&typeof img.decode==='function'){try{await img.decode();}catch(_erro){}}
       resolve(ok);
     };
@@ -1022,7 +1026,7 @@ function precarregarImagemDecodificada(src,prioridade='low'){
   return promessa;
 }
 
-function precarregarInsigniasCarreira(prioridade='low'){
+function precarregarInsigniasCarreira(prioridade='high'){
   const fontes=Object.values(typeof PATENTE_IMGS==='object'&&PATENTE_IMGS?PATENTE_IMGS:{}).filter(Boolean);
   return Promise.allSettled(fontes.map(src=>precarregarImagemDecodificada(src,prioridade)));
 }
@@ -1030,9 +1034,7 @@ function precarregarInsigniasCarreira(prioridade='low'){
 function agendarPrecarregamentoInsigniasCarreira(){
   if(PRELOAD_INSIGNIAS_AGENDADO)return;
   PRELOAD_INSIGNIAS_AGENDADO=true;
-  const executar=()=>precarregarInsigniasCarreira('low').catch(()=>{});
-  if(typeof requestIdleCallback==='function')requestIdleCallback(executar,{timeout:1400});
-  else setTimeout(executar,320);
+  return precarregarInsigniasCarreira('high').catch(()=>{});
 }
 
 function priorizarPrecarregamentoInsigniasCarreira(){
@@ -1909,6 +1911,8 @@ function irParaMapaSemPenalidade(motivoSalvamento='retorno-ao-mapa'){
 
 
 document.addEventListener('DOMContentLoaded',()=>{
+  // Fase 31: inicia imediatamente o pequeno pacote otimizado de insígnias.
+  if(typeof agendarPrecarregamentoInsigniasCarreira==='function')agendarPrecarregamentoInsigniasCarreira();
   registrarEventosMapa();
   atualizarContador();
   registrarAvisoSaidaMissao();
