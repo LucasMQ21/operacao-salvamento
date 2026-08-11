@@ -2058,3 +2058,26 @@ body.report-open{overflow:hidden}
     height: 104px;
   }
 }
+
+
+/* ===== FASE 32 — EMBLEMA OFICIAL ANIMADO ===== */
+.logo-area .escudo-bombeiro {
+  animation: none !important;
+}
+.logo-area .emblema-login-animado,
+.logo-area .emblema-login-animado svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.logo-area .emblema-login-animado svg {
+  overflow: visible;
+  filter: drop-shadow(0 0 22px rgba(247,127,0,.25));
+}
+#tela-mapa .escudo-mini svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 0 10px rgba(247,127,0,.28));
+}

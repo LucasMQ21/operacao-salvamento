@@ -63,6 +63,48 @@ let pontosCarreira=0;
 let pontosCarreiraTotal=0;
 const MAPA_SIZE=900, CENTRO=450;
 /* =========================================================
+   FASE 32 — EMBLEMA OFICIAL ANIMADO
+   Integra a animação oficial fornecida para a tela inicial.
+   O medalhão central permanece estático; o anel externo gira
+   180° no sentido horário e o interno 180° no anti-horário.
+   ========================================================= */
+let emblemaLoginRAF=null;
+function iniciarAnimacaoEmblemaLogin(){
+  const svg=document.getElementById('emblema-login-svg');
+  if(!svg||svg.dataset.animacaoAtiva==='1')return;
+  svg.dataset.animacaoAtiva='1';
+  const underlay=document.getElementById('loginEmblema-underlay');
+  const outerRing=document.getElementById('loginEmblema-outerRing');
+  const innerRing=document.getElementById('loginEmblema-innerRing');
+  const outerGroup=document.getElementById('loginEmblema-outerGroup');
+  const innerGroup=document.getElementById('loginEmblema-innerGroup');
+  if(!underlay||!outerRing||!innerRing||!outerGroup||!innerGroup)return;
+  const CX=512,CY=512,OUTER_R=454,INNER_R=338,INNER_CIRCLE_R=282,UNDERLAY_R=370;
+  const OUTER_DUR=1200,INNER_DUR=1200,GAP=180,PAUSE=2000,CYCLE=OUTER_DUR+GAP+INNER_DUR+PAUSE;
+  function polygonPoints(cx,cy,radius,sides,startAngle){const pts=[];for(let i=0;i<sides;i++){const a=startAngle+i*Math.PI*2/sides;pts.push([cx+Math.cos(a)*radius,cy+Math.sin(a)*radius]);}return pts;}
+  function ptsToPath(pts){return 'M '+pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+' Z';}
+  function circlePath(cx,cy,r){return `M ${(cx+r).toFixed(2)} ${cy.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(cx-r).toFixed(2)} ${cy.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(cx+r).toFixed(2)} ${cy.toFixed(2)} Z`;}
+  function easeInOut(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  const OUTER_START=-Math.PI/2-Math.PI/7,INNER_START=-Math.PI/2;
+  underlay.setAttribute('d',circlePath(CX,CY,UNDERLAY_R));
+  outerRing.setAttribute('d',ptsToPath(polygonPoints(CX,CY,OUTER_R,7,OUTER_START)));
+  innerRing.setAttribute('d',ptsToPath(polygonPoints(CX,CY,INNER_R,7,INNER_START))+' '+circlePath(CX,CY,INNER_CIRCLE_R));
+  function drawAtTime(ms){
+    const cycleNum=Math.floor(ms/CYCLE),phase=ms%CYCLE;
+    let outerAngle=cycleNum*180,innerAngle=-cycleNum*180;
+    if(phase<=OUTER_DUR)outerAngle+=180*easeInOut(clamp(phase/OUTER_DUR,0,1));else outerAngle+=180;
+    const innerStart=OUTER_DUR+GAP;
+    if(phase>innerStart)innerAngle+=-180*easeInOut(clamp((phase-innerStart)/INNER_DUR,0,1));
+    outerGroup.setAttribute('transform',`rotate(${outerAngle.toFixed(4)} ${CX} ${CY})`);
+    innerGroup.setAttribute('transform',`rotate(${innerAngle.toFixed(4)} ${CX} ${CY})`);
+  }
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){drawAtTime(0);return;}
+  function animate(ts){drawAtTime(ts);emblemaLoginRAF=requestAnimationFrame(animate);}
+  emblemaLoginRAF=requestAnimationFrame(animate);
+}
+
+/* =========================================================
    ÁUDIO E SIRENE — RUNTIME
    Centraliza trilha do menu, chamadas, trilhas das missões,
    som sintético da sirene e seu estado visual no cabeçalho.
@@ -1911,6 +1953,7 @@ function irParaMapaSemPenalidade(motivoSalvamento='retorno-ao-mapa'){
 
 
 document.addEventListener('DOMContentLoaded',()=>{
+  if(typeof iniciarAnimacaoEmblemaLogin==='function')iniciarAnimacaoEmblemaLogin();
   // Fase 31: inicia imediatamente o pequeno pacote otimizado de insígnias.
   if(typeof agendarPrecarregamentoInsigniasCarreira==='function')agendarPrecarregamentoInsigniasCarreira();
   registrarEventosMapa();

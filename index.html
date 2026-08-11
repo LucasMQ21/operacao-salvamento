@@ -21,7 +21,48 @@
 </head>
 <body>
 <div id="tela-inicial">
-  <div class="logo-area logo-area-portal"><div class="escudo-bombeiro"><img src="./assets/embedded/29d423909822d7c89224.png" alt="Emblema Operação Salvamento"></div><h1>Operação <span>Salvamento</span></h1><p>Matemática aplicada às atividades do Corpo de Bombeiros</p></div>
+  <div class="logo-area logo-area-portal"><div class="escudo-bombeiro"><div class="emblema-login-animado" aria-hidden="false"><svg aria-label="Emblema animado Operação Salvamento" class="loginEmblema-svg" id="emblema-login-svg" viewbox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialgradient cx="42%" cy="35%" id="loginEmblema-bgRed" r="80%">
+<stop offset="0%" stop-color="#ea2817"></stop>
+<stop offset="100%" stop-color="#c8160c"></stop>
+</radialgradient>
+<radialgradient cx="48%" cy="34%" id="loginEmblema-goldDisk" r="74%">
+<stop offset="0%" stop-color="#ffd168"></stop>
+<stop offset="52%" stop-color="#f8b73b"></stop>
+<stop offset="100%" stop-color="#eea521"></stop>
+</radialgradient>
+<lineargradient id="loginEmblema-goldStroke" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffd36d"></stop>
+<stop offset="45%" stop-color="#f7b12a"></stop>
+<stop offset="100%" stop-color="#d98c10"></stop>
+</lineargradient>
+<filter height="140%" id="loginEmblema-shadow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="10" flood-color="#000000" flood-opacity="0.18" stddeviation="10"></fedropshadow>
+</filter>
+<filter height="140%" id="loginEmblema-softShadow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="6" flood-color="#000000" flood-opacity="0.16" stddeviation="7"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#loginEmblema-shadow)" id="loginEmblema-root">
+<!-- preenchimento-base, chapado, para não aparecerem frestas claras -->
+<path fill="url(#loginEmblema-bgRed)" id="loginEmblema-underlay"></path>
+<!-- anel externo animado -->
+<g id="loginEmblema-outerGroup">
+<path fill="url(#loginEmblema-bgRed)" fill-rule="evenodd" id="loginEmblema-outerRing" stroke="url(#loginEmblema-goldStroke)" stroke-linejoin="round" stroke-width="20"></path>
+</g>
+<!-- anel interno animado -->
+<g id="loginEmblema-innerGroup">
+<path fill="url(#loginEmblema-bgRed)" fill-rule="evenodd" id="loginEmblema-innerRing" stroke="url(#loginEmblema-goldStroke)" stroke-linejoin="round" stroke-width="17"></path>
+</g>
+<!-- medalhão central estático -->
+<g filter="url(#loginEmblema-softShadow)" id="loginEmblema-centerGroup">
+<circle cx="512" cy="512" fill="#d31b0d" opacity="0.12" r="284"></circle>
+<circle cx="512" cy="512" fill="url(#loginEmblema-goldDisk)" r="274" stroke="#f7b12a" stroke-width="6"></circle>
+<image height="299" href="./assets/embedded/9ebe8c9dc58d2dce39b9.png" id="loginEmblema-truck" preserveaspectratio="xMidYMid meet" width="422" x="301" y="333"/>
+</g>
+</g>
+</svg></div></div><h1>Operação <span>Salvamento</span></h1><p>Matemática aplicada às atividades do Corpo de Bombeiros</p></div>
   <main class="access-hub access-hub-simple" aria-labelledby="accessHubTitle">
     <div class="access-hub-heading"><h2 id="accessHubTitle">Escolha como deseja acessar o jogo</h2></div>
     <div class="access-primary-action">
@@ -184,7 +225,48 @@
   <div class="mapa-decor decor-galeria" aria-hidden="true"><span class="decor-icon">◉</span><strong>Galeria subterrânea</strong><small>Acesso controlado</small></div>
   <div class="top-bar">
     <div class="header-player">
-      <div class="escudo-mini" id="escudo-mini"><img src="./assets/embedded/29d423909822d7c89224.png" alt="Emblema Operação Salvamento"></div>
+      <div class="escudo-mini" id="escudo-mini"><svg aria-label="Emblema Operação Salvamento" class="headerEmblema-svg" id="emblema-header-svg" viewbox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialgradient cx="42%" cy="35%" id="headerEmblema-bgRed" r="80%">
+<stop offset="0%" stop-color="#ea2817"></stop>
+<stop offset="100%" stop-color="#c8160c"></stop>
+</radialgradient>
+<radialgradient cx="48%" cy="34%" id="headerEmblema-goldDisk" r="74%">
+<stop offset="0%" stop-color="#ffd168"></stop>
+<stop offset="52%" stop-color="#f8b73b"></stop>
+<stop offset="100%" stop-color="#eea521"></stop>
+</radialgradient>
+<lineargradient id="headerEmblema-goldStroke" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffd36d"></stop>
+<stop offset="45%" stop-color="#f7b12a"></stop>
+<stop offset="100%" stop-color="#d98c10"></stop>
+</lineargradient>
+<filter height="140%" id="headerEmblema-shadow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="10" flood-color="#000000" flood-opacity="0.18" stddeviation="10"></fedropshadow>
+</filter>
+<filter height="140%" id="headerEmblema-softShadow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="6" flood-color="#000000" flood-opacity="0.16" stddeviation="7"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#headerEmblema-shadow)" id="headerEmblema-root">
+<!-- preenchimento-base, chapado, para não aparecerem frestas claras -->
+<path d="M 882.00 512.00 A 370.00 370.00 0 1 0 142.00 512.00 A 370.00 370.00 0 1 0 882.00 512.00 Z" fill="url(#headerEmblema-bgRed)" id="headerEmblema-underlay"></path>
+<!-- anel externo animado -->
+<g id="headerEmblema-outerGroup">
+<path d="M 315.02 102.96 L 708.98 102.96 L 954.62 410.98 L 866.95 795.06 L 512.00 966.00 L 157.05 795.06 L 69.38 410.98 Z" fill="url(#headerEmblema-bgRed)" fill-rule="evenodd" id="headerEmblema-outerRing" stroke="url(#headerEmblema-goldStroke)" stroke-linejoin="round" stroke-width="20"></path>
+</g>
+<!-- anel interno animado -->
+<g id="headerEmblema-innerGroup">
+<path d="M 512.00 174.00 L 776.26 301.26 L 841.53 587.21 L 658.65 816.53 L 365.35 816.53 L 182.47 587.21 L 247.74 301.26 Z M 794.00 512.00 A 282.00 282.00 0 1 0 230.00 512.00 A 282.00 282.00 0 1 0 794.00 512.00 Z" fill="url(#headerEmblema-bgRed)" fill-rule="evenodd" id="headerEmblema-innerRing" stroke="url(#headerEmblema-goldStroke)" stroke-linejoin="round" stroke-width="17"></path>
+</g>
+<!-- medalhão central estático -->
+<g filter="url(#headerEmblema-softShadow)" id="headerEmblema-centerGroup">
+<circle cx="512" cy="512" fill="#d31b0d" opacity="0.12" r="284"></circle>
+<circle cx="512" cy="512" fill="url(#headerEmblema-goldDisk)" r="274" stroke="#f7b12a" stroke-width="6"></circle>
+<image height="299" href="./assets/embedded/9ebe8c9dc58d2dce39b9.png" id="headerEmblema-truck" preserveaspectratio="xMidYMid meet" width="422" x="301" y="333"/>
+</g>
+</g>
+</svg></div>
       <div class="header-player-text"><span id="patente-display">Recruta</span><strong id="nome-display">---</strong></div>
       <span class="patente-badge-mini" id="patente-badge-mini"></span>
     </div>
