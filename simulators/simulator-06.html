@@ -3,925 +3,643 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simulador: Ciclo de Amortecimento Hídrico</title>
+<title>Simulador - Protocolo Quadrado Crescente</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap');
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
+* { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; }
   body {
-    background: #1a1a2e;
-    color: #fff;
-    font-family: 'Roboto', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    padding: 10px;
-  }
-
-  h1 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.4rem;
-    color: #ff6b35;
-    text-align: center;
-    margin-bottom: 6px;
-    text-shadow: 0 0 10px rgba(255,107,53,0.5);
-  }
-
-  .subtitle {
-    font-size: 0.8rem;
-    color: #aaa;
-    margin-bottom: 10px;
-    text-align: center;
-  }
-
-  #game-container {
-    position: relative;
-    width: 900px;
-    max-width: 100%;
-    aspect-ratio: 4/3;
-    border: 3px solid #ff6b35;
-    border-radius: 10px;
+    margin: 0;
     overflow: hidden;
-    background: #000;
-    box-shadow: 0 0 30px rgba(255,107,53,0.3);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #08131d;
+    color: #fff;
+    padding: 14px;
   }
-
-  #bg-image {
+  #simulator-shell {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 28px);
+    border-radius: 22px;
+    overflow: hidden;
+    background: #08131d;
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.38);
+  }
+  #bg {
     position: absolute;
-    top: 0; left: 0;
+    inset: 0;
     width: 100%; height: 100%;
-    object-fit: cover;
-    opacity: 1;
+    background-image: url('../assets/embedded/f37e2fea47e678cd33c7.webp');
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
   }
-
+  #overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 10, 0, 0.45);
+    z-index: 1;
+  }
   canvas {
     position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
   }
-
-  #hud {
+  #info-panel {
     position: absolute;
-    top: 8px; left: 8px; right: 8px;
-    display: flex;
-    justify-content: space-between;
-    pointer-events: none;
+    top: 20px; left: 20px;
     z-index: 10;
-    gap: 6px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 18px 22px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.7;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    max-width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
-
-  .hud-panel {
-    background: rgba(0,0,0,0.78);
-    border: 1px solid #ff6b35;
-    border-radius: 6px;
-    padding: 5px 8px;
-    font-family: 'Orbitron', monospace;
-    font-size: 0.7rem;
-    color: #fff;
-    text-align: center;
-    min-width: 100px;
-    flex: 1;
+  #info-panel strong {
+    color: #2ecc71;
+    font-size: 15px;
   }
-
-  .hud-panel .label {
-    font-size: 0.55rem;
-    color: #ff6b35;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+  #status {
+    display: block;
+    margin-top: 8px;
+    color: #f1c40f;
+    font-weight: 600;
   }
-
-  .hud-panel .value {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #00d4ff;
-  }
-
-  #answer-panel {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,0.88);
-    border-top: 2px solid #ff6b35;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    z-index: 20;
-    transition: opacity 0.5s;
-  }
-
-  #answer-panel.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  #answer-panel p {
-    font-size: 0.8rem;
-    color: #ddd;
-    text-align: center;
-  }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  #answer-input {
-    padding: 7px 10px;
-    font-size: 1rem;
-    border: 2px solid #ff6b35;
-    border-radius: 6px;
-    background: #222;
-    color: #fff;
-    width: 170px;
-    text-align: center;
-    font-family: 'Orbitron', monospace;
-  }
-
-  #answer-input:focus {
-    outline: none;
-    border-color: #00d4ff;
-    box-shadow: 0 0 10px rgba(0,212,255,0.3);
-  }
-
-  .btn {
-    padding: 7px 18px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'Roboto', sans-serif;
-    text-transform: uppercase;
-  }
-
-  .btn-primary {
-    background: #ff6b35;
-    color: #fff;
-  }
-
-  .btn-primary:hover {
-    background: #ff8555;
-    transform: scale(1.05);
-  }
-
   #attempts-display {
-    font-size: 0.75rem;
-    color: #ffaa00;
-  }
-
-  #feedback-msg {
-    font-size: 0.8rem;
+    display: block;
+    margin-top: 6px;
+    color: #e74c3c;
     font-weight: 700;
-    min-height: 18px;
+    font-size: 15px;
   }
-
-  .feedback-wrong { color: #ff4444; }
-  .feedback-correct { color: #44ff44; }
-
-  #mission-complete {
+  #controls {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.75);
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 18px 28px;
+    border-radius: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #controls label {
+    font-size: 13px;
+    color: #ddd;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    z-index: 50;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 1s;
+    gap: 4px;
   }
-
-  #mission-complete.visible {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  #mission-complete h2 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 2rem;
-    color: #44ff44;
-    text-shadow: 0 0 20px rgba(68,255,68,0.6);
-    margin-bottom: 8px;
-    animation: pulse 1.5s infinite;
-  }
-
-  #mission-complete p {
-    font-size: 0.95rem;
-    color: #fff;
-  }
-
-  #mission-complete .resumo {
-    margin-top: 12px;
-    font-size: 0.85rem;
-    color: #aaa;
-    line-height: 1.6;
+  #controls input {
+    width: 76px;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 18px;
     text-align: center;
+    font-weight: 700;
+    background: rgba(255,255,255,0.95);
+    color: #222;
   }
-
-  #status-label {
+  #controls input:disabled {
+    background: rgba(200,200,200,0.6);
+    color: #666;
+  }
+  #controls button {
+    padding: 12px 26px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s, background 0.2s;
+  }
+  #controls button:active { transform: scale(0.96); }
+  #controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  #btn-start { background: #2ecc71; color: #fff; }
+  #btn-start:hover:not(:disabled) { background: #27ae60; }
+  #btn-reset { background: #e74c3c; color: #fff; }
+  #btn-reset:hover:not(:disabled) { background: #c0392b; }
+  #message {
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.1rem;
-    color: #ff6b35;
-    background: rgba(0,0,0,0.75);
-    padding: 8px 18px;
-    border-radius: 8px;
-    border: 1px solid #ff6b35;
-    z-index: 15;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
+    z-index: 20;
+    background: rgba(46, 204, 113, 0.95);
+    color: #fff;
+    padding: 35px 55px;
+    border-radius: 24px;
+    font-size: 30px;
+    font-weight: 800;
     text-align: center;
+    display: none;
+    box-shadow: 0 12px 50px rgba(0,0,0,0.6);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
-
-  #status-label.visible { opacity: 1; }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
+  @keyframes popIn {
+    from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+    to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   }
-
-  .fire-warning {
+  #legend {
     position: absolute;
-    top: 22%;
-    left: 78%;
-    transform: translate(-50%, -50%);
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.65rem;
-    color: #ff4444;
-    background: rgba(0,0,0,0.65);
-    padding: 4px 8px;
-    border-radius: 4px;
-    z-index: 5;
-    pointer-events: none;
+    top: 20px; right: 20px;
+    z-index: 10;
+    background: rgba(0,0,0,0.7);
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    line-height: 1.8;
+  }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; border: 2px solid #fff; }
+  .dot.blue { background: #3498db; }
+  .dot.red { background: #e74c3c; }
+  .dot.cyan { background: #00e5ff; }
+
+  @media (max-width: 900px) {
+    body { padding: 10px; overflow: auto; }
+    #simulator-shell { height: min(58vh, 520px); min-height: 360px; border-radius: 16px; }
+    #info-panel {
+      top: 12px; left: 12px;
+      max-width: calc(100% - 24px);
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    #info-panel strong { font-size: 14px; }
+    #legend {
+      top: auto;
+      right: 12px;
+      bottom: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 170px;
+    }
+    #controls.controls-below {
+      position: static;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      transform: none;
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px 16px;
+      gap: 10px;
+      border-radius: 16px;
+    }
+    #controls input { width: 88px; }
+    #controls button { width: 100%; }
+    #message {
+      left: 14px;
+      right: 14px;
+      top: 50%;
+      bottom: auto;
+      transform: translateY(-50%);
+      max-width: none;
+      padding: 22px 18px;
+      font-size: 22px;
+      border-radius: 20px;
+    }
+    @keyframes popIn {
+      from { transform: translateY(-50%) scale(0.7); opacity: 0; }
+      to   { transform: translateY(-50%) scale(1); opacity: 1; }
+    }
+  }
+
+
+  /* Caixa padronizada do simulador em telas maiores. */
+  @media (min-width: 901px) {
+    body {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      background:#08131d;
+    }
+    #simulator-shell {
+      width:min(1320px, calc(100vw - 32px));
+      height:min(742px, calc(100vh - 32px));
+      border-radius:20px;
+    }
   }
 </style>
 </head>
 <body>
-<h1>CICLO DE AMORTECIMENTO HÍDRICO</h1>
-<p class="subtitle">Combate a Incêndio — Funções Lineares Iteradas & Sistemas Dinâmicos</p>
+<div id="simulator-shell">
+  <div id="bg"></div>
+  <div id="overlay"></div>
+  <canvas id="simCanvas"></canvas>
 
-<div id="game-container">
-  <img id="bg-image" src="../assets/embedded/32ae8c2fb789c478745f.webp" alt="Mapa da cidade">
-  <canvas id="sim-canvas"></canvas>
-
-  <div class="fire-warning">🔥 GALPÃO EM CHAMAS</div>
-
-  <div id="hud">
-    <div class="hud-panel">
-      <div class="label">Área do Fogo</div>
-      <div class="value" id="hud-area">400 m²</div>
-    </div>
-    <div class="hud-panel">
-      <div class="label">Água Consumida</div>
-      <div class="value" id="hud-agua">0 L</div>
-    </div>
-    <div class="hud-panel">
-      <div class="label">Tempo Simulado</div>
-      <div class="value" id="hud-tempo">0 min</div>
-    </div>
-    <div class="hud-panel">
-      <div class="label">Tentativas</div>
-      <div class="value" id="hud-tentativas">0</div>
-    </div>
+  <div id="info-panel">
+    <strong>🧭 Protocolo Quadrado Crescente</strong><br>
+    Origem (último contato): <b>(0, 0)</b><br>
+    Posição da vítima: <b>(230, 80)</b><br>
+    Velocidade na mata: <b>0,5 m/s</b><br>
+    Espaçamento inicial: <b>10 m</b><br>
+    <span id="status">Aguardando início da missão...</span>
+    <span id="attempts-display">Tentativas: 0</span>
   </div>
 
-  <div id="status-label"></div>
-
-  <div id="answer-panel">
-    <p><strong>Desafio:</strong> Determine o volume total de água (em litros) consumido até a extinção completa do incêndio.</p>
-    <div class="input-row">
-      <input type="number" id="answer-input" placeholder="Volume em litros">
-      <button class="btn btn-primary" id="btn-responder">Responder</button>
-    </div>
-    <div id="feedback-msg"></div>
-    <div id="attempts-display">Tentativas para acertar: 0</div>
+  <div id="legend">
+    <div><span class="dot blue"></span>Origem (0, 0)</div>
+    <div><span class="dot red"></span>Vítima (230, 80)</div>
+    <div><span class="dot cyan"></span>Equipe de busca</div>
   </div>
 
-  <div id="mission-complete">
-    <h2>✅ MISSÃO CONCLUÍDA</h2>
-    <p>Incêndio extinto com sucesso!</p>
-    <div class="resumo">
-      Água total consumida: <strong style="color:#00d4ff;">12.500 litros</strong><br>
-      Tempo total de operação: <strong style="color:#00d4ff;">60 minutos</strong><br>
-      Ciclos completos: 2 cargas + 1 carga parcial
-    </div>
+  <div id="message"></div>
+
+  <div id="controls" class="controls-below">
+    <label>Horas<input type="number" id="hours" min="0" value="0" step="1"></label>
+    <label>Minutos<input type="number" id="minutes" min="0" max="59" value="0" step="1"></label>
+    <button id="btn-start" onclick="startSimulation()">▶ Iniciar Simulação</button>
   </div>
-</div>
+  </div>
 <script>
-/* ============================================================
-   CONFIGURAÇÕES
-   ============================================================ */
-const CANVAS = document.getElementById('sim-canvas');
-const CTX = CANVAS.getContext('2d');
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const simulatorShell = document.getElementById('simulator-shell');
+const VICTIM_X = 230;
+const VICTIM_Y = 80;
+const TARGET_TIME = 11 * 3600 + 35 * 60; // 41700 s = 11h 35m
+const SPEED_REAL = 0.5; // m/s
+const SCALE_FACTOR = 30 / 86400; // 24h de missão = 30s de animação
+const IDLE_BOUNDS = Object.freeze({ minX: -50, maxX: VICTIM_X + 50, minY: -50, maxY: VICTIM_Y + 50 });
 
-const W = 900, H = 675;
+let animId = null;
+let segments = [];
+let animStart = null;
+let missionTime = 0;
+let animationDuration = 0;
+let pulsePhase = 0;
+let attempts = 0;
+let isRunning = false;
 
-const AREA_INICIAL = 400;
-const TAXA_COMBATE = 11;
-const TAXA_ESPALHAMENTO = 15;
-const VAZAO = 250;
-
-// Timeline de eventos pré-calculada (precisão exata)
-const EVENTOS = [
-  { tipo: 'combate',  durReal: 20, durAnim: 5,    area0: 400, area1: 180,  agua0: 0,     agua1: 5000,  tempo0: 0,  tempo1: 20 },
-  { tipo: 'ausencia', durReal: 5,  durAnim: 10,   area0: 180, area1: 255,  agua0: 5000,  agua1: 5000,  tempo0: 20, tempo1: 25 },
-  { tipo: 'combate',  durReal: 20, durAnim: 5,    area0: 255, area1: 35,   agua0: 5000,  agua1: 10000, tempo0: 25, tempo1: 45 },
-  { tipo: 'ausencia', durReal: 5,  durAnim: 10,   area0: 35,  area1: 110,  agua0: 10000, agua1: 10000, tempo0: 45, tempo1: 50 },
-  { tipo: 'combate',  durReal: 10, durAnim: 2.5,  area0: 110, area1: 0,    agua0: 10000, agua1: 12500, tempo0: 50, tempo1: 60 },
-];
-
-const RESPOSTA_CORRETA = 12500;
-
-/* ============================================================
-   POSIÇÕES NA NOVA IMAGEM (ruas bem definidas)
-   ============================================================ */
-const GALPAO = { x: 760, y: 160, w: 250, h: 180 };
-const CAMINHAO_HOME = { x: 885, y: 290 };
-const HIDRANTE = { x: 115, y: 650 };
-
-// Caminho realista pelas ruas — mais à direita e mais embaixo
-const CAMINHO_IDA = [
-  { x: 885, y: 290 },
-  { x: 885, y: 650 },
-  { x: 115, y: 650 },
-];
-
-const CAMINHO_VOLTA = [
-  { x: 115, y: 650 },
-  { x: 885, y: 650 },
-  { x: 885, y: 290 },
-];
-
-/* ============================================================
-   ESTADO
-   ============================================================ */
-let state = {
-  fase: 'espera',
-  eventoIdx: -1,
-  timerEvento: 0,
-  areaFogo: AREA_INICIAL,
-  aguaTotal: 0,
-  tempoSimulado: 0,
-  tentativasJogador: 0,
-  caminhaoPos: { ...CAMINHAO_HOME },
-  caminhaoRotation: 0,
-  caminhaoTargetRotation: 0,
-  partidasFogo: [],
-  partidasAgua: [],
-  animando: true,
-  mostrouMensagens: new Set(),
-};
-
-/* ============================================================
-   DOM
-   ============================================================ */
-const hudArea = document.getElementById('hud-area');
-const hudAgua = document.getElementById('hud-agua');
-const hudTempo = document.getElementById('hud-tempo');
-const hudTentativas = document.getElementById('hud-tentativas');
-const answerPanel = document.getElementById('answer-panel');
-const answerInput = document.getElementById('answer-input');
-const btnResponder = document.getElementById('btn-responder');
-const feedbackMsg = document.getElementById('feedback-msg');
-const attemptsDisplay = document.getElementById('attempts-display');
-const statusLabel = document.getElementById('status-label');
-const missionComplete = document.getElementById('mission-complete');
-
-/* ============================================================
-   CANVAS
-   ============================================================ */
-function resizeCanvas() {
-  const rect = document.getElementById('game-container').getBoundingClientRect();
-  CANVAS.width = rect.width;
-  CANVAS.height = rect.height;
+function resize() {
+  const maxW = Math.max(320, Math.min(1320, window.innerWidth - 32));
+  const maxH = Math.max(320, window.innerHeight - 32);
+  let w = maxW;
+  let h = w * 9 / 16;
+  if (h > maxH) { h = maxH; w = h * 16 / 9; }
+  simulatorShell.style.width = Math.floor(w) + 'px';
+  simulatorShell.style.height = Math.floor(h) + 'px';
+  canvas.width = Math.floor(w);
+  canvas.height = Math.floor(h);
+  // Alterar width/height limpa o canvas. Antes do início, redesenha imediatamente
+  // os dois referenciais fixos para que nunca desapareçam após um reflow do iframe.
+  if (!isRunning && missionTime === 0) renderInitialScene();
+  else if (!animId) drawScene(0);
 }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+window.addEventListener('resize', resize);
 
-function toCanvas(p) {
-  const rect = CANVAS.getBoundingClientRect();
-  return { x: (p.x / W) * rect.width, y: (p.y / H) * rect.height };
-}
-
-function toCanvasScale(v) {
-  const rect = CANVAS.getBoundingClientRect();
-  return (v / W) * rect.width;
-}
-
-/* ============================================================
-   FUNÇÕES DE CAMINHO (trajeto + direção)
-   ============================================================ */
-function posicaoNoCaminho(caminho, progresso) {
-  const n = caminho.length;
-  if (n < 2) return { ...caminho[0] };
-  const totalSegments = n - 1;
-  const globalT = progresso * totalSegments;
-  const idx = Math.min(Math.floor(globalT), totalSegments - 1);
-  const localT = globalT - idx;
-  const p0 = caminho[idx];
-  const p1 = caminho[idx + 1];
-  return {
-    x: p0.x + (p1.x - p0.x) * localT,
-    y: p0.y + (p1.y - p0.y) * localT
-  };
-}
-
-function tangenteDoCaminho(caminho, progresso) {
-  const dt = 0.005;
-  const p1 = posicaoNoCaminho(caminho, Math.max(0, progresso - dt));
-  const p2 = posicaoNoCaminho(caminho, Math.min(1, progresso + dt));
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len === 0) return { x: 0, y: 1 };
-  return { x: dx / len, y: dy / len };
-}
-
-function anguloPara(pDestino) {
-  const cp = toCanvas(state.caminhaoPos);
-  const dp = toCanvas(pDestino);
-  return Math.atan2(dp.y - cp.y, dp.x - cp.x) + Math.PI / 2;
-}
-
-function suavizarRotacao(atual, alvo, fator) {
-  let diff = alvo - atual;
-  while (diff > Math.PI) diff -= Math.PI * 2;
-  while (diff < -Math.PI) diff += Math.PI * 2;
-  return atual + diff * fator;
-}
-
-/* ============================================================
-   PARTÍCULAS
-   ============================================================ */
-function criarPartidaFogo() {
-  const c = toCanvas({ x: GALPAO.x, y: GALPAO.y });
-  const sw = toCanvasScale(GALPAO.w);
-  const sh = toCanvasScale(GALPAO.h);
-  return {
-    x: c.x + (Math.random() - 0.5) * sw * 0.9,
-    y: c.y + (Math.random() - 0.5) * sh * 0.9,
-    vx: (Math.random() - 0.5) * 0.7,
-    vy: -Math.random() * 1.4 - 0.4,
-    life: 1.0,
-    decay: 0.014 + Math.random() * 0.018,
-    size: 3 + Math.random() * 9,
-    hue: Math.random() * 45
-  };
-}
-
-function criarPartidaAgua() {
-  const cp = toCanvas(state.caminhaoPos);
-  const esc = CANVAS.getBoundingClientRect().width / W;
-
-  // Ponto frontal do caminhão (frente = cima no espaço local)
-  const frontalDist = 30 * esc;
-  const startX = cp.x + Math.cos(state.caminhaoRotation - Math.PI / 2) * frontalDist;
-  const startY = cp.y + Math.sin(state.caminhaoRotation - Math.PI / 2) * frontalDist;
-
-  const gp = toCanvas({ x: GALPAO.x, y: GALPAO.y });
-  const angle = Math.atan2(gp.y - startY, gp.x - startX);
-  const a = angle + (Math.random() - 0.5) * 0.35;
-  const speed = 3.5 + Math.random() * 3;
-  return {
-    x: startX,
-    y: startY,
-    vx: Math.cos(a) * speed,
-    vy: Math.sin(a) * speed + 0.8,
-    life: 1.0,
-    decay: 0.025 + Math.random() * 0.02,
-    size: 2 + Math.random() * 2.5
-  };
-}
-
-/* ============================================================
-   ATUALIZAÇÃO
-   ============================================================ */
-let lastTime = performance.now();
-
-function update(dt) {
-  // === FASE VITÓRIA ===
-  if (state.fase === 'vitoria') {
-    for (let i = state.partidasFogo.length - 1; i >= 0; i--) {
-      const p = state.partidasFogo[i];
-      p.x += p.vx; p.y += p.vy;
-      p.life -= p.decay * 2;
-      p.size *= 0.95;
-      if (p.life <= 0) state.partidasFogo.splice(i, 1);
-    }
-    for (let i = state.partidasAgua.length - 1; i >= 0; i--) {
-      const p = state.partidasAgua[i];
-      p.x += p.vx; p.y += p.vy; p.vy += 0.12;
-      p.life -= p.decay * 2;
-      if (p.life <= 0) state.partidasAgua.splice(i, 1);
-    }
-    return;
-  }
-
-  // === FASE ESPERA ===
-  if (state.fase === 'espera') {
-    const intensidade = Math.max(0.15, state.areaFogo / AREA_INICIAL);
-    for (let i = 0; i < Math.floor(2 + intensidade * 5); i++) {
-      if (Math.random() < 0.35) state.partidasFogo.push(criarPartidaFogo());
-    }
-    for (let i = state.partidasFogo.length - 1; i >= 0; i--) {
-      const p = state.partidasFogo[i];
-      p.x += p.vx; p.y += p.vy;
-      p.life -= p.decay;
-      p.size *= 0.98;
-      if (p.life <= 0) state.partidasFogo.splice(i, 1);
-    }
-
-    // Área do fogo MANTIDA FIXA em 400 m² até o jogador responder
-    state.areaFogo = AREA_INICIAL;
-
-    // Caminhão aponta para o galpão
-    state.caminhaoTargetRotation = anguloPara({ x: GALPAO.x, y: GALPAO.y });
-    state.caminhaoRotation = suavizarRotacao(state.caminhaoRotation, state.caminhaoTargetRotation, 0.08);
-
-    atualizarHUD();
-    return;
-  }
-
-  // === FASE SIMULANDO ===
-  const ev = EVENTOS[state.eventoIdx];
-  if (!ev) return;
-
-  state.timerEvento += dt;
-  const progresso = Math.min(state.timerEvento / ev.durAnim, 1);
-
-  // Interpolação dos valores
-  state.areaFogo = ev.area0 + (ev.area1 - ev.area0) * progresso;
-  state.aguaTotal = ev.agua0 + (ev.agua1 - ev.agua0) * progresso;
-  state.tempoSimulado = ev.tempo0 + (ev.tempo1 - ev.tempo0) * progresso;
-
-  // Partículas de água durante combate
-  if (ev.tipo === 'combate') {
-    for (let i = 0; i < 4; i++) {
-      if (Math.random() < 0.5) state.partidasAgua.push(criarPartidaAgua());
-    }
-    // Caminhão aponta para o galpão
-    state.caminhaoTargetRotation = anguloPara({ x: GALPAO.x, y: GALPAO.y });
-  }
-
-  // Movimento do caminhão pelas ruas
-  if (ev.tipo === 'ausencia') {
-    let pos, tan;
-    if (progresso < 0.4) {
-      const p = progresso / 0.4;
-      pos = posicaoNoCaminho(CAMINHO_IDA, p);
-      tan = tangenteDoCaminho(CAMINHO_IDA, p);
-      state.caminhaoTargetRotation = Math.atan2(tan.y, tan.x) + Math.PI / 2;
-      if (!state.mostrouMensagens.has('indo')) {
-        mostrarStatus('🚒 INDO AO HIDRANTE');
-        state.mostrouMensagens.add('indo');
-      }
-    } else if (progresso < 0.6) {
-      pos = posicaoNoCaminho(CAMINHO_IDA, 1);
-      // Parado no hidrante — aponta para o hidrante
-      state.caminhaoTargetRotation = anguloPara(HIDRANTE);
-      if (!state.mostrouMensagens.has('abastecendo')) {
-        mostrarStatus('⛽ REABASTECENDO...');
-        state.mostrouMensagens.add('abastecendo');
-      }
-    } else {
-      const p = (progresso - 0.6) / 0.4;
-      pos = posicaoNoCaminho(CAMINHO_VOLTA, p);
-      tan = tangenteDoCaminho(CAMINHO_VOLTA, p);
-      state.caminhaoTargetRotation = Math.atan2(tan.y, tan.x) + Math.PI / 2;
-      if (!state.mostrouMensagens.has('voltando')) {
-        mostrarStatus('🚒 RETORNANDO AO COMBATE');
-        state.mostrouMensagens.add('voltando');
-      }
-    }
-    state.caminhaoPos = pos;
+const controls = document.getElementById('controls');
+function applyResponsiveLayout() {
+  const mobile = window.innerWidth <= 900;
+  if (mobile) {
+    document.body.classList.add('mobile-layout');
+    if (controls.parentElement === simulatorShell) simulatorShell.insertAdjacentElement('afterend', controls);
+    controls.classList.add('controls-below');
   } else {
-    state.caminhaoPos = { ...CAMINHAO_HOME };
-    state.mostrouMensagens.clear();
+    document.body.classList.remove('mobile-layout');
+    if (controls.parentElement !== simulatorShell) simulatorShell.appendChild(controls);
+    controls.classList.remove('controls-below');
+  }
+  resize();
+}
+window.addEventListener('resize', applyResponsiveLayout);
+
+
+function generateSegments(maxTime) {
+  const maxDist = maxTime * SPEED_REAL;
+  const segs = [];
+  let x = 0, y = 0;
+  let totalDist = 0;
+  let n = 1;
+  while (totalDist < maxDist - 1e-9) {
+    const fullLen = 10 * Math.ceil(n / 2);
+    const remaining = maxDist - totalDist;
+    const len = Math.min(fullLen, remaining);
+    let dx = 0, dy = 0;
+    const dir = n % 4;
+    if (dir === 1) dy = 1;       // Norte
+    else if (dir === 2) dx = 1;  // Leste
+    else if (dir === 3) dy = -1; // Sul
+    else dx = -1;                // Oeste
+    const x2 = x + dx * len;
+    const y2 = y + dy * len;
+    segs.push({ x1: x, y1: y, x2: x2, y2: y2, len, fullLen, dir });
+    x = x2; y = y2;
+    totalDist += len;
+    n++;
+  }
+  return segs;
+}
+
+function getBounds(segs) {
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+  for (const s of segs) {
+    minX = Math.min(minX, s.x1, s.x2);
+    maxX = Math.max(maxX, s.x1, s.x2);
+    minY = Math.min(minY, s.y1, s.y2);
+    maxY = Math.max(maxY, s.y1, s.y2);
+  }
+  minX = Math.min(minX, 0, VICTIM_X);
+  maxX = Math.max(maxX, 0, VICTIM_X);
+  minY = Math.min(minY, 0, VICTIM_Y);
+  maxY = Math.max(maxY, 0, VICTIM_Y);
+  const margin = 50;
+  return { minX: minX - margin, maxX: maxX + margin, minY: minY - margin, maxY: maxY + margin };
+}
+
+let transform = { scale: 1, offsetX: 0, offsetY: 0 };
+
+function computeTransform(bounds) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const bw = bounds.maxX - bounds.minX;
+  const bh = bounds.maxY - bounds.minY;
+  const scale = Math.min(w / bw, h / bh) * 0.88;
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cy = (bounds.minY + bounds.maxY) / 2;
+  const offsetX = w / 2 - cx * scale;
+  const offsetY = h / 2 + cy * scale;
+  return { scale, offsetX, offsetY };
+}
+
+function toCanvas(x, y) {
+  return {
+    x: transform.offsetX + x * transform.scale,
+    y: transform.offsetY - y * transform.scale
+  };
+}
+
+function drawPoint(x, y, color, baseRadius, label, pulse = false) {
+  const p = toCanvas(x, y);
+  const radius = pulse ? baseRadius + Math.sin(pulsePhase * 3) * 2 : baseRadius;
+
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, Math.max(4, radius), 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, Math.max(6, radius + 4), 0, Math.PI * 2);
+  ctx.fillStyle = color + '33';
+  ctx.fill();
+
+  if (label) {
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(label, p.x, p.y - baseRadius - 8);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawGrid(bounds) {
+  const step = 50;
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.font = '11px "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.textAlign = 'center';
+
+  for (let x = Math.floor(bounds.minX / step) * step; x <= bounds.maxX; x += step) {
+    const p1 = toCanvas(x, bounds.minY);
+    const p2 = toCanvas(x, bounds.maxY);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    const pLabel = toCanvas(x, bounds.minY);
+    ctx.fillText(x, pLabel.x, pLabel.y + 14);
+  }
+  for (let y = Math.floor(bounds.minY / step) * step; y <= bounds.maxY; y += step) {
+    const p1 = toCanvas(bounds.minX, y);
+    const p2 = toCanvas(bounds.maxX, y);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    const pLabel = toCanvas(bounds.minX, y);
+    ctx.textAlign = 'right';
+    ctx.fillText(y, pLabel.x - 6, pLabel.y + 4);
+  }
+}
+
+function renderInitialScene() {
+  transform = computeTransform(IDLE_BOUNDS);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid(IDLE_BOUNDS);
+  drawPoint(0, 0, '#3498db', 6, 'Origem', true);
+  drawPoint(VICTIM_X, VICTIM_Y, '#e74c3c', 6, 'Vítima', true);
+}
+
+function drawScene(progress) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const currentDist = progress * missionTime * SPEED_REAL;
+  let drawnDist = 0;
+  let posX = 0, posY = 0;
+  let reached = false;
+
+  if (segments.length > 0) {
+    const b = getBounds(segments);
+    drawGrid(b);
   }
 
-  // Suavizar rotação
-  state.caminhaoRotation = suavizarRotacao(state.caminhaoRotation, state.caminhaoTargetRotation, 0.12);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
-  // Partículas de fogo
-  const intensidadeFogo = Math.max(0.15, state.areaFogo / AREA_INICIAL);
-  for (let i = 0; i < Math.floor(2 + intensidadeFogo * 5); i++) {
-    if (Math.random() < 0.35) state.partidasFogo.push(criarPartidaFogo());
+  for (let i = 0; i < segments.length; i++) {
+    const s = segments[i];
+    const segStart = drawnDist;
+    const segEnd = drawnDist + s.len;
+    const p1 = toCanvas(s.x1, s.y1);
+
+    if (currentDist >= segEnd - 1e-9) {
+      const p2 = toCanvas(s.x2, s.y2);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = 'rgba(255, 235, 59, 0.75)';
+      ctx.lineWidth = Math.max(1.5, 2.2 * transform.scale);
+      ctx.stroke();
+      drawnDist = segEnd;
+    } else if (currentDist > segStart) {
+      const frac = (currentDist - segStart) / s.len;
+      posX = s.x1 + (s.x2 - s.x1) * frac;
+      posY = s.y1 + (s.y2 - s.y1) * frac;
+      const p2 = toCanvas(posX, posY);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = 'rgba(255, 235, 59, 0.95)';
+      ctx.lineWidth = Math.max(2, 2.8 * transform.scale);
+      ctx.shadowColor = 'rgba(255, 235, 59, 0.4)';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      reached = true;
+      drawnDist = currentDist;
+      break;
+    } else {
+      break;
+    }
   }
-  for (let i = state.partidasFogo.length - 1; i >= 0; i--) {
-    const p = state.partidasFogo[i];
-    p.x += p.vx; p.y += p.vy;
-    p.life -= p.decay;
-    p.size *= 0.98;
-    if (p.life <= 0) state.partidasFogo.splice(i, 1);
+
+  if (!reached && segments.length > 0 && progress >= 1) {
+    const last = segments[segments.length - 1];
+    posX = last.x2;
+    posY = last.y2;
+    reached = true;
   }
 
-  // Partículas de água
-  for (let i = state.partidasAgua.length - 1; i >= 0; i--) {
-    const p = state.partidasAgua[i];
-    p.x += p.vx; p.y += p.vy; p.vy += 0.12;
-    p.life -= p.decay;
-    if (p.life <= 0) state.partidasAgua.splice(i, 1);
+  drawPoint(0, 0, '#3498db', 6, 'Origem', true);
+  drawPoint(VICTIM_X, VICTIM_Y, '#e74c3c', 6, 'Vítima', true);
+
+  if (reached || progress > 0) {
+    drawPoint(posX, posY, '#00e5ff', 7, null, true);
   }
 
-  // Fim do evento
-  if (progresso >= 1) {
-    state.areaFogo = ev.area1;
-    state.aguaTotal = ev.agua1;
-    state.tempoSimulado = ev.tempo1;
-    state.timerEvento = 0;
-    state.mostrouMensagens.clear();
+  const h = Math.floor(progress * missionTime / 3600);
+  const m = Math.floor((progress * missionTime % 3600) / 60);
+  const s = Math.floor(progress * missionTime % 60);
+  const dist = (progress * missionTime * SPEED_REAL).toFixed(0);
+  document.getElementById('status').innerHTML =
+    `Tempo de missão: <b>${h}h ${m}min ${s}s</b><br>` +
+    `Distância: <b>${dist} m</b> | Posição: <b>(${posX.toFixed(1)}, ${posY.toFixed(1)})</b>`;
+}
 
-    if (state.eventoIdx < EVENTOS.length - 1) {
-      state.eventoIdx++;
-      const prox = EVENTOS[state.eventoIdx];
-      if (prox.tipo === 'ausencia') {
-        mostrarStatus('💧 ÁGUA ESGOTADA — Rumo ao hidrante');
+function setControlsEnabled(enabled) {
+  document.getElementById('hours').disabled = !enabled;
+  document.getElementById('minutes').disabled = !enabled;
+  document.getElementById('btn-start').disabled = !enabled;
+}
+
+function startSimulation() {
+  if (isRunning) return;
+  if (animId) cancelAnimationFrame(animId);
+
+  const h = parseInt(document.getElementById('hours').value) || 0;
+  const m = parseInt(document.getElementById('minutes').value) || 0;
+  missionTime = h * 3600 + m * 60;
+
+  if (missionTime <= 0) {
+    alert('Informe um tempo de missão maior que zero.');
+    return;
+  }
+
+  isRunning = true;
+  setControlsEnabled(false);
+
+  animationDuration = missionTime * SCALE_FACTOR;
+  segments = generateSegments(missionTime);
+  const bounds = getBounds(segments);
+  transform = computeTransform(bounds);
+
+  document.getElementById('message').style.display = 'none';
+  animStart = performance.now();
+
+  function loop(now) {
+    pulsePhase += 0.05;
+    const elapsed = (now - animStart) / 1000;
+    let progress = elapsed / animationDuration;
+    if (progress > 1) progress = 1;
+
+    drawScene(progress);
+
+    if (progress < 1) {
+      animId = requestAnimationFrame(loop);
+    } else {
+      isRunning = false;
+      if (missionTime === TARGET_TIME) {
+        const msg = document.getElementById('message');
+        if (msg) msg.style.display = 'none';
+        if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao();
       } else {
-        mostrarStatus('💦 COMBATE REINICIADO');
+        attempts++;
+        document.getElementById('attempts-display').innerText = 'Tentativas: ' + attempts;
       }
-    } else {
-      state.areaFogo = 0;
-      state.fase = 'vitoria';
-      atualizarHUD();
-      setTimeout(() => { if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao(); }, 1200);
-      return;
     }
   }
-
-  atualizarHUD();
+  animId = requestAnimationFrame(loop);
 }
 
-function atualizarHUD() {
-  const area = state.areaFogo <= 0.05 ? 0 : state.areaFogo;
-  hudArea.textContent = area.toFixed(1).replace('.', ',') + ' m²';
-  hudAgua.textContent = Math.floor(state.aguaTotal).toLocaleString('pt-BR') + ' L';
-  hudTempo.textContent = Math.floor(state.tempoSimulado) + ' min';
-  hudTentativas.textContent = state.tentativasJogador;
-
-  if (area > 200) hudArea.style.color = '#ff4444';
-  else if (area > 50) hudArea.style.color = '#ffaa00';
-  else hudArea.style.color = '#44ff44';
+function resetSimulation() {
+  if (animId) cancelAnimationFrame(animId);
+  animId = null;
+  segments = [];
+  missionTime = 0;
+  isRunning = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('status').innerText = 'Aguardando início da missão...';
+  document.getElementById('message').style.display = 'none';
+  document.getElementById('hours').value = 0;
+  document.getElementById('minutes').value = 0;
+  setControlsEnabled(true);
+  renderInitialScene();
 }
 
-function mostrarStatus(texto) {
-  statusLabel.textContent = texto;
-  statusLabel.classList.add('visible');
-  setTimeout(() => statusLabel.classList.remove('visible'), 2800);
-}
-
-/* ============================================================
-   DESENHO
-   ============================================================ */
-function draw() {
-  CTX.clearRect(0, 0, CANVAS.width, CANVAS.height);
-
-  // Glow do fogo no galpão
-  if (state.areaFogo > 0.5) {
-    const c = toCanvas({ x: GALPAO.x, y: GALPAO.y });
-    const r = toCanvasScale(Math.max(GALPAO.w, GALPAO.h)) * 1.1;
-    const intensidade = Math.min(state.areaFogo / AREA_INICIAL, 1.5);
-    const grad = CTX.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
-    grad.addColorStop(0, `rgba(255, 80, 0, ${0.25 * intensidade})`);
-    grad.addColorStop(1, 'rgba(255, 30, 0, 0)');
-    CTX.fillStyle = grad;
-    CTX.fillRect(c.x - r, c.y - r, r * 3, r * 3);
-  }
-
-  // Partículas fogo
-  for (const p of state.partidasFogo) {
-    CTX.globalAlpha = p.life;
-    const g = CTX.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-    g.addColorStop(0, `hsla(${p.hue}, 100%, 60%, 1)`);
-    g.addColorStop(0.5, `hsla(${p.hue + 15}, 100%, 50%, 0.8)`);
-    g.addColorStop(1, `hsla(${p.hue + 30}, 100%, 40%, 0)`);
-    CTX.fillStyle = g;
-    CTX.beginPath(); CTX.arc(p.x, p.y, p.size, 0, Math.PI * 2); CTX.fill();
-  }
-  CTX.globalAlpha = 1;
-
-  // Partículas água
-  for (const p of state.partidasAgua) {
-    CTX.globalAlpha = p.life * 0.6;
-    CTX.fillStyle = 'rgba(0, 200, 255, 0.7)';
-    CTX.beginPath(); CTX.arc(p.x, p.y, p.size, 0, Math.PI * 2); CTX.fill();
-  }
-  CTX.globalAlpha = 1;
-
-  // Caminhão COM ROTAÇÃO
-  const cp = toCanvas(state.caminhaoPos);
-  const esc = CANVAS.getBoundingClientRect().width / W;
-
-  CTX.save();
-  CTX.translate(cp.x, cp.y);
-  CTX.rotate(state.caminhaoRotation);
-
-  // Sombra
-  CTX.fillStyle = 'rgba(0,0,0,0.35)';
-  CTX.beginPath();
-  CTX.ellipse(2 * esc, 6 * esc, 20 * esc, 9 * esc, 0, 0, Math.PI * 2);
-  CTX.fill();
-
-  // Carroceria principal (frente = negativo Y)
-  CTX.fillStyle = '#cc0000';
-  CTX.fillRect(-18 * esc, -26 * esc, 36 * esc, 50 * esc);
-
-  // Teto / faixa superior
-  CTX.fillStyle = '#990000';
-  CTX.fillRect(-18 * esc, -26 * esc, 36 * esc, 8 * esc);
-
-  // Faixa branca lateral
-  CTX.fillStyle = '#ecf0f1';
-  CTX.fillRect(-18 * esc, -4 * esc, 36 * esc, 2.5 * esc);
-  CTX.fillRect(-18 * esc, 12 * esc, 36 * esc, 2.5 * esc);
-
-  // Cabine (frente)
-  CTX.fillStyle = '#b30000';
-  CTX.fillRect(-16 * esc, -38 * esc, 32 * esc, 14 * esc);
-
-  // Janela da cabine
-  CTX.fillStyle = '#77bbee';
-  CTX.fillRect(-13 * esc, -36 * esc, 26 * esc, 9 * esc);
-
-  // Rodas
-  CTX.fillStyle = '#1a1a1a';
-  CTX.beginPath();
-  CTX.arc(-12 * esc, 20 * esc, 4.5 * esc, 0, Math.PI * 2);
-  CTX.fill();
-  CTX.beginPath();
-  CTX.arc(12 * esc, 20 * esc, 4.5 * esc, 0, Math.PI * 2);
-  CTX.fill();
-  CTX.beginPath();
-  CTX.arc(-12 * esc, -8 * esc, 4.5 * esc, 0, Math.PI * 2);
-  CTX.fill();
-  CTX.beginPath();
-  CTX.arc(12 * esc, -8 * esc, 4.5 * esc, 0, Math.PI * 2);
-  CTX.fill();
-
-  // Sirene
-  CTX.fillStyle = '#3388dd';
-  CTX.beginPath(); CTX.arc(0, -40 * esc, 2.8 * esc, 0, Math.PI * 2); CTX.fill();
-
-  // Luz piscando
-  if (state.fase !== 'espera') {
-    if (Math.sin(performance.now() / 90) > 0) {
-      CTX.fillStyle = 'rgba(80, 160, 255, 0.7)';
-      CTX.beginPath(); CTX.arc(0, -40 * esc, 7.5 * esc, 0, Math.PI * 2); CTX.fill();
-    }
-  }
-
-  // Mangueira enrolada na traseira
-  CTX.strokeStyle = '#f1c40f';
-  CTX.lineWidth = 1.5 * esc;
-  CTX.beginPath();
-  CTX.arc(0, 18 * esc, 5 * esc, 0, Math.PI * 2);
-  CTX.stroke();
-  CTX.beginPath();
-  CTX.arc(0, 18 * esc, 3 * esc, 0, Math.PI * 2);
-  CTX.stroke();
-
-  // Jato de água (sai da frente do caminhão — direção -Y local)
-  if (state.fase === 'simulando') {
-    const ev = EVENTOS[state.eventoIdx];
-    if (ev && ev.tipo === 'combate') {
-      CTX.strokeStyle = 'rgba(0, 200, 255, 0.45)';
-      CTX.lineWidth = 3.5 * esc;
-      CTX.lineCap = 'round';
-      CTX.beginPath();
-      CTX.moveTo(0, -38 * esc);
-      CTX.lineTo(0, -90 * esc);
-      CTX.stroke();
-
-      CTX.strokeStyle = 'rgba(140, 225, 255, 0.28)';
-      CTX.lineWidth = 7 * esc;
-      CTX.beginPath();
-      CTX.moveTo(0, -38 * esc);
-      CTX.lineTo(0, -70 * esc);
-      CTX.stroke();
-    }
-  }
-
-  CTX.restore();
-
-  // Hidrante destaque durante abastecimento
-  const hp = toCanvas(HIDRANTE);
-  if (state.fase === 'simulando') {
-    const ev = EVENTOS[state.eventoIdx];
-    if (ev && ev.tipo === 'ausencia') {
-      const pulse = 0.4 + 0.6 * Math.sin(performance.now() / 180);
-      CTX.strokeStyle = `rgba(0, 255, 120, ${pulse})`;
-      CTX.lineWidth = 2 * esc;
-      CTX.beginPath(); CTX.arc(hp.x, hp.y, 14 * esc, 0, Math.PI * 2); CTX.stroke();
-    }
-  }
-
-  // Label sobre caminhão
-  if (state.fase === 'simulando') {
-    const ev = EVENTOS[state.eventoIdx];
-    if (ev) {
-      let label = '';
-      if (ev.tipo === 'combate') label = '💦 COMBATENDO';
-      else {
-        const prog = state.timerEvento / ev.durAnim;
-        if (prog < 0.4) label = '🚒 INDO AO HIDRANTE';
-        else if (prog < 0.6) label = '⛽ REABASTECENDO';
-        else label = '🚒 VOLTANDO';
-      }
-      CTX.fillStyle = '#fff';
-      CTX.font = `bold ${Math.max(9, 9 * esc)}px Orbitron`;
-      CTX.textAlign = 'center';
-      CTX.fillText(label, cp.x, cp.y - 42 * esc);
-    }
-  }
-}
-
-/* ============================================================
-   LOOP
-   ============================================================ */
-function loop(now) {
-  const dt = Math.min((now - lastTime) / 1000, 0.1);
-  lastTime = now;
-  update(dt);
-  draw();
-  if (state.animando) requestAnimationFrame(loop);
-}
-
-/* ============================================================
-   CONTROLE DE RESPOSTAS
-   ============================================================ */
-function verificarResposta() {
-  const val = parseInt(answerInput.value.trim());
-  if (isNaN(val)) {
-    feedbackMsg.textContent = 'Digite um número válido.';
-    feedbackMsg.className = 'feedback-wrong';
-    return;
-  }
-
-  if (val === RESPOSTA_CORRETA) {
-    feedbackMsg.textContent = '✅ Resposta correta! Iniciando simulação...';
-    feedbackMsg.className = 'feedback-correct';
-    setTimeout(() => {
-      answerPanel.classList.add('hidden');
-      iniciarSimulacao();
-    }, 800);
-  } else {
-    state.tentativasJogador++;
-    attemptsDisplay.textContent = 'Tentativas para acertar: ' + state.tentativasJogador;
-    hudTentativas.textContent = state.tentativasJogador;
-    feedbackMsg.textContent = '❌ Resposta incorreta. Tente novamente!';
-    feedbackMsg.className = 'feedback-wrong';
-    answerInput.value = '';
-    answerInput.focus();
-  }
-}
-
-function iniciarSimulacao() {
-  state.fase = 'simulando';
-  state.eventoIdx = 0;
-  state.timerEvento = 0;
-  state.areaFogo = EVENTOS[0].area0;
-  state.aguaTotal = EVENTOS[0].agua0;
-  state.tempoSimulado = EVENTOS[0].tempo0;
-  state.mostrouMensagens.clear();
-  mostrarStatus('🚒 INICIANDO COMBATE!');
-}
-
-btnResponder.addEventListener('click', verificarResposta);
-answerInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') verificarResposta();
-});
-
-requestAnimationFrame(loop);
+applyResponsiveLayout();
+// Duplo agendamento intencional: o iframe pode sofrer um segundo reflow logo após
+// ser anexado ao jogo principal. Em ambos os casos o estado inicial é restaurado.
+requestAnimationFrame(renderInitialScene);
+setTimeout(renderInitialScene, 120);
 </script>
 <script>
 // Ponte comum entre cada simulador e o jogo principal.
-// O build substitui 4 pelo índice da missão.
+// O build substitui 3 pelo índice da missão.
 (function () {
-  const MISSION_ID = 4;
+  const MISSION_ID = 3;
   let sucessoJaReportado = false;
+  let tentativasPadrao = 0;
   function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
   function lerTentativas(){
     for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
       const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
     }
-    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):tentativasPadrao;
   }
   function reportarEstado(pedirConclusao=false){
     try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
   }
   window.atualizarTentativasPadrao=function(total){
-    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+    const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
   };
   window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
   window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.controlarTrilhaSimulacaoPadrao=function(action){
+    const acao=String(action||'').toLowerCase();
+    if(!['start','pause','resume','stop'].includes(acao))return;
+    try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
+  };
   window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
   ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
   setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);

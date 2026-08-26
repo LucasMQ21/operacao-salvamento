@@ -3,1035 +3,931 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Missão Cachoeira de Congonhas - Simulador de Varredura</title>
+<title>Simulador: Ciclo de Amortecimento Hídrico</title>
 <style>
-* {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap');
 
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2a3a 0%, #0d1b2a 100%);
-            min-height: 100vh;
-            overflow: auto;
-            padding: 10px 10px 18px;
-            color: #e0e0e0;
-        }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        
-        h1, .subtitle, .info-panel, #gameContainer, .legend, .stats-bar, #controls, #progressContainer, #messageBox {
-            width: min(100%, 1040px);
-            margin-left: auto;
-            margin-right: auto;
-        }
+  body {
+    background: #1a1a2e;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+  }
 
-        #gameContainer {
-            max-height: none;
-        }
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    color: #ff6b35;
+    text-align: center;
+    margin-bottom: 6px;
+    text-shadow: 0 0 10px rgba(255,107,53,0.5);
+  }
 
-        canvas {
-            width: 100%;
-            height: auto;
-            max-height: none;
-        }
+  .subtitle {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 10px;
+    text-align: center;
+  }
 
-        .legend, .stats-bar {
-            justify-content: center;
-        }
+  #game-container {
+    position: relative;
+    width: 900px;
+    max-width: 100%;
+    aspect-ratio: 4/3;
+    border: 3px solid #ff6b35;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 0 30px rgba(255,107,53,0.3);
+  }
 
-        @media (max-width: 900px) {
-            body { padding: 8px 8px 14px; }
-            h1 { font-size: 1.35rem; }
-            .subtitle { margin-bottom: 10px; }
-            #controls { padding: 16px 18px; gap: 14px; }
-        }
+  #bg-image {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 1;
+  }
 
-        h1 {
-            font-size: 1.6rem;
-            color: #00d4ff;
-            text-align: center;
-            margin-bottom: 5px;
-            text-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
-        }
+  canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
 
-        .subtitle {
-            font-size: 0.9rem;
-            color: #88aabb;
-            text-align: center;
-            margin-bottom: 15px;
-        }
+  #hud {
+    position: absolute;
+    top: 8px; left: 8px; right: 8px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+    gap: 6px;
+  }
 
-        #gameContainer {
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            border: 2px solid #2a4a5a;
-            background: #0d1b2a;
-            max-width: 100%;
-            max-height: calc(100vh - 160px);
-        }
+  .hud-panel {
+    background: rgba(0,0,0,0.78);
+    border: 1px solid #ff6b35;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: #fff;
+    text-align: center;
+    min-width: 100px;
+    flex: 1;
+  }
 
-        canvas {
-            display: block;
-            background-size: cover;
-            background-position: center;
-            max-width: 100%;
-            max-height: calc(100vh - 160px);
-            width: auto;
-            height: auto;
-        }
+  .hud-panel .label {
+    font-size: 0.55rem;
+    color: #ff6b35;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
 
-        #controls {
-            margin-top: 20px;
-            background: rgba(20, 35, 50, 0.9);
-            padding: 20px 30px;
-            border-radius: 12px;
-            border: 1px solid #2a4a5a;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            align-items: center;
-            justify-content: center;
-            max-width: 900px;
-            width: 100%;
-        }
+  .hud-panel .value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #00d4ff;
+  }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
+  #answer-panel {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.88);
+    border-top: 2px solid #ff6b35;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 20;
+    transition: opacity 0.5s;
+  }
 
-        .control-group label {
-            font-size: 0.85rem;
-            color: #88aabb;
-            font-weight: 600;
-        }
+  #answer-panel.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
 
-        .control-group input[type="number"] {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid #3a6a8a;
-            background: #0d1b2a;
-            color: #00d4ff;
-            font-size: 1.1rem;
-            width: 140px;
-            text-align: center;
-            outline: none;
-        }
+  #answer-panel p {
+    font-size: 0.8rem;
+    color: #ddd;
+    text-align: center;
+  }
 
-        .control-group input[type="number"]:focus {
-            border-color: #00d4ff;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
-        }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
 
-        .btn {
-            padding: 12px 30px;
-            border-radius: 8px;
-            border: none;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+  #answer-input {
+    padding: 7px 10px;
+    font-size: 1rem;
+    border: 2px solid #ff6b35;
+    border-radius: 6px;
+    background: #222;
+    color: #fff;
+    width: 170px;
+    text-align: center;
+    font-family: 'Orbitron', monospace;
+  }
 
-        #btnTestar {
-            background: linear-gradient(135deg, #ff6600 0%, #cc4400 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
-        }
+  #answer-input:focus {
+    outline: none;
+    border-color: #00d4ff;
+    box-shadow: 0 0 10px rgba(0,212,255,0.3);
+  }
 
-        #btnTestar:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 102, 0, 0.5);
-        }
+  .btn {
+    padding: 7px 18px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Roboto', sans-serif;
+    text-transform: uppercase;
+  }
 
-        #btnTestar:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+  .btn-primary {
+    background: #ff6b35;
+    color: #fff;
+  }
 
-        #btnResetar {
-            background: linear-gradient(135deg, #3a6a8a 0%, #2a4a6a 100%);
-            color: #e0e0e0;
-        }
+  .btn-primary:hover {
+    background: #ff8555;
+    transform: scale(1.05);
+  }
 
-        #btnResetar:hover {
-            background: linear-gradient(135deg, #4a7a9a 0%, #3a5a7a 100%);
-        }
+  #attempts-display {
+    font-size: 0.75rem;
+    color: #ffaa00;
+  }
 
-        #progressContainer {
-            width: 100%;
-            margin-top: 5px;
-            max-width: 900px;
-        }
+  #feedback-msg {
+    font-size: 0.8rem;
+    font-weight: 700;
+    min-height: 18px;
+  }
 
-        #progressLabel {
-            font-size: 0.8rem;
-            color: #88aabb;
-            margin-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-        }
+  .feedback-wrong { color: #ff4444; }
+  .feedback-correct { color: #44ff44; }
 
-        #progressBar {
-            width: 100%;
-            height: 12px;
-            background: #0d1b2a;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #2a4a5a;
-        }
+  #mission-complete {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s;
+  }
 
-        #progressFill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #00d4ff 0%, #00ff88 100%);
-            border-radius: 6px;
-            transition: width 0.3s ease;
-        }
+  #mission-complete.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
 
-        #messageBox {
-            margin-top: 15px;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            text-align: center;
-            min-height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            max-width: 900px;
-            width: 100%;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
+  #mission-complete h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    color: #44ff44;
+    text-shadow: 0 0 20px rgba(68,255,68,0.6);
+    margin-bottom: 8px;
+    animation: pulse 1.5s infinite;
+  }
 
-        #messageBox.show {
-            opacity: 1;
-        }
+  #mission-complete p {
+    font-size: 0.95rem;
+    color: #fff;
+  }
 
-        #messageBox.success {
-            background: rgba(0, 200, 100, 0.15);
-            border: 1px solid #00c864;
-            color: #00ff88;
-        }
+  #mission-complete .resumo {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: #aaa;
+    line-height: 1.6;
+    text-align: center;
+  }
 
-        #messageBox.error {
-            background: rgba(255, 80, 80, 0.15);
-            border: 1px solid #ff5050;
-            color: #ff6666;
-        }
+  #status-label {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    color: #ff6b35;
+    background: rgba(0,0,0,0.75);
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid #ff6b35;
+    z-index: 15;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-align: center;
+  }
 
-        #messageBox.warning {
-            background: rgba(255, 180, 0, 0.15);
-            border: 1px solid #ffaa00;
-            color: #ffcc44;
-        }
+  #status-label.visible { opacity: 1; }
 
-        .legend {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 10px;
-            font-size: 0.8rem;
-            color: #88aabb;
-        }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 3px;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-
-        .info-panel {
-            background: rgba(20, 35, 50, 0.8);
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            max-width: 900px;
-            width: 100%;
-            border: 1px solid #2a4a5a;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        .info-panel strong {
-            color: #ff9933;
-        }
-
-        .info-panel .dim {
-            color: #88aabb;
-        }
-
-        .stats-bar {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-
-        .stat-item {
-            background: rgba(20, 35, 50, 0.8);
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1px solid #2a4a5a;
-        }
-
-        .stat-item .stat-value {
-            color: #ff9933;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-    
-        /* Layout compacto: os dados e tentativas já aparecem no cabeçalho/tela de enunciado. */
-        html, body { width:100%; height:100%; overflow:hidden !important; }
-        body {
-            height:100vh !important;
-            min-height:0 !important;
-            display:flex !important;
-            flex-direction:column;
-            align-items:center;
-            justify-content:flex-start;
-            padding:8px 10px 10px !important;
-        }
-        .info-panel, .stats-bar { display:none !important; }
-        h1 { flex:0 0 auto; margin-bottom:2px; }
-        .subtitle { flex:0 0 auto; margin-bottom:8px !important; }
-        #gameContainer {
-            flex:1 1 auto;
-            min-height:240px;
-            max-height:none !important;
-            width:min(100%, 1040px) !important;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-        }
-        #gameContainer canvas {
-            width:100% !important;
-            height:100% !important;
-            max-width:100% !important;
-            max-height:100% !important;
-            object-fit:contain;
-        }
-        .legend { flex:0 0 auto; margin-top:6px !important; font-size:.74rem; gap:14px; }
-        #controls {
-            flex:0 0 auto;
-            margin-top:8px !important;
-            padding:10px 18px !important;
-            gap:14px !important;
-            min-height:0;
-        }
-        #progressContainer { flex:0 0 auto; margin-top:5px !important; }
-        #messageBox {
-            flex:0 0 auto;
-            margin-top:6px !important;
-            padding:8px 15px !important;
-            min-height:34px !important;
-            font-size:.88rem !important;
-        }
-        @media (max-height:700px) {
-            h1 { font-size:1.25rem !important; }
-            .subtitle { font-size:.78rem !important; }
-            .legend { display:none !important; }
-            #controls { padding:8px 14px !important; }
-            #messageBox { min-height:28px !important; padding:5px 12px !important; }
-        }
+  .fire-warning {
+    position: absolute;
+    top: 22%;
+    left: 78%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    color: #ff4444;
+    background: rgba(0,0,0,0.65);
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 5;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
-<h1>🌊 Missão Cachoeira de Congonhas</h1>
-    <p class="subtitle">Simulador de Varredura Subaquática - Equipe de Mergulho de Resgate</p>
+<h1>CICLO DE AMORTECIMENTO HÍDRICO</h1>
+<p class="subtitle">Combate a Incêndio — Funções Lineares Iteradas & Sistemas Dinâmicos</p>
 
-    <div class="info-panel">
-        <strong>📋 Dados da Missão:</strong><br>
-        <span class="dim">Área de Busca:</span> <strong>80 m × 30 m</strong> (retângulo central de água cristalina)<br>
-        <span class="dim">Faixa de Varredura:</span> <strong>3 m</strong> &nbsp;|&nbsp;
-        <span class="dim">Padrão:</span> <strong>Zigue-zague completo</strong><br>
-        <span class="dim">Objetivo:</span> <strong>Informe o tempo que você acredita ser suficiente para varrer todo o poço.</strong>
+<div id="game-container">
+  <img id="bg-image" src="../assets/embedded/32ae8c2fb789c478745f.webp" alt="Mapa da cidade">
+  <canvas id="sim-canvas"></canvas>
+
+  <div class="fire-warning">🔥 GALPÃO EM CHAMAS</div>
+
+  <div id="hud">
+    <div class="hud-panel">
+      <div class="label">Área do Fogo</div>
+      <div class="value" id="hud-area">400 m²</div>
     </div>
-
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+    <div class="hud-panel">
+      <div class="label">Água Consumida</div>
+      <div class="value" id="hud-agua">0 L</div>
     </div>
-
-    <div class="legend">
-        <div class="legend-item">
-            <div class="legend-color" style="background:#00FFFF22; border:1px solid #00FFFF;"></div>
-            <span>Retângulo de Busca (80×30 m)</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background:#BBBBBB44;"></div>
-            <span>Rastro de Varredura (3 m)</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background:#FF6600; border-radius:50%;"></div>
-            <span>Dupla de Bombeiros</span>
-        </div>
+    <div class="hud-panel">
+      <div class="label">Tempo Simulado</div>
+      <div class="value" id="hud-tempo">0 min</div>
     </div>
-
-    <div class="stats-bar">
-        <div class="stat-item">
-            Tentativas: <span class="stat-value" id="contadorTentativas">0</span>
-        </div>
+    <div class="hud-panel">
+      <div class="label">Tentativas</div>
+      <div class="value" id="hud-tentativas">0</div>
     </div>
+  </div>
 
-    <div id="controls">
-        <div class="control-group">
-            <label for="tempoInput">⏱️ Tempo Informado (min)</label>
-            <input type="number" id="tempoInput" min="1" max="500" value="" placeholder="Informe o tempo">
-        </div>
-        <button class="btn" id="btnTestar">▶ Testar Tempo</button>
-        <button class="btn" id="btnResetar" style="display:none;">↺ Resetar</button>
+  <div id="status-label"></div>
+
+  <div id="answer-panel">
+    <p><strong>Desafio:</strong> Determine o volume total de água (em litros) consumido até a extinção completa do incêndio.</p>
+    <div class="input-row">
+      <input type="number" id="answer-input" placeholder="Volume em litros">
+      <button class="btn btn-primary" id="btn-responder">Responder</button>
     </div>
+    <div id="feedback-msg"></div>
+    <div id="attempts-display">Tentativas para acertar: 0</div>
+  </div>
 
-    <div id="progressContainer">
-        <div id="progressLabel">
-            <span>Progresso da Varredura</span>
-            <span id="progressText">0%</span>
-        </div>
-        <div id="progressBar">
-            <div id="progressFill"></div>
-        </div>
+  <div id="mission-complete">
+    <h2>✅ MISSÃO CONCLUÍDA</h2>
+    <p>Incêndio extinto com sucesso!</p>
+    <div class="resumo">
+      Água total consumida: <strong style="color:#00d4ff;">12.500 litros</strong><br>
+      Tempo total de operação: <strong style="color:#00d4ff;">60 minutos</strong><br>
+      Ciclos completos: 2 cargas + 1 carga parcial
     </div>
-
-    <div id="messageBox"></div>
+  </div>
+</div>
 <script>
-/**
- * ============================================================
- * SIMULADOR CACHOEIRA DE CONGONHAS v3
- * Varredura Subaquática - Padrão Zigue-Zague
- * ============================================================
- */
+/* ============================================================
+   CONFIGURAÇÕES
+   ============================================================ */
+const CANVAS = document.getElementById('sim-canvas');
+const CTX = CANVAS.getContext('2d');
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const tempoInput = document.getElementById('tempoInput');
-const btnTestar = document.getElementById('btnTestar');
-const btnResetar = document.getElementById('btnResetar');
-const progressFill = document.getElementById('progressFill');
-const progressText = document.getElementById('progressText');
-const messageBox = document.getElementById('messageBox');
-const contadorTentativasEl = document.getElementById('contadorTentativas');
+const W = 900, H = 675;
 
-// ============================================================
-// CONSTANTES DO CENÁRIO
-// ============================================================
-const RETANGULO_LARGURA_METROS = 80;
-const RETANGULO_ALTURA_METROS = 30;
-const FAIXA_VARREDURA_METROS = 3;
-const TEMPO_MINIMO_MINUTOS = 80;
+const AREA_INICIAL = 400;
+const TAXA_COMBATE = 11;
+const TAXA_ESPALHAMENTO = 15;
+const VAZAO = 250;
 
-// ============================================================
-// CONFIGURAÇÃO DE CORES
-// ============================================================
-const COR_RETANGULO_BUSCA = '#00FFFF';
-const COR_RETANGULO_BUSCA_ALPHA = 0.13; // ~#00FFFF22
-const COR_RASTRO = '#BBBBBB';
-const COR_RASTRO_ALPHA = 0.27; // ~#BBBBBB44
-const COR_PONTOS = '#FF6600';
-const COR_PONTOS_RAIO = 4;
+// Timeline de eventos pré-calculada (precisão exata)
+const EVENTOS = [
+  { tipo: 'combate',  durReal: 20, durAnim: 5,    area0: 400, area1: 180,  agua0: 0,     agua1: 5000,  tempo0: 0,  tempo1: 20 },
+  { tipo: 'ausencia', durReal: 5,  durAnim: 10,   area0: 180, area1: 255,  agua0: 5000,  agua1: 5000,  tempo0: 20, tempo1: 25 },
+  { tipo: 'combate',  durReal: 20, durAnim: 5,    area0: 255, area1: 35,   agua0: 5000,  agua1: 10000, tempo0: 25, tempo1: 45 },
+  { tipo: 'ausencia', durReal: 5,  durAnim: 10,   area0: 35,  area1: 110,  agua0: 10000, agua1: 10000, tempo0: 45, tempo1: 50 },
+  { tipo: 'combate',  durReal: 10, durAnim: 2.5,  area0: 110, area1: 0,    agua0: 10000, agua1: 12500, tempo0: 50, tempo1: 60 },
+];
 
-// ============================================================
-// IMAGEM DE FUNDO - CARREGADA DIRETAMENTE DO URL
-// ============================================================
-const bgImage = new Image();
-let imagemCarregada = false;
-let canvasWidth = 800;
-let canvasHeight = 600;
+const RESPOSTA_CORRETA = 12500;
 
-// URL da imagem fornecida pelo usuário
-bgImage.crossOrigin = "anonymous";
-bgImage.src = "../assets/embedded/e8cfcf95fa654f96944d.webp";
+/* ============================================================
+   POSIÇÕES NA NOVA IMAGEM (ruas bem definidas)
+   ============================================================ */
+const GALPAO = { x: 760, y: 160, w: 250, h: 180 };
+const CAMINHAO_HOME = { x: 885, y: 290 };
+const HIDRANTE = { x: 115, y: 650 };
 
-bgImage.onload = () => {
-    imagemCarregada = true;
-    canvasWidth = bgImage.width;
-    canvasHeight = bgImage.height;
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    definirRetanguloBusca();
-    drawFrame();
+// Caminho realista pelas ruas — mais à direita e mais embaixo
+const CAMINHO_IDA = [
+  { x: 885, y: 290 },
+  { x: 885, y: 650 },
+  { x: 115, y: 650 },
+];
+
+const CAMINHO_VOLTA = [
+  { x: 115, y: 650 },
+  { x: 885, y: 650 },
+  { x: 885, y: 290 },
+];
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+let state = {
+  fase: 'espera',
+  eventoIdx: -1,
+  timerEvento: 0,
+  areaFogo: AREA_INICIAL,
+  aguaTotal: 0,
+  tempoSimulado: 0,
+  tentativasJogador: 0,
+  caminhaoPos: { ...CAMINHAO_HOME },
+  caminhaoRotation: 0,
+  caminhaoTargetRotation: 0,
+  partidasFogo: [],
+  partidasAgua: [],
+  animando: true,
+  mostrouMensagens: new Set(),
 };
 
-bgImage.onerror = () => {
-    imagemCarregada = false;
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    definirRetanguloBusca();
-    drawFrame();
-};
+/* ============================================================
+   DOM
+   ============================================================ */
+const hudArea = document.getElementById('hud-area');
+const hudAgua = document.getElementById('hud-agua');
+const hudTempo = document.getElementById('hud-tempo');
+const hudTentativas = document.getElementById('hud-tentativas');
+const answerPanel = document.getElementById('answer-panel');
+const answerInput = document.getElementById('answer-input');
+const btnResponder = document.getElementById('btn-responder');
+const feedbackMsg = document.getElementById('feedback-msg');
+const attemptsDisplay = document.getElementById('attempts-display');
+const statusLabel = document.getElementById('status-label');
+const missionComplete = document.getElementById('mission-complete');
 
-// ============================================================
-// RETÂNGULO DE BUSCA (posição central sobre a água cristalina)
-// ============================================================
-let rx, ry, rw, rh;
-let escalaPixelsPorMetro;
+/* ============================================================
+   CANVAS
+   ============================================================ */
+function resizeCanvas() {
+  const rect = document.getElementById('game-container').getBoundingClientRect();
+  CANVAS.width = rect.width;
+  CANVAS.height = rect.height;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-function definirRetanguloBusca() {
-    rw = canvasWidth * 0.60;
-    rh = canvasHeight * 0.35;
-    rx = (canvasWidth - rw) / 2;
-    ry = (canvasHeight - rh) / 2;
-    escalaPixelsPorMetro = rw / RETANGULO_LARGURA_METROS;
+function toCanvas(p) {
+  const rect = CANVAS.getBoundingClientRect();
+  return { x: (p.x / W) * rect.width, y: (p.y / H) * rect.height };
 }
 
-// ============================================================
-// ESTADO DA ANIMAÇÃO
-// ============================================================
-let estado = 'parado'; // 'parado', 'entrada', 'varredura', 'saida', 'erro', 'completo'
-let tempoInformado = 0;
-let progresso = 0;
-let pontos = { x: 0, y: 0 };
-let caminho = [];
-let animacaoId = null;
-let tempoInicio = 0;
-let duracaoAnimacaoMs = 0;
-let progressoMaximo = 1.0;
-let piscarPontos = false;
-let piscarContador = 0;
-let tentativas = 0;
+function toCanvasScale(v) {
+  const rect = CANVAS.getBoundingClientRect();
+  return (v / W) * rect.width;
+}
 
-// ============================================================
-// FUNÇÕES DE DESENHO
-// ============================================================
+/* ============================================================
+   FUNÇÕES DE CAMINHO (trajeto + direção)
+   ============================================================ */
+function posicaoNoCaminho(caminho, progresso) {
+  const n = caminho.length;
+  if (n < 2) return { ...caminho[0] };
+  const totalSegments = n - 1;
+  const globalT = progresso * totalSegments;
+  const idx = Math.min(Math.floor(globalT), totalSegments - 1);
+  const localT = globalT - idx;
+  const p0 = caminho[idx];
+  const p1 = caminho[idx + 1];
+  return {
+    x: p0.x + (p1.x - p0.x) * localT,
+    y: p0.y + (p1.y - p0.y) * localT
+  };
+}
 
-function desenharFundo() {
-    if (imagemCarregada && bgImage.complete && bgImage.naturalWidth > 0) {
-        ctx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
-        return;
+function tangenteDoCaminho(caminho, progresso) {
+  const dt = 0.005;
+  const p1 = posicaoNoCaminho(caminho, Math.max(0, progresso - dt));
+  const p2 = posicaoNoCaminho(caminho, Math.min(1, progresso + dt));
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len === 0) return { x: 0, y: 1 };
+  return { x: dx / len, y: dy / len };
+}
+
+function anguloPara(pDestino) {
+  const cp = toCanvas(state.caminhaoPos);
+  const dp = toCanvas(pDestino);
+  return Math.atan2(dp.y - cp.y, dp.x - cp.x) + Math.PI / 2;
+}
+
+function suavizarRotacao(atual, alvo, fator) {
+  let diff = alvo - atual;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  return atual + diff * fator;
+}
+
+/* ============================================================
+   PARTÍCULAS
+   ============================================================ */
+function criarPartidaFogo() {
+  const c = toCanvas({ x: GALPAO.x, y: GALPAO.y });
+  const sw = toCanvasScale(GALPAO.w);
+  const sh = toCanvasScale(GALPAO.h);
+  return {
+    x: c.x + (Math.random() - 0.5) * sw * 0.9,
+    y: c.y + (Math.random() - 0.5) * sh * 0.9,
+    vx: (Math.random() - 0.5) * 0.7,
+    vy: -Math.random() * 1.4 - 0.4,
+    life: 1.0,
+    decay: 0.014 + Math.random() * 0.018,
+    size: 3 + Math.random() * 9,
+    hue: Math.random() * 45
+  };
+}
+
+function criarPartidaAgua() {
+  const cp = toCanvas(state.caminhaoPos);
+  const esc = CANVAS.getBoundingClientRect().width / W;
+
+  // Ponto frontal do caminhão (frente = cima no espaço local)
+  const frontalDist = 30 * esc;
+  const startX = cp.x + Math.cos(state.caminhaoRotation - Math.PI / 2) * frontalDist;
+  const startY = cp.y + Math.sin(state.caminhaoRotation - Math.PI / 2) * frontalDist;
+
+  const gp = toCanvas({ x: GALPAO.x, y: GALPAO.y });
+  const angle = Math.atan2(gp.y - startY, gp.x - startX);
+  const a = angle + (Math.random() - 0.5) * 0.35;
+  const speed = 3.5 + Math.random() * 3;
+  return {
+    x: startX,
+    y: startY,
+    vx: Math.cos(a) * speed,
+    vy: Math.sin(a) * speed + 0.8,
+    life: 1.0,
+    decay: 0.025 + Math.random() * 0.02,
+    size: 2 + Math.random() * 2.5
+  };
+}
+
+/* ============================================================
+   ATUALIZAÇÃO
+   ============================================================ */
+let lastTime = performance.now();
+
+function update(dt) {
+  // === FASE VITÓRIA ===
+  if (state.fase === 'vitoria') {
+    for (let i = state.partidasFogo.length - 1; i >= 0; i--) {
+      const p = state.partidasFogo[i];
+      p.x += p.vx; p.y += p.vy;
+      p.life -= p.decay * 2;
+      p.size *= 0.95;
+      if (p.life <= 0) state.partidasFogo.splice(i, 1);
+    }
+    for (let i = state.partidasAgua.length - 1; i >= 0; i--) {
+      const p = state.partidasAgua[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+      p.life -= p.decay * 2;
+      if (p.life <= 0) state.partidasAgua.splice(i, 1);
+    }
+    return;
+  }
+
+  // === FASE ESPERA ===
+  if (state.fase === 'espera') {
+    const intensidade = Math.max(0.15, state.areaFogo / AREA_INICIAL);
+    for (let i = 0; i < Math.floor(2 + intensidade * 5); i++) {
+      if (Math.random() < 0.35) state.partidasFogo.push(criarPartidaFogo());
+    }
+    for (let i = state.partidasFogo.length - 1; i >= 0; i--) {
+      const p = state.partidasFogo[i];
+      p.x += p.vx; p.y += p.vy;
+      p.life -= p.decay;
+      p.size *= 0.98;
+      if (p.life <= 0) state.partidasFogo.splice(i, 1);
     }
 
-    // Fallback: cena procedural de cachoeira
-    const gradSky = ctx.createLinearGradient(0, 0, 0, canvasHeight * 0.3);
-    gradSky.addColorStop(0, '#1a3a2a');
-    gradSky.addColorStop(1, '#2a5a3a');
-    ctx.fillStyle = gradSky;
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight * 0.3);
+    // Área do fogo MANTIDA FIXA em 400 m² até o jogador responder
+    state.areaFogo = AREA_INICIAL;
 
-    const cx = canvasWidth / 2;
-    const cy = canvasHeight / 2;
-    const raio = Math.min(canvasWidth, canvasHeight) * 0.42;
+    // Caminhão aponta para o galpão
+    state.caminhaoTargetRotation = anguloPara({ x: GALPAO.x, y: GALPAO.y });
+    state.caminhaoRotation = suavizarRotacao(state.caminhaoRotation, state.caminhaoTargetRotation, 0.08);
 
-    ctx.beginPath();
-    ctx.arc(cx, cy, raio, 0, Math.PI * 2);
-    ctx.fillStyle = '#0a2a3a';
-    ctx.fill();
+    atualizarHUD();
+    return;
+  }
 
-    ctx.beginPath();
-    ctx.arc(cx, cy, raio * 0.85, 0, Math.PI * 2);
-    ctx.fillStyle = '#0d3a4a';
-    ctx.fill();
+  // === FASE SIMULANDO ===
+  const ev = EVENTOS[state.eventoIdx];
+  if (!ev) return;
 
-    const gradWater = ctx.createLinearGradient(0, canvasHeight * 0.25, 0, canvasHeight * 0.35);
-    gradWater.addColorStop(0, 'rgba(200, 230, 255, 0.6)');
-    gradWater.addColorStop(1, 'rgba(200, 230, 255, 0.1)');
-    ctx.fillStyle = gradWater;
-    ctx.fillRect(cx - raio * 0.3, canvasHeight * 0.20, raio * 0.6, canvasHeight * 0.15);
+  state.timerEvento += dt;
+  const progresso = Math.min(state.timerEvento / ev.durAnim, 1);
 
-    ctx.fillStyle = '#3a3a3a';
-    for (let i = 0; i < 15; i++) {
-        const px = cx - raio * 0.8 + (i / 14) * raio * 1.6 + (Math.sin(i * 3.7) - 0.5) * 20;
-        const py = cy + raio * 0.7 + Math.abs(Math.cos(i * 2.3)) * 30;
-        const pr = 8 + Math.abs(Math.sin(i * 1.7)) * 12;
-        ctx.beginPath();
-        ctx.ellipse(px, py, pr, pr * 0.7, 0, 0, Math.PI * 2);
-        ctx.fill();
+  // Interpolação dos valores
+  state.areaFogo = ev.area0 + (ev.area1 - ev.area0) * progresso;
+  state.aguaTotal = ev.agua0 + (ev.agua1 - ev.agua0) * progresso;
+  state.tempoSimulado = ev.tempo0 + (ev.tempo1 - ev.tempo0) * progresso;
+
+  // Partículas de água durante combate
+  if (ev.tipo === 'combate') {
+    for (let i = 0; i < 4; i++) {
+      if (Math.random() < 0.5) state.partidasAgua.push(criarPartidaAgua());
     }
-}
+    // Caminhão aponta para o galpão
+    state.caminhaoTargetRotation = anguloPara({ x: GALPAO.x, y: GALPAO.y });
+  }
 
-function desenharRetanguloBusca() {
-    ctx.save();
-    ctx.fillStyle = COR_RETANGULO_BUSCA;
-    ctx.globalAlpha = COR_RETANGULO_BUSCA_ALPHA;
-    ctx.fillRect(rx, ry, rw, rh);
-    ctx.globalAlpha = 1.0;
-    ctx.strokeStyle = COR_RETANGULO_BUSCA;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 4]);
-    ctx.strokeRect(rx, ry, rw, rh);
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = '#00d4ff';
-    ctx.font = 'bold 12px Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('80 m', rx + rw / 2, ry + rh + 18);
-
-    ctx.save();
-    ctx.translate(rx - 18, ry + rh / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText('30 m', 0, 0);
-    ctx.restore();
-
-    ctx.restore();
-}
-
-function desenharRastro() {
-    if (caminho.length === 0) return;
-
-    const faixaLarguraPixels = FAIXA_VARREDURA_METROS * escalaPixelsPorMetro;
-
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    for (let i = 0; i < caminho.length; i++) {
-        const seg = caminho[i];
-        ctx.beginPath();
-        ctx.moveTo(seg.x1, seg.y1);
-        ctx.lineTo(seg.x2, seg.y2);
-        ctx.strokeStyle = COR_RASTRO;
-        ctx.globalAlpha = COR_RASTRO_ALPHA;
-        ctx.lineWidth = faixaLarguraPixels;
-        ctx.stroke();
-    }
-
-    ctx.globalAlpha = 1.0;
-    ctx.restore();
-}
-
-function desenharPontos() {
-    if (estado === 'parado') return;
-
-    const raio = COR_PONTOS_RAIO;
-
-    let alpha = 1.0;
-    if (piscarPontos) {
-        alpha = (Math.sin(piscarContador * 0.3) + 1) / 2;
-        if (alpha < 0.3) alpha = 0.3;
-    }
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetX = 1;
-    ctx.shadowOffsetY = 1;
-
-    // Ponto 1 (ligeiramente à esquerda)
-    ctx.beginPath();
-    ctx.arc(pontos.x - 3, pontos.y, raio, 0, Math.PI * 2);
-    ctx.fillStyle = COR_PONTOS;
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Ponto 2 (ligeiramente à direita)
-    ctx.beginPath();
-    ctx.arc(pontos.x + 3, pontos.y, raio, 0, Math.PI * 2);
-    ctx.fillStyle = COR_PONTOS;
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.restore();
-}
-
-function desenharZonaRasaLabel() {
-    ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.font = '11px Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('ZONA RASA', canvasWidth / 2, canvasHeight - 20);
-    ctx.restore();
-}
-
-function drawFrame() {
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    desenharFundo();
-    desenharRetanguloBusca();
-    desenharRastro();
-    desenharPontos();
-    desenharZonaRasaLabel();
-}
-
-// ============================================================
-// CÁLCULO DO CAMINHO ZIGUE-ZAGUE
-// ============================================================
-
-function calcularCaminhoZigueZague() {
-    const numFaixas = Math.ceil(RETANGULO_ALTURA_METROS / FAIXA_VARREDURA_METROS); // 10
-    const alturaFaixa = rh / numFaixas;
-
-    const pontosZigueZague = [];
-
-    let px = rx;
-    let py = ry + rh - alturaFaixa / 2;
-
-    pontosZigueZague.push({ x: px, y: py });
-
-    for (let f = 0; f < numFaixas; f++) {
-        py = ry + rh - (f * alturaFaixa) - alturaFaixa / 2;
-
-        if (f % 2 === 0) {
-            px = rx + rw;
-        } else {
-            px = rx;
-        }
-
-        pontosZigueZague.push({ x: px, y: py });
-
-        if (f < numFaixas - 1) {
-            const pyNext = ry + rh - ((f + 1) * alturaFaixa) - alturaFaixa / 2;
-            pontosZigueZague.push({ x: px, y: pyNext });
-        }
-    }
-
-    return pontosZigueZague;
-}
-
-function calcularDistanciaTotal(pontos) {
-    let dist = 0;
-    for (let i = 1; i < pontos.length; i++) {
-        const dx = pontos[i].x - pontos[i - 1].x;
-        const dy = pontos[i].y - pontos[i - 1].y;
-        dist += Math.sqrt(dx * dx + dy * dy);
-    }
-    return dist;
-}
-
-// ============================================================
-// ANIMAÇÃO
-// ============================================================
-
-let pontosCaminho = [];
-let distanciaTotal = 0;
-let ultimaPosX = 0, ultimaPosY = 0;
-
-function iniciarAnimacao() {
-
-    caminho = [];
-    progresso = 0;
-    piscarPontos = false;
-    progressoMaximo = 1.0;
-    atualizarProgressoUI();
-    esconderMensagem();
-
-    tempoInformado = parseFloat(tempoInput.value);
-    if (isNaN(tempoInformado) || tempoInformado <= 0) {
-        mostrarMensagem('⚠️ Informe um tempo válido em minutos!', 'warning');
-        return;
-    }
-
-    // VALIDAÇÃO: tempo superior ao mínimo
-    if (tempoInformado > TEMPO_MINIMO_MINUTOS) {
-        mostrarMensagem('⏱️ O tempo informado (' + tempoInformado + ' min) é superior ao necessário para completar a varredura. Tente um valor menor!', 'warning');
-        return;
-    }
-
-    if (tempoInformado < TEMPO_MINIMO_MINUTOS) {
-        progressoMaximo = tempoInformado / TEMPO_MINIMO_MINUTOS;
+  // Movimento do caminhão pelas ruas
+  if (ev.tipo === 'ausencia') {
+    let pos, tan;
+    if (progresso < 0.4) {
+      const p = progresso / 0.4;
+      pos = posicaoNoCaminho(CAMINHO_IDA, p);
+      tan = tangenteDoCaminho(CAMINHO_IDA, p);
+      state.caminhaoTargetRotation = Math.atan2(tan.y, tan.x) + Math.PI / 2;
+      if (!state.mostrouMensagens.has('indo')) {
+        mostrarStatus('🚒 INDO AO HIDRANTE');
+        state.mostrouMensagens.add('indo');
+      }
+    } else if (progresso < 0.6) {
+      pos = posicaoNoCaminho(CAMINHO_IDA, 1);
+      // Parado no hidrante — aponta para o hidrante
+      state.caminhaoTargetRotation = anguloPara(HIDRANTE);
+      if (!state.mostrouMensagens.has('abastecendo')) {
+        mostrarStatus('⛽ REABASTECENDO...');
+        state.mostrouMensagens.add('abastecendo');
+      }
     } else {
-        progressoMaximo = 1.0;
+      const p = (progresso - 0.6) / 0.4;
+      pos = posicaoNoCaminho(CAMINHO_VOLTA, p);
+      tan = tangenteDoCaminho(CAMINHO_VOLTA, p);
+      state.caminhaoTargetRotation = Math.atan2(tan.y, tan.x) + Math.PI / 2;
+      if (!state.mostrouMensagens.has('voltando')) {
+        mostrarStatus('🚒 RETORNANDO AO COMBATE');
+        state.mostrouMensagens.add('voltando');
+      }
     }
+    state.caminhaoPos = pos;
+  } else {
+    state.caminhaoPos = { ...CAMINHAO_HOME };
+    state.mostrouMensagens.clear();
+  }
 
-    pontosCaminho = calcularCaminhoZigueZague();
-    distanciaTotal = calcularDistanciaTotal(pontosCaminho);
+  // Suavizar rotação
+  state.caminhaoRotation = suavizarRotacao(state.caminhaoRotation, state.caminhaoTargetRotation, 0.12);
 
-    const inicioX = canvasWidth / 2;
-    const inicioY = ry + rh + 40;
+  // Partículas de fogo
+  const intensidadeFogo = Math.max(0.15, state.areaFogo / AREA_INICIAL);
+  for (let i = 0; i < Math.floor(2 + intensidadeFogo * 5); i++) {
+    if (Math.random() < 0.35) state.partidasFogo.push(criarPartidaFogo());
+  }
+  for (let i = state.partidasFogo.length - 1; i >= 0; i--) {
+    const p = state.partidasFogo[i];
+    p.x += p.vx; p.y += p.vy;
+    p.life -= p.decay;
+    p.size *= 0.98;
+    if (p.life <= 0) state.partidasFogo.splice(i, 1);
+  }
 
-    pontos.x = inicioX;
-    pontos.y = inicioY;
+  // Partículas de água
+  for (let i = state.partidasAgua.length - 1; i >= 0; i--) {
+    const p = state.partidasAgua[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+    p.life -= p.decay;
+    if (p.life <= 0) state.partidasAgua.splice(i, 1);
+  }
 
-    estado = 'entrada';
-    tempoInicio = performance.now();
+  // Fim do evento
+  if (progresso >= 1) {
+    state.areaFogo = ev.area1;
+    state.aguaTotal = ev.agua1;
+    state.tempoSimulado = ev.tempo1;
+    state.timerEvento = 0;
+    state.mostrouMensagens.clear();
 
-    const duracaoBaseMs = 6000;
-    duracaoAnimacaoMs = duracaoBaseMs * (tempoInformado / TEMPO_MINIMO_MINUTOS);
-    if (duracaoAnimacaoMs < 2000) duracaoAnimacaoMs = 2000;
-    if (duracaoAnimacaoMs > 12000) duracaoAnimacaoMs = 12000;
-
-    if (tempoInformado >= TEMPO_MINIMO_MINUTOS) {
-        duracaoAnimacaoMs = duracaoBaseMs;
+    if (state.eventoIdx < EVENTOS.length - 1) {
+      state.eventoIdx++;
+      const prox = EVENTOS[state.eventoIdx];
+      if (prox.tipo === 'ausencia') {
+        mostrarStatus('💧 ÁGUA ESGOTADA — Rumo ao hidrante');
+      } else {
+        mostrarStatus('💦 COMBATE REINICIADO');
+      }
+    } else {
+      state.areaFogo = 0;
+      state.fase = 'vitoria';
+      atualizarHUD();
+      setTimeout(() => { if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao(); }, 1200);
+      return;
     }
+  }
 
-    btnTestar.disabled = true;
-    tempoInput.disabled = true;
-
-    animacaoId = requestAnimationFrame(loopAnimacao);
+  atualizarHUD();
 }
 
-function loopAnimacao(timestamp) {
-    if (estado === 'parado') return;
+function atualizarHUD() {
+  const area = state.areaFogo <= 0.05 ? 0 : state.areaFogo;
+  hudArea.textContent = area.toFixed(1).replace('.', ',') + ' m²';
+  hudAgua.textContent = Math.floor(state.aguaTotal).toLocaleString('pt-BR') + ' L';
+  hudTempo.textContent = Math.floor(state.tempoSimulado) + ' min';
+  hudTentativas.textContent = state.tentativasJogador;
 
-    const tempoDecorrido = timestamp - tempoInicio;
+  if (area > 200) hudArea.style.color = '#ff4444';
+  else if (area > 50) hudArea.style.color = '#ffaa00';
+  else hudArea.style.color = '#44ff44';
+}
 
-    if (estado === 'entrada') {
-        const destinoX = pontosCaminho[0].x;
-        const destinoY = ry + rh;
+function mostrarStatus(texto) {
+  statusLabel.textContent = texto;
+  statusLabel.classList.add('visible');
+  setTimeout(() => statusLabel.classList.remove('visible'), 2800);
+}
 
-        const dx = destinoX - (canvasWidth / 2);
-        const dy = destinoY - (ry + rh + 40);
+/* ============================================================
+   DESENHO
+   ============================================================ */
+function draw() {
+  CTX.clearRect(0, 0, CANVAS.width, CANVAS.height);
 
-        const progressoEntrada = Math.min(tempoDecorrido / 500, 1);
-        pontos.x = (canvasWidth / 2) + dx * progressoEntrada;
-        pontos.y = (ry + rh + 40) + dy * progressoEntrada;
+  // Glow do fogo no galpão
+  if (state.areaFogo > 0.5) {
+    const c = toCanvas({ x: GALPAO.x, y: GALPAO.y });
+    const r = toCanvasScale(Math.max(GALPAO.w, GALPAO.h)) * 1.1;
+    const intensidade = Math.min(state.areaFogo / AREA_INICIAL, 1.5);
+    const grad = CTX.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
+    grad.addColorStop(0, `rgba(255, 80, 0, ${0.25 * intensidade})`);
+    grad.addColorStop(1, 'rgba(255, 30, 0, 0)');
+    CTX.fillStyle = grad;
+    CTX.fillRect(c.x - r, c.y - r, r * 3, r * 3);
+  }
 
-        if (progressoEntrada >= 1) {
-            estado = 'varredura';
-            tempoInicio = timestamp;
-            ultimaPosX = pontosCaminho[0].x;
-            ultimaPosY = pontosCaminho[0].y;
-            pontos.x = ultimaPosX;
-            pontos.y = ultimaPosY;
-        }
-    } else if (estado === 'varredura') {
-        const progressoTemporal = Math.min(tempoDecorrido / duracaoAnimacaoMs, progressoMaximo);
-        const distanciaAlvo = progressoTemporal * distanciaTotal;
+  // Partículas fogo
+  for (const p of state.partidasFogo) {
+    CTX.globalAlpha = p.life;
+    const g = CTX.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+    g.addColorStop(0, `hsla(${p.hue}, 100%, 60%, 1)`);
+    g.addColorStop(0.5, `hsla(${p.hue + 15}, 100%, 50%, 0.8)`);
+    g.addColorStop(1, `hsla(${p.hue + 30}, 100%, 40%, 0)`);
+    CTX.fillStyle = g;
+    CTX.beginPath(); CTX.arc(p.x, p.y, p.size, 0, Math.PI * 2); CTX.fill();
+  }
+  CTX.globalAlpha = 1;
 
-        let distAcumulada = 0;
-        let encontrou = false;
-        let posX = pontosCaminho[0].x;
-        let posY = pontosCaminho[0].y;
+  // Partículas água
+  for (const p of state.partidasAgua) {
+    CTX.globalAlpha = p.life * 0.6;
+    CTX.fillStyle = 'rgba(0, 200, 255, 0.7)';
+    CTX.beginPath(); CTX.arc(p.x, p.y, p.size, 0, Math.PI * 2); CTX.fill();
+  }
+  CTX.globalAlpha = 1;
 
-        for (let i = 0; i < pontosCaminho.length - 1; i++) {
-            const p1 = pontosCaminho[i];
-            const p2 = pontosCaminho[i + 1];
-            const dx = p2.x - p1.x;
-            const dy = p2.y - p1.y;
-            const segDist = Math.sqrt(dx * dx + dy * dy);
+  // Caminhão COM ROTAÇÃO
+  const cp = toCanvas(state.caminhaoPos);
+  const esc = CANVAS.getBoundingClientRect().width / W;
 
-            if (distAcumulada + segDist >= distanciaAlvo) {
-                const resto = distanciaAlvo - distAcumulada;
-                const prog = resto / segDist;
-                posX = p1.x + dx * prog;
-                posY = p1.y + dy * prog;
-                encontrou = true;
-                break;
-            }
-            distAcumulada += segDist;
-        }
+  CTX.save();
+  CTX.translate(cp.x, cp.y);
+  CTX.rotate(state.caminhaoRotation);
 
-        if (!encontrou) {
-            const ultimo = pontosCaminho[pontosCaminho.length - 1];
-            posX = ultimo.x;
-            posY = ultimo.y;
-        }
+  // Sombra
+  CTX.fillStyle = 'rgba(0,0,0,0.35)';
+  CTX.beginPath();
+  CTX.ellipse(2 * esc, 6 * esc, 20 * esc, 9 * esc, 0, 0, Math.PI * 2);
+  CTX.fill();
 
-        if (Math.abs(posX - ultimaPosX) > 0.5 || Math.abs(posY - ultimaPosY) > 0.5) {
-            caminho.push({
-                x1: ultimaPosX,
-                y1: ultimaPosY,
-                x2: posX,
-                y2: posY
-            });
-            ultimaPosX = posX;
-            ultimaPosY = posY;
-        }
+  // Carroceria principal (frente = negativo Y)
+  CTX.fillStyle = '#cc0000';
+  CTX.fillRect(-18 * esc, -26 * esc, 36 * esc, 50 * esc);
 
-        pontos.x = posX;
-        pontos.y = posY;
+  // Teto / faixa superior
+  CTX.fillStyle = '#990000';
+  CTX.fillRect(-18 * esc, -26 * esc, 36 * esc, 8 * esc);
 
-        progresso = progressoTemporal;
-        atualizarProgressoUI();
+  // Faixa branca lateral
+  CTX.fillStyle = '#ecf0f1';
+  CTX.fillRect(-18 * esc, -4 * esc, 36 * esc, 2.5 * esc);
+  CTX.fillRect(-18 * esc, 12 * esc, 36 * esc, 2.5 * esc);
 
-        // Tempo insuficiente - para no meio
-        if (tempoInformado < TEMPO_MINIMO_MINUTOS && progressoTemporal >= progressoMaximo) {
-            tentativas++;
-            contadorTentativasEl.textContent = tentativas;
-            estado = 'erro';
-            piscarPontos = true;
-            piscarContador = 0;
-            tempoInicio = timestamp;
-            mostrarMensagem('⏱️ TEMPO INSUFICIENTE! A varredura não foi completada. A metade superior do poço permanece sem varrer! Tente novamente.', 'error');
-            setTimeout(() => fadeOutRastro(), 2000);
-            drawFrame();
-            animacaoId = requestAnimationFrame(loopAnimacao);
-            return;
-        }
+  // Cabine (frente)
+  CTX.fillStyle = '#b30000';
+  CTX.fillRect(-16 * esc, -38 * esc, 32 * esc, 14 * esc);
 
-        // Completou com sucesso
-        if (progressoTemporal >= 1) {
-            estado = 'saida';
-            tempoInicio = timestamp;
-            ultimaPosX = posX;
-            ultimaPosY = posY;
-        }
-    } else if (estado === 'saida') {
-        const destinoX = canvasWidth / 2;
-        const destinoY = ry + rh + 40;
-        const dx = destinoX - ultimaPosX;
-        const dy = destinoY - ultimaPosY;
+  // Janela da cabine
+  CTX.fillStyle = '#77bbee';
+  CTX.fillRect(-13 * esc, -36 * esc, 26 * esc, 9 * esc);
 
-        const progressoSaida = Math.min(tempoDecorrido / 500, 1);
-        pontos.x = ultimaPosX + dx * progressoSaida;
-        pontos.y = ultimaPosY + dy * progressoSaida;
+  // Rodas
+  CTX.fillStyle = '#1a1a1a';
+  CTX.beginPath();
+  CTX.arc(-12 * esc, 20 * esc, 4.5 * esc, 0, Math.PI * 2);
+  CTX.fill();
+  CTX.beginPath();
+  CTX.arc(12 * esc, 20 * esc, 4.5 * esc, 0, Math.PI * 2);
+  CTX.fill();
+  CTX.beginPath();
+  CTX.arc(-12 * esc, -8 * esc, 4.5 * esc, 0, Math.PI * 2);
+  CTX.fill();
+  CTX.beginPath();
+  CTX.arc(12 * esc, -8 * esc, 4.5 * esc, 0, Math.PI * 2);
+  CTX.fill();
 
-        if (caminho.length > 0) {
-            caminho.push({
-                x1: caminho[caminho.length - 1].x2,
-                y1: caminho[caminho.length - 1].y2,
-                x2: pontos.x,
-                y2: pontos.y
-            });
-        }
+  // Sirene
+  CTX.fillStyle = '#3388dd';
+  CTX.beginPath(); CTX.arc(0, -40 * esc, 2.8 * esc, 0, Math.PI * 2); CTX.fill();
 
-        if (progressoSaida >= 1) {
-            estado = 'completo';
-            progresso = 1;
-            atualizarProgressoUI();
-            if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao();
-            btnTestar.disabled = false;
-            tempoInput.disabled = false;
-            drawFrame();
-            setTimeout(() => fadeOutRastro(), 3000);
-            return;
-        }
-    } else if (estado === 'erro') {
-        piscarContador++;
-        if (piscarContador > 120) {
-            estado = 'parado';
-            btnTestar.disabled = false;
-            tempoInput.disabled = false;
-            piscarPontos = false;
-            drawFrame();
-            return;
-        }
-    } else if (estado === 'completo') {
-        drawFrame();
-        return;
+  // Luz piscando
+  if (state.fase !== 'espera') {
+    if (Math.sin(performance.now() / 90) > 0) {
+      CTX.fillStyle = 'rgba(80, 160, 255, 0.7)';
+      CTX.beginPath(); CTX.arc(0, -40 * esc, 7.5 * esc, 0, Math.PI * 2); CTX.fill();
     }
+  }
 
-    drawFrame();
-    animacaoId = requestAnimationFrame(loopAnimacao);
-}
+  // Mangueira enrolada na traseira
+  CTX.strokeStyle = '#f1c40f';
+  CTX.lineWidth = 1.5 * esc;
+  CTX.beginPath();
+  CTX.arc(0, 18 * esc, 5 * esc, 0, Math.PI * 2);
+  CTX.stroke();
+  CTX.beginPath();
+  CTX.arc(0, 18 * esc, 3 * esc, 0, Math.PI * 2);
+  CTX.stroke();
 
-function fadeOutRastro() {
-    let fadeAlpha = COR_RASTRO_ALPHA;
-    function fade() {
-        fadeAlpha -= 0.02;
-        if (fadeAlpha <= 0) {
-            caminho = [];
-            drawFrame();
-            return;
-        }
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        desenharFundo();
-        desenharRetanguloBusca();
+  // Jato de água (sai da frente do caminhão — direção -Y local)
+  if (state.fase === 'simulando') {
+    const ev = EVENTOS[state.eventoIdx];
+    if (ev && ev.tipo === 'combate') {
+      CTX.strokeStyle = 'rgba(0, 200, 255, 0.45)';
+      CTX.lineWidth = 3.5 * esc;
+      CTX.lineCap = 'round';
+      CTX.beginPath();
+      CTX.moveTo(0, -38 * esc);
+      CTX.lineTo(0, -90 * esc);
+      CTX.stroke();
 
-        if (caminho.length > 0) {
-            const faixaLarguraPixels = FAIXA_VARREDURA_METROS * escalaPixelsPorMetro;
-            ctx.save();
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            for (let i = 0; i < caminho.length; i++) {
-                const seg = caminho[i];
-                ctx.beginPath();
-                ctx.moveTo(seg.x1, seg.y1);
-                ctx.lineTo(seg.x2, seg.y2);
-                ctx.strokeStyle = COR_RASTRO;
-                ctx.globalAlpha = fadeAlpha;
-                ctx.lineWidth = faixaLarguraPixels;
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1.0;
-            ctx.restore();
-        }
-
-        desenharPontos();
-        desenharZonaRasaLabel();
-        requestAnimationFrame(fade);
+      CTX.strokeStyle = 'rgba(140, 225, 255, 0.28)';
+      CTX.lineWidth = 7 * esc;
+      CTX.beginPath();
+      CTX.moveTo(0, -38 * esc);
+      CTX.lineTo(0, -70 * esc);
+      CTX.stroke();
     }
-    fade();
-}
+  }
 
-// ============================================================
-// UI HELPERS
-// ============================================================
+  CTX.restore();
 
-function atualizarProgressoUI() {
-    const pct = Math.round(progresso * 100);
-    progressFill.style.width = pct + '%';
-    progressText.textContent = pct + '%';
-}
-
-function mostrarMensagem(texto, tipo) {
-    messageBox.textContent = texto;
-    messageBox.className = 'show ' + tipo;
-}
-
-function esconderMensagem() {
-    messageBox.className = '';
-    setTimeout(() => { messageBox.textContent = ''; }, 500);
-}
-
-function resetar() {
-    if (animacaoId) {
-        cancelAnimationFrame(animacaoId);
-        animacaoId = null;
+  // Hidrante destaque durante abastecimento
+  const hp = toCanvas(HIDRANTE);
+  if (state.fase === 'simulando') {
+    const ev = EVENTOS[state.eventoIdx];
+    if (ev && ev.tipo === 'ausencia') {
+      const pulse = 0.4 + 0.6 * Math.sin(performance.now() / 180);
+      CTX.strokeStyle = `rgba(0, 255, 120, ${pulse})`;
+      CTX.lineWidth = 2 * esc;
+      CTX.beginPath(); CTX.arc(hp.x, hp.y, 14 * esc, 0, Math.PI * 2); CTX.stroke();
     }
-    estado = 'parado';
-    caminho = [];
-    progresso = 0;
-    piscarPontos = false;
-    atualizarProgressoUI();
-    btnTestar.disabled = false;
-    tempoInput.disabled = false;
-    esconderMensagem();
-    drawFrame();
+  }
+
+  // Label sobre caminhão
+  if (state.fase === 'simulando') {
+    const ev = EVENTOS[state.eventoIdx];
+    if (ev) {
+      let label = '';
+      if (ev.tipo === 'combate') label = '💦 COMBATENDO';
+      else {
+        const prog = state.timerEvento / ev.durAnim;
+        if (prog < 0.4) label = '🚒 INDO AO HIDRANTE';
+        else if (prog < 0.6) label = '⛽ REABASTECENDO';
+        else label = '🚒 VOLTANDO';
+      }
+      CTX.fillStyle = '#fff';
+      CTX.font = `bold ${Math.max(9, 9 * esc)}px Orbitron`;
+      CTX.textAlign = 'center';
+      CTX.fillText(label, cp.x, cp.y - 42 * esc);
+    }
+  }
 }
 
-// ============================================================
-// EVENT LISTENERS
-// ============================================================
+/* ============================================================
+   LOOP
+   ============================================================ */
+function loop(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+  update(dt);
+  draw();
+  if (state.animando) requestAnimationFrame(loop);
+}
 
-btnTestar.addEventListener('click', iniciarAnimacao);
-btnResetar.addEventListener('click', resetar);
+/* ============================================================
+   CONTROLE DE RESPOSTAS
+   ============================================================ */
+function verificarResposta() {
+  const val = parseInt(answerInput.value.trim());
+  if (isNaN(val)) {
+    feedbackMsg.textContent = 'Digite um número válido.';
+    feedbackMsg.className = 'feedback-wrong';
+    return;
+  }
 
-tempoInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') iniciarAnimacao();
+  if (val === RESPOSTA_CORRETA) {
+    feedbackMsg.textContent = '✅ Resposta correta! Iniciando simulação...';
+    feedbackMsg.className = 'feedback-correct';
+    setTimeout(() => {
+      answerPanel.classList.add('hidden');
+      iniciarSimulacao();
+    }, 800);
+  } else {
+    state.tentativasJogador++;
+    attemptsDisplay.textContent = 'Tentativas para acertar: ' + state.tentativasJogador;
+    hudTentativas.textContent = state.tentativasJogador;
+    feedbackMsg.textContent = '❌ Resposta incorreta. Tente novamente!';
+    feedbackMsg.className = 'feedback-wrong';
+    answerInput.value = '';
+    answerInput.focus();
+  }
+}
+
+function iniciarSimulacao() {
+  state.fase = 'simulando';
+  state.eventoIdx = 0;
+  state.timerEvento = 0;
+  state.areaFogo = EVENTOS[0].area0;
+  state.aguaTotal = EVENTOS[0].agua0;
+  state.tempoSimulado = EVENTOS[0].tempo0;
+  state.mostrouMensagens.clear();
+  mostrarStatus('🚒 INICIANDO COMBATE!');
+}
+
+btnResponder.addEventListener('click', verificarResposta);
+answerInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') verificarResposta();
 });
 
-// ============================================================
-// INICIALIZAÇÃO
-// ============================================================
-
-canvas.width = canvasWidth;
-canvas.height = canvasHeight;
-definirRetanguloBusca();
-drawFrame();
+requestAnimationFrame(loop);
 </script>
 <script>
 // Ponte comum entre cada simulador e o jogo principal.
-// O build substitui 5 pelo índice da missão.
+// O build substitui 4 pelo índice da missão.
 (function () {
-  const MISSION_ID = 5;
+  const MISSION_ID = 4;
   let sucessoJaReportado = false;
+  let tentativasPadrao = 0;
   function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
   function lerTentativas(){
     for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
       const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
     }
-    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):tentativasPadrao;
   }
   function reportarEstado(pedirConclusao=false){
     try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
   }
   window.atualizarTentativasPadrao=function(total){
-    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+    const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
   };
   window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
   window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.controlarTrilhaSimulacaoPadrao=function(action){
+    const acao=String(action||'').toLowerCase();
+    if(!['start','pause','resume','stop'].includes(acao))return;
+    try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
+  };
   window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
   ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
   setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);

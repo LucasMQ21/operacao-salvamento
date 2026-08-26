@@ -365,21 +365,27 @@ button{font:inherit}
 (function () {
   const MISSION_ID = 0;
   let sucessoJaReportado = false;
+  let tentativasPadrao = 0;
   function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
   function lerTentativas(){
     for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
       const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
     }
-    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):tentativasPadrao;
   }
   function reportarEstado(pedirConclusao=false){
     try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
   }
   window.atualizarTentativasPadrao=function(total){
-    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+    const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
   };
   window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
   window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.controlarTrilhaSimulacaoPadrao=function(action){
+    const acao=String(action||'').toLowerCase();
+    if(!['start','pause','resume','stop'].includes(acao))return;
+    try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
+  };
   window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
   ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
   setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);

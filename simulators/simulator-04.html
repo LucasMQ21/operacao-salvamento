@@ -3,803 +3,818 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>O Enigma da Galeria Subterrânea</title>
+<title>Simulador — Lançamento do Saco de Arremesso</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --bg:#1a2a3a; --panel:#2a3f54; --border:#4a6fa5;
+  --yellow:#ffd166; --green:#06d6a0; --red:#ef476f;
+  --cyan:#118ab2; --orange:#f78c6b; --purple:#9b5de5;
+  --text:#fff; --dim:#a8c0d8;
+}
+html, body{
+  width:100%; height:100%; font-family:'Fredoka',sans-serif;
+  background:#0d1b2a; color:var(--text); overflow:hidden;
+}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+/* ===== GAME SCREEN ===== */
+#gameScreen{
+  display:flex; width:100%; height:100%; flex-direction:column;
+  padding:6px 6px 4px; overflow:hidden; background:#0d1b2a;
+}
+.sim-panel{
+  background:var(--panel); border:2px solid var(--border); border-radius:12px;
+  padding:6px 10px; box-shadow:0 4px 14px rgba(0,0,0,0.25);
+}
+.sim-panel h2{
+  font-size:11px; text-transform:uppercase; color:var(--yellow);
+  letter-spacing:1px; margin-bottom:4px; text-align:center; font-weight:700;
+}
+.sim-top{
+  display:flex; width:100%; max-width:1200px; gap:6px; margin:0 auto 6px; flex-wrap:wrap;
+}
+.sim-mission{ flex:1; min-width:160px; }
+.sim-mission .row{ display:flex; align-items:center; gap:6px; font-size:11px; margin:2px 0; color:var(--dim); }
+.sim-mission .row .val{ color:var(--cyan); font-weight:700; }
+.sim-title{ flex:2; min-width:240px; text-align:center; display:flex; flex-direction:column; justify-content:center; }
+.sim-title h1{ font-size:15px; color:var(--yellow); text-transform:uppercase; margin-bottom:3px; }
+.sim-title p{ font-size:11px; color:var(--dim); line-height:1.3; }
+.sim-title .paused-msg{
+  background:rgba(255,209,102,0.15); border:2px solid var(--yellow); border-radius:8px;
+  padding:4px 10px; margin-top:4px; font-size:11px; color:var(--yellow); font-weight:700; display:none;
+}
+.sim-obj{ flex:1; min-width:160px; }
+.sim-obj p{ font-size:11px; color:var(--dim); line-height:1.4; }
+.sim-obj .acertos{ font-size:13px; color:var(--yellow); font-weight:900; margin-top:4px; }
 
-        body {
-            background: #1a1208;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            font-family: 'Roboto', sans-serif;
-            color: #fff;
-            overflow: hidden;
-        }
+.sim-mid{
+  display:flex; width:100%; max-width:1200px; gap:6px; margin:0 auto 4px; align-items:stretch; flex:1; min-height:0;
+}
+.canvas-area{ flex:3; display:flex; flex-direction:column; min-width:0; }
+.canvas-wrap{
+  flex:1; position:relative; border-radius:14px; overflow:hidden;
+  border:3px solid var(--border); box-shadow:0 6px 20px rgba(0,0,0,0.4); min-height:220px;
+}
+#simCanvas{ display:block; width:100%; height:100%; background:#87CEEB; }
+.pause-data{
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  background:rgba(13,27,42,0.95); border:2px solid var(--yellow); border-radius:12px;
+  padding:10px 18px; display:none; text-align:center; z-index:20; box-shadow:0 6px 20px rgba(0,0,0,0.4);
+}
+.pause-data.show{ display:block; animation:popIn .3s ease; }
+.pause-data h3{ font-size:11px; color:var(--yellow); margin-bottom:6px; }
+.pause-data .grid{ display:grid; grid-template-columns:1fr 1fr; gap:4px 18px; font-size:11px; }
+.pause-data .grid div{ color:var(--dim); }
+.pause-data .grid div span{ color:var(--cyan); font-weight:700; }
+@keyframes popIn{ from{ transform:translateX(-50%) scale(0.8); opacity:0; } to{ transform:translateX(-50%) scale(1); opacity:1; } }
+.rio-badge{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:13px; font-weight:900; color:#fff; text-shadow:1px 1px 4px rgba(0,0,0,0.6);
+  pointer-events:none; z-index:5; background:rgba(0,0,0,0.25); padding:5px 12px; border-radius:16px;
+}
 
-        h1 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 18px;
-            text-align: center;
-            color: #ffcc00;
-            margin: 15px 0 5px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            line-height: 1.6;
-        }
+/* Barra de controles abaixo do canvas */
+.ctrl-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  margin-top:5px; flex-wrap:wrap;
+}
+.ctrl-bar .ctrl-group{ display:flex; align-items:center; gap:5px; }
+.ctrl-bar .inputs-group{
+  display:flex; align-items:center; gap:6px;
+  background:var(--panel); border:2px solid var(--border); border-radius:10px; padding:4px 8px;
+}
+.ctrl-bar .inputs-group label{
+  font-size:11px; color:var(--dim); display:flex; align-items:center; gap:3px; font-weight:600;
+}
+.ctrl-bar .inputs-group input{
+  width:56px; padding:5px 6px; border:2px solid var(--border); border-radius:8px;
+  background:#0f1f30; color:#fff; font-size:14px; font-weight:700; text-align:center;
+  font-family:'Fredoka',sans-serif;
+}
+.ctrl-bar .inputs-group input:focus{ outline:none; border-color:var(--cyan); }
+.ctrl-bar .btn-launch{
+  margin:0; padding:9px 14px; border:none; border-radius:10px;
+  background:linear-gradient(180deg,var(--green),#04b48a); color:#fff;
+  font-family:'Fredoka',sans-serif; font-size:13px; font-weight:700; text-transform:uppercase;
+  cursor:pointer; box-shadow:0 4px 0 #038f6e; transition:all .15s; letter-spacing:1px;
+}
+.ctrl-bar .btn-launch:hover{ transform:translateY(-1px); box-shadow:0 6px 0 #038f6e; }
+.ctrl-bar .btn-launch:active{ transform:translateY(1px); box-shadow:0 2px 0 #038f6e; }
+.ctrl-bar .btn-launch:disabled{ opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+.ctrl-bar .tempo-display{ font-size:11px; color:var(--dim); font-weight:600; margin-left:4px; }
+.ctrl-bar .tempo-display span{ color:var(--cyan); font-weight:700; }
+.ctrl-bar .btn-reiniciar{
+  padding:9px 12px; border:none; border-radius:10px;
+  background:linear-gradient(180deg,var(--orange),#d96a4a); color:#fff;
+  font-family:'Fredoka',sans-serif; font-size:12px; font-weight:700; cursor:pointer;
+  box-shadow:0 4px 0 #b8553a; transition:all .15s;
+}
+.ctrl-bar .btn-reiniciar:hover{ transform:translateY(-1px); }
+.ctrl-bar .btn-reiniciar:active{ transform:translateY(1px); }
 
-        .subtitle {
-            font-size: 13px;
-            color: #ccc;
-            margin-bottom: 10px;
-            text-align: center;
-            max-width: 800px;
-            padding: 0 15px;
-        }
+.btn{
+  padding:8px 10px; border:none; border-radius:8px;
+  font-family:'Fredoka',sans-serif; font-size:11px; font-weight:700;
+  cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:4px;
+}
+.btn-pausar{ background:linear-gradient(180deg,#42a5f5,#1976d2); color:#fff; box-shadow:0 3px 0 #0d47a1; }
+.btn-pausar:hover{ transform:translateY(-1px); }
+.btn-pausar:active{ transform:translateY(1px); }
+.btn-resumir{ background:linear-gradient(180deg,#66bb6a,#388e3c); color:#fff; box-shadow:0 3px 0 #1b5e20; }
+.btn-resumir:hover{ transform:translateY(-1px); }
 
-        #gameContainer {
-            position: relative;
-            width: min(900px, 95vw, calc((100vh - 190px) * 1200 / 1050));
-            aspect-ratio: 1200/1050;
-            border: 4px solid #5a4a2a;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            background: #2a1f0f;
-        }
+.sim-side{ flex:1; min-width:170px; display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+.sim-side .sim-panel{ flex:1; }
+.sim-side h2{ font-size:11px; }
+.sim-side ol{ padding-left:14px; font-size:11px; color:var(--dim); line-height:1.5; }
+.sim-side ol li{ margin-bottom:3px; }
+.dica-box{
+  background:rgba(255,209,102,0.1); border:2px dashed var(--yellow); border-radius:8px;
+  padding:6px; margin-top:4px; font-size:11px; color:var(--dim);
+}
+.dica-box strong{ color:var(--yellow); }
+.dica-box .formula{
+  font-family:'Courier New',monospace; color:var(--cyan); margin-top:4px; font-size:10px;
+  background:rgba(0,0,0,0.2); padding:4px; border-radius:4px;
+}
 
-        #bgImage {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 1;
-        }
+.resultado .res-grid{
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:4px; text-align:center;
+}
+.res-item .icon{ font-size:18px; margin-bottom:2px; }
+.res-item .label{ font-size:9px; color:var(--dim); text-transform:uppercase; }
+.res-item .value{ font-size:13px; font-weight:900; color:var(--cyan); margin-top:2px; }
+.res-item .sub{ font-size:9px; color:#5a7a9a; }
+.resultado .diff-line{
+  margin-top:6px; padding-top:6px; border-top:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center; gap:10px; font-size:12px;
+}
+.resultado .diff-line .diff-val{ font-size:16px; font-weight:900; color:var(--yellow); }
+.resultado .res-msg{
+  margin-top:5px; font-size:11px; font-weight:600; text-align:center;
+  padding:5px; border-radius:6px; line-height:1.3;
+}
+.resultado.win{ border-color:var(--green); background:rgba(6,214,160,0.08); }
+.resultado.win .res-msg{ background:rgba(6,214,160,0.15); color:var(--green); }
+.resultado.fail{ border-color:var(--red); background:rgba(239,71,111,0.08); }
+.resultado.fail .res-msg{ background:rgba(239,71,111,0.15); color:var(--red); }
 
-        #gameCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-        }
+.dica-footer{
+  width:100%; max-width:1200px; text-align:center; font-size:10px; color:#4a6a8a;
+  margin:4px auto 0; padding:4px;
+}
 
-        .ui-panel {
-            width: 900px;
-            max-width: 95vw;
-            background: linear-gradient(180deg, #3a2e1a 0%, #2a1f0f 100%);
-            border: 3px solid #5a4a2a;
-            border-top: none;
-            border-radius: 0 0 12px 12px;
-            padding: 15px 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            justify-content: space-between;
-            z-index: 10;
-        }
+.confetti{ position:fixed; width:10px; height:10px; pointer-events:none; z-index:9999; border-radius:50%; }
+.toast{
+  position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(100px);
+  background:var(--panel); border:3px solid var(--yellow); border-radius:16px;
+  padding:14px 28px; font-size:14px; font-weight:700; color:#fff;
+  box-shadow:0 10px 40px rgba(0,0,0,0.4); z-index:200;
+  transition:transform .4s cubic-bezier(.175,.885,.32,1.275); text-align:center;
+}
+.toast.show{ transform:translateX(-50%) translateY(0); }
 
-        .input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+/* ===== TOPO COMPACTO ===== */
+.sim-top-bar{ width:100%; max-width:1200px; margin:0 auto 6px; text-align:center; flex-shrink:0; }
+.sim-top-bar h1{ font-size:14px; color:var(--yellow); text-transform:uppercase; margin-bottom:4px; }
+.sim-stats{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--dim); }
+.sim-stats b{ color:var(--cyan); }
+.btn-info{
+  background:var(--panel); border:2px solid var(--border); border-radius:8px; color:var(--yellow);
+  font-family:'Fredoka',sans-serif; font-size:11px; font-weight:700; padding:4px 10px; cursor:pointer;
+}
+.btn-info:hover{ border-color:var(--yellow); }
 
-        .input-group label {
-            font-size: 14px;
-            font-weight: bold;
-            color: #ffcc00;
-        }
+/* ===== OVERLAY COMO FUNCIONA ===== */
+.como-funciona-overlay{
+  display:none; position:absolute; inset:0; background:rgba(13,27,42,0.96); z-index:30;
+  padding:16px; overflow-y:auto; border-radius:12px;
+}
+.como-funciona-overlay.show{ display:block; }
+.como-funciona-overlay h2{ font-size:13px; color:var(--yellow); margin-bottom:8px; }
+.como-funciona-overlay ol{ padding-left:16px; font-size:12px; color:var(--dim); line-height:1.6; margin-bottom:10px; }
+.btn-fechar-cf{
+  position:absolute; top:10px; right:10px; background:var(--panel); border:2px solid var(--border);
+  color:#fff; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:14px;
+}
 
-        .input-group input {
-            width: 70px;
-            padding: 8px 12px;
-            font-size: 18px;
-            text-align: center;
-            border: 2px solid #5a4a2a;
-            border-radius: 6px;
-            background: #1a1208;
-            color: #fff;
-            outline: none;
-        }
-
-        .input-group input:focus {
-            border-color: #ffcc00;
-        }
-
-        .btn {
-            padding: 10px 24px;
-            font-size: 14px;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(180deg, #ffaa00, #cc7700);
-            color: #1a1208;
-            box-shadow: 0 4px 0 #885500;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 #885500;
-        }
-
-        .btn-primary:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #885500;
-        }
-
-        .btn-danger {
-            background: linear-gradient(180deg, #ff4444, #aa0000);
-            color: #fff;
-            box-shadow: 0 4px 0 #660000;
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 #660000;
-        }
-
-        .btn-danger:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #660000;
-        }
-
-        .stats {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .stat-item {
-            background: #1a1208;
-            border: 2px solid #5a4a2a;
-            border-radius: 8px;
-            padding: 8px 16px;
-            text-align: center;
-        }
-
-        .stat-item .label {
-            font-size: 10px;
-            color: #aaa;
-            text-transform: uppercase;
-            font-family: 'Press Start 2P', cursive;
-        }
-
-        .stat-item .value {
-            font-size: 20px;
-            font-weight: bold;
-            color: #ffcc00;
-        }
-
-        .path-display {
-            font-size: 14px;
-            color: #ccc;
-            background: #1a1208;
-            border: 2px solid #5a4a2a;
-            border-radius: 8px;
-            padding: 8px 16px;
-            min-width: 200px;
-        }
-
-        .path-display span {
-            color: #ffcc00;
-            font-weight: bold;
-        }
-
-        /* Overlay Messages */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: linear-gradient(180deg, #3a2e1a, #1a1208);
-            border: 4px solid #ffcc00;
-            border-radius: 16px;
-            padding: 40px;
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 0 50px rgba(255,204,0,0.3);
-            animation: popIn 0.4s ease-out;
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            80% { transform: scale(1.05); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .modal-icon {
-            font-size: 60px;
-            margin-bottom: 15px;
-        }
-
-        .modal h2 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .modal p {
-            font-size: 14px;
-            color: #ccc;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
-        .success .modal-icon { color: #00ff66; }
-        .success h2 { color: #00ff66; }
-        .fail .modal-icon { color: #ff4444; }
-        .fail h2 { color: #ff4444; }
-
-        .hint-box {
-            background: rgba(255, 204, 0, 0.1);
-            border: 1px solid rgba(255, 204, 0, 0.3);
-            border-radius: 8px;
-            padding: 10px 15px;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #ffcc00;
-        }
-
-        /* Pulse animation for current position */
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-        }
-
-        /* Responsive */
-        @media (max-width: 600px) {
-            h1 { font-size: 12px; }
-            .subtitle { font-size: 11px; }
-            .ui-panel { padding: 10px; gap: 10px; justify-content: center; }
-            .btn { padding: 8px 16px; font-size: 8px; }
-        }
+/* ===== RESULTADO COMPACTO (faixa horizontal abaixo dos controles) ===== */
+.resultado-compact{ margin-top:5px; padding:8px 10px; }
+.resultado-compact .res-grid{ grid-template-columns:repeat(4,1fr); gap:4px; }
+.resultado-compact .res-item .icon{ font-size:14px; }
+.resultado-compact .res-item .value{ font-size:12px; }
 </style>
 </head>
 <body>
-<h1>🚨 O ENIGMA DA GALERIA SUBTERRÂNEA 🚨</h1>
-    <p class="subtitle">
-        <strong>Missão:</strong> Percorra TODAS as tubulações exatamente UMA VEZ para resgatar o cachorro.<br>
-        Primeiro, escolha o poço de acesso (onde o tripé será posicionado). Depois, digite o próximo poço para se mover.
-    </p>
+<div class="toast" id="toast"></div>
 
-    <div id="gameContainer">
-        <img id="bgImage" src="../assets/embedded/03772770e813b39103cc.webp" alt="Planta da Galeria">
-        <canvas id="gameCanvas"></canvas>
+<!-- ===== GAME ===== -->
+<div id="gameScreen">
+  <div class="sim-top-bar">
+    <h1>🚒 Salvamento Aquático: Lançamento do Saco</h1>
+    <div class="sim-stats">
+      <span>↔️ L: <b>20 m</b></span>
+      <span>🌊 V<sub>rio</sub>: <b>3 m/s</b></span>
+      <span>🎒 V<sub>saco</sub>: <b>5 m/s</b></span>
+      <span>🏆 Acertos: <b id="scoreWin">0</b></span>
+      <button class="btn-info" onclick="toggleComoFunciona()">❓ Como funciona</button>
     </div>
+    <div class="paused-msg" id="pausedMsg">⏸️ PAUSADO — Ajuste os ângulos e clique em "Lançar Saco"!</div>
+  </div>
 
-    <div class="ui-panel">
-        <div class="input-group">
-            <label for="nextNode">Próximo Poço:</label>
-            <input type="number" id="nextNode" min="1" max="7" placeholder="?" onkeypress="handleKey(event)">
-            <button class="btn btn-primary" onclick="makeMove()">Mover</button>
+  <div class="sim-mid">
+    <div class="canvas-area">
+      <div class="canvas-wrap">
+        <canvas id="simCanvas" width="900" height="300"></canvas>
+        <div class="rio-badge" id="rioBadge">V<sub>rio</sub> = 3 m/s ➜</div>
+        <div class="pause-data" id="pauseData">
+          <h3>📊 Dados do Momento do Pause</h3>
+          <div class="grid">
+            <div>Posição X: <span id="pdX">--</span> m</div>
+            <div>Tempo: <span id="pdT">--</span> s</div>
+            <div>Distância d: <span id="pdD">--</span> m</div>
+            <div>θ ideal: <span id="pdTheta">--</span>°</div>
+            <div>α ideal: <span id="pdAlpha">--</span>°</div>
+            <div>Tempo voo: <span id="pdTf">--</span> s</div>
+          </div>
         </div>
-
-        <div class="path-display">
-            Rota: <span id="pathText">---</span>
+        <div class="como-funciona-overlay" id="comoFuncionaOverlay">
+          <button class="btn-fechar-cf" onclick="toggleComoFunciona()">✕</button>
+          <h2>📖 Como Funciona</h2>
+          <ol>
+            <li>A vítima flutua no centro do rio, arrastada pela correnteza.</li>
+            <li>O saco parte da mão do bombeiro com velocidade (V<sub>saco</sub>) e ângulos θ e α.</li>
+            <li>O saco precisa atravessar metade do rio (10m) para chegar ao centro.</li>
+            <li>Acerte os ângulos para que o saco e a vítima se encontrem no centro!</li>
+          </ol>
+          <div class="dica-box">
+            <strong>💡 Dica</strong><br>
+            O saco precisa "cortar" a frente da vítima. O ângulo θ depende da posição dela!
+            <div class="formula">cos(θ) ≈ V<sub>rio</sub> / V<sub>saco</sub> quando X≈0</div>
+          </div>
         </div>
+      </div>
 
-        <div class="stats">
-            <div class="stat-item">
-                <div class="label">Tentativas</div>
-                <div class="value" id="attemptCount">0</div>
-            </div>
-            <div class="stat-item">
-                <div class="label">Tubos</div>
-                <div class="value" id="pipeCount">0/10</div>
-            </div>
+      <div class="ctrl-bar">
+        <div class="ctrl-group">
+          <button class="btn btn-pausar" id="btnPause" onclick="togglePause()">⏸️ PAUSAR</button>
+          <button class="btn btn-resumir" id="btnResume" onclick="resumeGame()">▶️ RESUMIR</button>
+          <div class="tempo-display">⏱️ <span id="timer">0.0</span> s</div>
         </div>
+        <div class="inputs-group">
+          <label>θ:<input type="number" id="inputTheta" step="0.1" placeholder="0">°</label>
+          <label>α:<input type="number" id="inputAlpha" step="0.1" placeholder="45">°</label>
+          <button class="btn-launch" id="btnLaunch" onclick="launchBag()" disabled>🚀 LANÇAR</button>
+        </div>
+        <div class="ctrl-group">
+          <button class="btn-reiniciar" onclick="resetGame()">🔄 REINICIAR</button>
+        </div>
+      </div>
 
-        <button class="btn btn-danger" onclick="resetGame()">🔄 Reiniciar</button>
+      <div class="sim-panel resultado resultado-compact" id="resultPanel">
+        <div class="res-grid">
+          <div class="res-item">
+            <div class="icon">🎯</div>
+            <div class="label">Impacto</div>
+            <div class="value" id="resImpact">--</div>
+          </div>
+          <div class="res-item">
+            <div class="icon">🏊</div>
+            <div class="label">Vítima</div>
+            <div class="value" id="resVictim">--</div>
+          </div>
+          <div class="res-item">
+            <div class="icon">📏</div>
+            <div class="label">Diferença</div>
+            <div class="value" id="resDiff">--</div>
+          </div>
+          <div class="res-item">
+            <div class="icon">🏁</div>
+            <div class="label">Resultado</div>
+            <div class="value" id="resVerdict">---.-- m</div>
+          </div>
+        </div>
+        <div class="res-msg" id="resMsg" style="display:none;"></div>
+      </div>
     </div>
-
-    <!-- Success Overlay -->
-    <div id="successOverlay" class="overlay success">
-        <div class="modal">
-            <div class="modal-icon">🏆</div>
-            <h2>MISSÃO CONCLUÍDA COM SUCESSO!</h2>
-            <p>
-                Parabéns! Você percorreu todas as 10 tubulações sem repetir nenhuma!<br>
-                O cachorro foi resgatado com sucesso. 🐕
-            </p>
-            <div class="hint-box">
-                Você descobriu um <strong>Caminho Euleriano</strong>!<br>
-                Sempre deve começar (ou terminar) em vértices de grau ímpar.
-            </div>
-            <br>
-            <button class="btn btn-primary" onclick="resetGame()" style="margin-top:10px;">Jogar Novamente</button>
-        </div>
-    </div>
-
-    <!-- Fail Overlay -->
-    <div id="failOverlay" class="overlay fail">
-        <div class="modal">
-            <div class="modal-icon">💥</div>
-            <h2>FALHA NA MISSÃO!</h2>
-            <p id="failMessage">
-                Você ficou sem movimentos possíveis antes de percorrer todas as tubulações.
-            </p>
-            <div class="hint-box" id="failHint">
-                Tente outra rota. Lembre-se: cada tubulação só pode ser usada uma vez!
-            </div>
-            <br>
-            <button class="btn btn-danger" onclick="resetGame()" style="margin-top:10px;">Tentar Novamente</button>
-        </div>
-    </div>
+  </div>
+</div>
 <script>
-// ================== CONFIGURAÇÕES DO GRAFO ==================
-    // Coordenadas dos poços na imagem (percentual 0-100)
-    const nodes = {
-        1: { x: 14.5,  y: 20.5, label: '1' },
-        2: { x: 50.0,  y: 17.0, label: '2' },
-        3: { x: 29.5,  y: 50.0, label: '3' },
-        4: { x: 66.0,  y: 43.0, label: '4' },
-        5: { x: 47.0,  y: 80.5, label: '5' },
-        6: { x: 87.5,  y: 47.5, label: '6' },
-        7: { x: 77.0,  y: 81.0, label: '7' }
-    };
+const contadorTentativasBridge=document.createElement('span');
+contadorTentativasBridge.id='contadorTentativasBridge';
+contadorTentativasBridge.style.display='none';
+contadorTentativasBridge.textContent='0';
+document.body.appendChild(contadorTentativasBridge);
+// ============================================================
+// CONFIGURAÇÕES DO SIMULADOR
+// ============================================================
+const CFG={L:20,Vrio:3,Vsaco:5,v0:25,g:10,ppm:14,halfL:10,errTheta:2,errAlpha:3,errDist:2};
+const GS={RUN:'running',PAUSE:'paused',LAUNCH:'launching',END:'finished',RESCUE:'rescuing'};
+let state=GS.RUN;
+let victimX=-40;
+let pausedX=0;
+let bag=null, splash=null, result=null;
+let rescue=null;
+let animId,lastT=0,gameT=0;
+let acertos=0;
+let tentativasErradasBridge=0;
+const cvs=document.getElementById('simCanvas');
+const ctx=cvs.getContext('2d');
+function toggleComoFunciona(){ document.getElementById('comoFuncionaOverlay').classList.toggle('show'); }
 
-    // Arestas (tubulações) - definidas como pares ordenados para identificação única
-    const allEdges = [
-        [1, 2], [1, 3],
-        [2, 3], [2, 4],
-        [3, 4], [3, 5],
-        [4, 5], [4, 6],
-        [5, 7], [6, 7]
-    ];
+// Layout do canvas — bombeiro mais centralizado
+const PERP_X=260;
+const RIVER_Y=70;
+const RIVER_H=130;
+const FIREMAN_GND_Y=RIVER_Y+RIVER_H+50;
+const BAG_START_X=PERP_X;
+const BAG_START_Y=FIREMAN_GND_Y-55;
+const RIVER_CENTER_Y=RIVER_Y+RIVER_H/2;
 
-    // Adjacência
-    const adj = {
-        1: [2, 3],
-        2: [1, 3, 4],
-        3: [1, 2, 4, 5],
-        4: [2, 3, 5, 6],
-        5: [3, 4, 7],
-        6: [4, 7],
-        7: [5, 6]
-    };
+const PPM_Y=(RIVER_H/2)/CFG.halfL;
 
-    // ================== ESTADO DO JOGO ==================
-    let currentNode = null;
-    let usedEdges = new Set();
-    let path = [];
-    let attempts = 0;
-    let gameState = 'selecting'; // 'selecting', 'playing', 'won', 'lost'
-    let animationFrame = null;
-    let firefighterPos = null; // {x, y} animado
-    let targetPos = null;
-    let animProgress = 0;
+const elPauseMsg=document.getElementById('pausedMsg');
+const elPauseData=document.getElementById('pauseData');
+const elBtnLaunch=document.getElementById('btnLaunch');
+const elBtnPause=document.getElementById('btnPause');
+const elTimer=document.getElementById('timer');
+const elResPanel=document.getElementById('resultPanel');
+const elResMsg=document.getElementById('resMsg');
+const elScore=document.getElementById('scoreWin');
+const D2R=d=>d*Math.PI/180;
+const R2D=r=>r*180/Math.PI;
 
-    // ================== CANVAS SETUP ==================
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const container = document.getElementById('gameContainer');
+// ============================================================
+// FÍSICA — Ângulos ideais
+// ============================================================
+function idealTheta(X){
+  const target=CFG.halfL*CFG.Vrio/CFG.Vsaco;
+  let lo=0.1, hi=Math.PI/2-0.01;
+  for(let i=0;i<50;i++){
+    const mid=(lo+hi)/2;
+    const val=CFG.halfL*Math.cos(mid)-X*Math.sin(mid);
+    if(val>target) lo=mid; else hi=mid;
+  }
+  const th=(lo+hi)/2;
+  if(th<=0.05||th>=Math.PI/2-0.05) return null;
+  return R2D(th);
+}
+function flightTime(thDeg){
+  return CFG.halfL/(CFG.Vsaco*Math.sin(D2R(thDeg)));
+}
+function idealAlpha(thDeg){
+  const t=flightTime(thDeg);
+  const Xf=pausedX+CFG.Vrio*t;
+  const d=Math.sqrt(CFG.halfL*CFG.halfL+Xf*Xf);
+  const s2a=d*CFG.g/(CFG.v0*CFG.v0);
+  if(s2a>1||s2a<0) return null;
+  return R2D(Math.asin(s2a)/2);
+}
+function calcDist(thDeg){
+  const t=flightTime(thDeg);
+  const Xf=pausedX+CFG.Vrio*t;
+  return Math.sqrt(CFG.halfL*CFG.halfL+Xf*Xf);
+}
 
-    function resizeCanvas() {
-        const rect = container.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        draw();
+// ============================================================
+// DESENHO
+// ============================================================
+function drawScene(ts){
+  const W=cvs.width,H=cvs.height;
+  // Céu
+  const skyG=ctx.createLinearGradient(0,0,0,RIVER_Y);
+  skyG.addColorStop(0,'#4a90d9'); skyG.addColorStop(1,'#87CEEB');
+  ctx.fillStyle=skyG; ctx.fillRect(0,0,W,RIVER_Y);
+  drawCloud(80,30,24);drawCloud(300,18,20);drawCloud(520,40,28);drawCloud(720,24,22);drawCloud(850,42,18);
+  drawMountains(W,RIVER_Y);
+  drawTree(40,RIVER_Y-8,0.6);drawTree(110,RIVER_Y-4,0.8);drawTree(200,RIVER_Y-10,0.5);
+  drawTree(340,RIVER_Y-6,0.7);drawTree(460,RIVER_Y-12,0.6);drawTree(600,RIVER_Y-8,0.8);drawTree(740,RIVER_Y-4,0.65);
+  const grassG=ctx.createLinearGradient(0,RIVER_Y-16,0,RIVER_Y);
+  grassG.addColorStop(0,'#4a7c23');grassG.addColorStop(1,'#6ab04c');
+  ctx.fillStyle=grassG;ctx.fillRect(0,RIVER_Y-16,W,16);
+  // Rio
+  const waterG=ctx.createLinearGradient(0,RIVER_Y,0,RIVER_Y+RIVER_H);
+  waterG.addColorStop(0,'#2980b9');waterG.addColorStop(0.5,'#3498db');waterG.addColorStop(1,'#1a5276');
+  ctx.fillStyle=waterG;ctx.fillRect(0,RIVER_Y,W,RIVER_H);
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=2;
+  const off=(ts/25)%50;
+  for(let y=RIVER_Y+12;y<RIVER_Y+RIVER_H;y+=22){
+    ctx.beginPath();
+    for(let x=0;x<W;x+=8){
+      const wy=y+Math.sin((x+off*2+y)*0.04)*4;
+      if(x===0)ctx.moveTo(x,wy);else ctx.lineTo(x,wy);
     }
+    ctx.stroke();
+  }
+  ctx.fillStyle='rgba(255,255,255,0.1)';
+  for(let i=0;i<5;i++){
+    const rx=((ts/30+i*200)%W),ry=RIVER_Y+25+i*24;
+    ctx.beginPath();ctx.ellipse(rx,ry,35,5,0,0,Math.PI*2);ctx.fill();
+  }
+  drawRock(170,RIVER_Y+35,15);drawRock(320,RIVER_Y+85,18);drawRock(440,RIVER_Y+48,13);
+  drawRock(580,RIVER_Y+100,16);drawRock(710,RIVER_Y+58,14);
+  // Linha do centro do rio
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.setLineDash([8,8]);ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,RIVER_CENTER_Y);ctx.lineTo(W,RIVER_CENTER_Y);ctx.stroke();ctx.setLineDash([]);
+  // Margem inferior
+  const groundG=ctx.createLinearGradient(0,RIVER_Y+RIVER_H,0,H);
+  groundG.addColorStop(0,'#5d4037');groundG.addColorStop(0.3,'#6d4c41');groundG.addColorStop(1,'#4a7c23');
+  ctx.fillStyle=groundG;ctx.fillRect(0,RIVER_Y+RIVER_H,W,H-(RIVER_Y+RIVER_H));
+  ctx.fillStyle='#795548';
+  for(let x=0;x<W;x+=15){const py=RIVER_Y+RIVER_H+Math.sin(x*0.3)*3;ctx.beginPath();ctx.ellipse(x,py,10,6,0,0,Math.PI*2);ctx.fill();}
+  ctx.fillStyle='#6ab04c';ctx.fillRect(0,RIVER_Y+RIVER_H+10,W,6);
+  for(let x=0;x<W;x+=20)drawBlade(x,RIVER_Y+RIVER_H+8,10);
+  drawTree(320,RIVER_Y+RIVER_H+4,0.7);drawTree(460,RIVER_Y+RIVER_H,0.9);
+  drawTree(640,RIVER_Y+RIVER_H+6,0.6);drawTree(760,RIVER_Y+RIVER_H+2,0.75);
+  // Linha perpendicular
+  ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.setLineDash([10,8]);ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(PERP_X,0);ctx.lineTo(PERP_X,H);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='11px Fredoka';
+  ctx.fillText('Linha Perpendicular (t = 0)',PERP_X+6,RIVER_Y-12);
+  // Bombeiro
+  drawFiremanCartoon(PERP_X-15,FIREMAN_GND_Y);
+  drawRope(PERP_X-55,FIREMAN_GND_Y-5);
 
-    window.addEventListener('resize', resizeCanvas);
+  // === VÍTIMA ===
+  let vicScrX, vicScrY=RIVER_CENTER_Y;
+  if(state===GS.RESCUE && rescue){
+    vicScrX=PERP_X+rescue.x*CFG.ppm;
+    vicScrY=rescue.y;
+    // Corda do bombeiro até a vítima
+    ctx.strokeStyle='#f1c40f';ctx.lineWidth=3;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(PERP_X,BAG_START_Y);ctx.lineTo(vicScrX,vicScrY);ctx.stroke();ctx.setLineDash([]);
+    // Saco junto às mãos da vítima
+    drawBagCartoon(vicScrX+10,vicScrY+2,0);
+  }else{
+    vicScrX=PERP_X+victimX*CFG.ppm;
+  }
+  drawVictimCartoon(vicScrX,vicScrY,ts);
 
-    // ================== DESENHO ==================
-    function getPos(nodeId) {
-        const n = nodes[nodeId];
-        return {
-            x: (n.x / 100) * canvas.width,
-            y: (n.y / 100) * canvas.height
-        };
+  // === SACO ===
+  if(bag){
+    const progress=Math.min(1,bag.y/CFG.halfL);
+    const targetX=PERP_X+bag.targetX*CFG.ppm;
+    const bagCX=BAG_START_X+progress*(targetX-BAG_START_X);
+    const bagCY=BAG_START_Y+progress*(RIVER_CENTER_Y-BAG_START_Y);
+    drawBagCartoon(bagCX,bagCY,bag.time);
+    ctx.strokeStyle='#f1c40f';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(BAG_START_X,BAG_START_Y);ctx.lineTo(bagCX,bagCY);ctx.stroke();
+  }
+  // === SPLASH ===
+  if(splash){
+    ctx.strokeStyle=`rgba(255,255,255,${Math.max(0,1-splash.time/25)})`;ctx.lineWidth=2;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.arc(splash.x,splash.y,splash.r*(1+i*0.4)*(splash.time/15),0,Math.PI*2);
+      ctx.stroke();
     }
-
-    function edgeKey(a, b) {
-        return a < b ? `${a}-${b}` : `${b}-${a}`;
+  }
+  // Marcações de pausa
+  if(state===GS.PAUSE||state===GS.LAUNCH||state===GS.END){
+    const px=PERP_X+pausedX*CFG.ppm;
+    ctx.strokeStyle='#ffc107';ctx.lineWidth=3;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.arc(px,RIVER_CENTER_Y,24,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    const iTh=idealTheta(pausedX);
+    if(iTh!==null){
+      const aimLen=100;
+      const ax=Math.cos(D2R(iTh))*aimLen;
+      const ay=-Math.sin(D2R(iTh))*aimLen;
+      ctx.strokeStyle='rgba(0,230,255,0.5)';ctx.lineWidth=2;ctx.setLineDash([5,5]);
+      ctx.beginPath();ctx.moveTo(BAG_START_X,BAG_START_Y);ctx.lineTo(BAG_START_X+ax,BAG_START_Y+ay);ctx.stroke();ctx.setLineDash([]);
+      ctx.strokeStyle='rgba(0,230,255,0.3)';
+      ctx.beginPath();
+      ctx.arc(BAG_START_X,BAG_START_Y,30,-Math.PI/2,-Math.PI/2+D2R(iTh));
+      ctx.stroke();
     }
+  }
+}
 
-    function drawPipe(a, b, used) {
-        const p1 = getPos(a);
-        const p2 = getPos(b);
+// ---- Desenho de elementos ----
+function drawCloud(x,y,r){
+  ctx.fillStyle='rgba(255,255,255,0.9)';
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+r*0.8,y-4,r*0.7,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x-r*0.6,y+2,r*0.6,0,Math.PI*2);ctx.fill();
+}
+function drawMountains(W,baseY){
+  ctx.fillStyle='#2d5a3d';
+  ctx.beginPath();
+  ctx.moveTo(0,baseY);ctx.lineTo(80,baseY-42);ctx.lineTo(180,baseY-26);ctx.lineTo(280,baseY-58);
+  ctx.lineTo(400,baseY-34);ctx.lineTo(520,baseY-50);ctx.lineTo(650,baseY-30);
+  ctx.lineTo(780,baseY-55);ctx.lineTo(W,baseY-22);ctx.lineTo(W,baseY);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#1e3d2f';
+  ctx.beginPath();
+  ctx.moveTo(0,baseY);ctx.lineTo(120,baseY-30);ctx.lineTo(250,baseY-46);ctx.lineTo(380,baseY-22);
+  ctx.lineTo(500,baseY-38);ctx.lineTo(620,baseY-18);ctx.lineTo(720,baseY-42);
+  ctx.lineTo(W,baseY-26);ctx.lineTo(W,baseY);ctx.closePath();ctx.fill();
+}
+function drawTree(x,y,scale){
+  const s=scale;
+  ctx.fillStyle='#5d4037';ctx.fillRect(x-4*s,y-36*s,8*s,36*s);
+  ctx.fillStyle='#2e7d32';ctx.beginPath();ctx.arc(x,y-50*s,20*s,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#388e3c';
+  ctx.beginPath();ctx.arc(x-7*s,y-44*s,14*s,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+9*s,y-46*s,12*s,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#4caf50';ctx.beginPath();ctx.arc(x,y-60*s,16*s,0,Math.PI*2);ctx.fill();
+}
+function drawBlade(x,y,h){
+  ctx.strokeStyle='#4caf50';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x-3,y-h/2,x-1,y-h);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+4,y-h/2,x+2,y-h*0.9);ctx.stroke();
+}
+function drawRock(x,y,r){
+  ctx.fillStyle='#7f8c8d';ctx.beginPath();ctx.ellipse(x,y,r,r*0.6,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#95a5a6';ctx.beginPath();ctx.ellipse(x-3,y-2,r*0.7,r*0.4,0,0,Math.PI*2);ctx.fill();
+}
+function drawRope(x,y){
+  ctx.strokeStyle='#d4a017';ctx.lineWidth=3;
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(x+i*12,y,10,4,0,0,Math.PI*2);ctx.stroke();}
+  ctx.fillStyle='#c0392b';ctx.beginPath();ctx.arc(x+35,y-2,7,0,Math.PI*2);ctx.fill();
+}
+function drawFiremanCartoon(x,groundY){
+  const y=groundY;
+  ctx.fillStyle='#1a1a2e';ctx.fillRect(x-12,y-12,10,12);ctx.fillRect(x+2,y-12,10,12);
+  ctx.fillStyle='#f1c40f';ctx.fillRect(x-12,y-35,24,23);
+  ctx.fillStyle='rgba(255,255,255,0.6)';ctx.fillRect(x-12,y-30,24,4);ctx.fillRect(x-12,y-20,24,4);
+  ctx.fillStyle='#2c3e50';ctx.fillRect(x-13,y-38,26,5);
+  ctx.fillStyle='#e74c3c';ctx.fillRect(x-14,y-65,28,27);
+  ctx.fillStyle='#f1c40f';ctx.fillRect(x-3,y-58,6,14);ctx.fillRect(x-8,y-53,16,4);
+  ctx.fillStyle='#e74c3c';ctx.fillRect(x-22,y-62,10,22);ctx.fillRect(x+12,y-62,10,22);
+  ctx.fillStyle='#2c3e50';
+  ctx.beginPath();ctx.arc(x-17,y-40,6,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+17,y-40,6,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffccaa';ctx.beginPath();ctx.arc(x,y-72,11,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.arc(x,y-78,12,Math.PI,0);ctx.fill();
+  ctx.fillRect(x-12,y-78,24,6);
+  ctx.fillStyle='#c0392b';ctx.fillRect(x-14,y-76,28,4);
+  ctx.fillStyle='#2c3e50';
+  ctx.beginPath();ctx.arc(x-4,y-74,1.5,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+4,y-74,1.5,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x,y-69,3,0,Math.PI);ctx.stroke();
+  ctx.fillStyle='#e59866';ctx.beginPath();ctx.arc(x,y-72,2,0,Math.PI*2);ctx.fill();
+}
+function drawVictimCartoon(x,y,ts){
+  const wave=Math.sin(ts/120)*5;
+  ctx.fillStyle='#e67e22';ctx.beginPath();ctx.ellipse(x,y+8,20,8,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#d35400';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#ff9800';ctx.fillRect(x-8,y-10,16,16);
+  ctx.fillStyle='#ffccaa';ctx.beginPath();ctx.arc(x,y-18,9,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#5d4037';ctx.beginPath();ctx.arc(x,y-24,9,Math.PI,0);ctx.fill();
+  ctx.fillStyle='#2c3e50';
+  ctx.beginPath();ctx.arc(x-3,y-20,2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+3,y-20,2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#2c3e50';ctx.beginPath();ctx.ellipse(x,y-15,2.5,3.5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.ellipse(x,y-14,1.8,2.2,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#ffccaa';ctx.lineWidth=4;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x-7,y-8);ctx.lineTo(x-16,y-22+wave);ctx.stroke();
+  ctx.fillStyle='#ffccaa';ctx.beginPath();ctx.arc(x-16,y-22+wave,3.5,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.moveTo(x+7,y-6);ctx.lineTo(x+16,y+2);ctx.stroke();
+  ctx.beginPath();ctx.arc(x+16,y+2,2.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  for(let i=0;i<4;i++){
+    const bx=x-22+i*14+Math.sin(ts/200+i)*3;
+    const by=y+14-((ts/25+i*40)%45);
+    ctx.beginPath();ctx.arc(bx,by,2+i*0.6,0,Math.PI*2);ctx.fill();
+  }
+}
+function drawBagCartoon(x,y,t){
+  const sc=Math.max(0.5,1-t*0.006);
+  ctx.fillStyle='#c0392b';ctx.beginPath();ctx.arc(x,y,8*sc,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#922b21';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.arc(x-2,y-2,3*sc,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#f1c40f';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(x,y-8*sc);ctx.lineTo(x+Math.sin(t*0.3)*10,y-18*sc);ctx.stroke();
+}
 
-        ctx.save();
-        if (used) {
-            // Tubulação desativada (escura/transparente)
-            ctx.strokeStyle = 'rgba(60, 50, 30, 0.35)';
-            ctx.lineWidth = 14;
-            ctx.setLineDash([8, 6]);
-        } else {
-            // Tubulação ativa (brilhante)
-            // Glow
-            ctx.shadowColor = 'rgba(100, 200, 255, 0.5)';
-            ctx.shadowBlur = 12;
-            ctx.strokeStyle = 'rgba(160, 210, 240, 0.6)';
-            ctx.lineWidth = 10;
-        }
+// ============================================================
+// CONTROLE DO JOGO
+// ============================================================
+function togglePause(){
+  if(state===GS.RUN){
+    state=GS.PAUSE;
+    pausedX=victimX;
+    elPauseMsg.style.display='block';
+    elPauseData.classList.add('show');
+    elBtnLaunch.disabled=false;
+    elBtnPause.style.opacity='0.5';
+    const iTh=idealTheta(pausedX);
+    const d=iTh!==null?calcDist(iTh):null;
+    const iAl=iTh!==null?idealAlpha(iTh):null;
+    const tf=iTh!==null?flightTime(iTh):null;
+    document.getElementById('pdX').textContent=pausedX.toFixed(1);
+    document.getElementById('pdT').textContent=gameT.toFixed(1);
+    document.getElementById('pdD').textContent=d!==null?d.toFixed(2):'--';
+    document.getElementById('pdTheta').textContent=iTh!==null?iTh.toFixed(1):'--';
+    document.getElementById('pdAlpha').textContent=iAl!==null?iAl.toFixed(1):'--';
+    document.getElementById('pdTf').textContent=tf!==null?tf.toFixed(2):'--';
+  }
+}
+function resumeGame(){
+  if(state===GS.PAUSE){
+    state=GS.RUN;
+    elPauseMsg.style.display='none';
+    elPauseData.classList.remove('show');
+    elBtnLaunch.disabled=true;
+    elBtnPause.style.opacity='1';
+  }
+}
+function launchBag(){
+  if(state!==GS.PAUSE)return;
+  const thI=parseFloat(document.getElementById('inputTheta').value);
+  const alI=parseFloat(document.getElementById('inputAlpha').value);
+  if(isNaN(thI)||isNaN(alI)){ finishLaunch(false,'⚠️ Insira valores válidos para os dois ângulos!');return;}
+  if(thI<=0||thI>=90||alI<=0||alI>=90){ finishLaunch(false,'⚠️ Os ângulos devem estar entre 0° e 90°!');return;}
+  const iTh=idealTheta(pausedX);
+  if(iTh===null){ finishLaunch(false,'❌ Posição muito extrema. Reinicie e tente outro momento!');return;}
+  const iAl=idealAlpha(iTh);
+  if(iAl===null){ finishLaunch(false,'❌ Distância muito grande para este lançamento.');return;}
+  const tf=flightTime(thI);
+  const xVic=pausedX+CFG.Vrio*tf;
+  bag={x:0,y:0,targetX:xVic,th:thI,al:alI,time:0};
+  state=GS.LAUNCH;
+  elBtnLaunch.disabled=true;
+  const xBag=CFG.Vsaco*Math.cos(D2R(thI))*tf;
+  const distErr=Math.abs(xBag-xVic);
+  const dAct=Math.sqrt(CFG.halfL*CFG.halfL+xVic*xVic);
+  const maxR=(CFG.v0*CFG.v0*Math.sin(2*D2R(alI)))/CFG.g;
+  const rangeErr=Math.abs(maxR-dAct);
+  const thErr=Math.abs(thI-iTh);
+  const alErr=Math.abs(alI-iAl);
+  result={thErr,alErr,distErr,rangeErr,iTh,iAl,tf,xBag,xVic,thI,alI,
+    success:thErr<=CFG.errTheta&&alErr<=CFG.errAlpha&&distErr<=CFG.errDist};
+}
+function finishLaunch(precomputed,msg){
+  state=GS.END;
+  elBtnPause.style.opacity='1';
+  if(precomputed===false){
+    tentativasErradasBridge++; contadorTentativasBridge.textContent=tentativasErradasBridge;
+    elResPanel.className='sim-panel resultado fail';
+    document.getElementById('resImpact').textContent='--';
+    document.getElementById('resVictim').textContent='--';
+    document.getElementById('resDiff').textContent='--';
+    document.getElementById('resVerdict').textContent='❌ ERRO';
+    elResMsg.style.display='block';elResMsg.textContent=msg;
+    return;
+  }
+  if(!result)return;
+  if(result.success){
+    acertos++;
+    elScore.textContent=acertos;
+    elResPanel.className='sim-panel resultado win';
+    document.getElementById('resImpact').textContent=result.xBag.toFixed(1)+' m';
+    document.getElementById('resVictim').textContent=result.xVic.toFixed(1)+' m';
+    document.getElementById('resDiff').textContent=result.distErr.toFixed(2)+' m';
+    document.getElementById('resVerdict').textContent='✅ ACERTOU!';
+    elResMsg.style.display='block';
+    elResMsg.textContent=`🎉 SALVOU! θ=${result.thI.toFixed(1)}° (ideal:${result.iTh.toFixed(1)}°) | α=${result.alI.toFixed(1)}° (ideal:${result.iAl.toFixed(1)}°)`;
+    setTimeout(()=>{
+      state=GS.RESCUE;
+      bag=null;
+      rescue={x:result.xVic, y:RIVER_CENTER_Y};
+    },800);
+    confetti();
+  }else{
+    tentativasErradasBridge++; contadorTentativasBridge.textContent=tentativasErradasBridge;
+    let reason='';
+    if(result.thErr>CFG.errTheta)reason+=`θ errado (você:${result.thI.toFixed(1)}°, ideal:${result.iTh.toFixed(1)}°). `;
+    if(result.alErr>CFG.errAlpha)reason+=`α errado (você:${result.alI.toFixed(1)}°, ideal:${result.iAl.toFixed(1)}°). `;
+    if(result.distErr>CFG.errDist&&result.thErr<=CFG.errTheta)reason+=`Caiu longe da vítima. `;
+    elResPanel.className='sim-panel resultado fail';
+    document.getElementById('resImpact').textContent=result.xBag.toFixed(1)+' m';
+    document.getElementById('resVictim').textContent=result.xVic.toFixed(1)+' m';
+    document.getElementById('resDiff').textContent=result.distErr.toFixed(2)+' m';
+    document.getElementById('resVerdict').textContent='❌ ERROU';
+    elResMsg.style.display='block';
+    elResMsg.textContent=`💦 Errou! ${reason}`;
+  }
+}
+function resetGame(){
+  state=GS.RUN; victimX=-40; pausedX=0; bag=null; splash=null; result=null; rescue=null; gameT=0;
+  elBtnLaunch.disabled=true; elBtnPause.style.opacity='1';
+  document.getElementById('inputTheta').value='';
+  document.getElementById('inputAlpha').value='';
+  elPauseMsg.style.display='none';
+  elPauseData.classList.remove('show');
+  elResPanel.className='sim-panel resultado';
+  elResMsg.style.display='none';
+  document.getElementById('resImpact').textContent='--';
+  document.getElementById('resVictim').textContent='--';
+  document.getElementById('resDiff').textContent='--';
+  document.getElementById('resVerdict').textContent='---.-- m';
+  elScore.textContent=acertos;
+}
 
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
+// ============================================================
+// LOOP
+// ============================================================
+function loop(ts){
+  if(!lastT)lastT=ts;
+  const dt=(ts-lastT)/1000;
+  lastT=ts;
 
-        // Linha interna mais fina para destaque
-        if (!used) {
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = 'rgba(200, 230, 255, 0.4)';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-        }
-        ctx.restore();
+  if(state===GS.RUN){
+    victimX+=CFG.Vrio*dt*3;
+    if(victimX>60)victimX=-40;
+    gameT+=dt;
+    elTimer.textContent=gameT.toFixed(1);
+  }
+
+  if(state===GS.LAUNCH&&bag){
+    bag.time++;
+    const speedSim=8;
+    const dtb=(1/60)*speedSim;
+    bag.y+=CFG.Vsaco*Math.sin(D2R(bag.th))*dtb;
+    bag.x+=CFG.Vsaco*Math.cos(D2R(bag.th))*dtb;
+    victimX=pausedX+CFG.Vrio*(bag.y/(CFG.Vsaco*Math.sin(D2R(bag.th))));
+    if(bag.y>=CFG.halfL){
+      bag.y=CFG.halfL;
+      splash={x:PERP_X+bag.targetX*CFG.ppm,y:RIVER_CENTER_Y,time:0,r:8};
+      finishLaunch();
     }
+  }
 
-    function drawNode(id, highlight) {
-        const p = getPos(id);
-        const radius = Math.min(canvas.width, canvas.height) * 0.038;
-
-        ctx.save();
-
-        // Sombra do buraco
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 4;
-
-        // Círculo externo (borda do poço)
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#4a4a4a';
-        ctx.fill();
-        ctx.strokeStyle = '#777';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        // Interior escuro do poço
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, radius * 0.78, 0, Math.PI * 2);
-        ctx.fillStyle = '#1a0f00';
-        ctx.fill();
-
-        // Destaque se for o nó atual
-        if (highlight) {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, radius * 1.15, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255, 50, 50, 0.6)';
-            ctx.lineWidth = 4;
-            ctx.setLineDash([5, 5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        ctx.restore();
-
-        // Número do poço
-        ctx.save();
-        ctx.font = `bold ${Math.floor(radius * 0.9)}px 'Press Start 2P', monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ffcc00';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.strokeText(id, p.x, p.y - radius * 1.55);
-        ctx.fillText(id, p.x, p.y - radius * 1.55);
-        ctx.restore();
+  if(state===GS.RESCUE&&rescue){
+    const vpull=70;
+    const vriver=CFG.Vrio*CFG.ppm*0.4;
+    const bx=PERP_X;
+    const by=BAG_START_Y;
+    const vx=PERP_X+rescue.x*CFG.ppm;
+    const vy=rescue.y;
+    const dx=bx-vx;
+    const dy=by-vy;
+    const len=Math.sqrt(dx*dx+dy*dy);
+    if(vy < RIVER_Y+RIVER_H-8 && len > 10){
+      const nx=dx/len;
+      const ny=dy/len;
+      const newVx=vx+(nx*vpull+vriver)*dt;
+      const newVy=vy+ny*vpull*dt;
+      rescue.x=(newVx-PERP_X)/CFG.ppm;
+      rescue.y=newVy;
+    } else {
+      state=GS.END;
+      if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao();
     }
+  }
 
-    function drawFirefighter() {
-        if (!firefighterPos) return;
+  if(splash){ splash.time++; splash.r+=1.5; if(splash.time>25)splash=null; }
+  drawScene(ts);
+  animId=requestAnimationFrame(loop);
+}
 
-        const radius = Math.min(canvas.width, canvas.height) * 0.025;
+function confetti(){
+  const colors=['#ef476f','#118ab2','#ffd166','#06d6a0','#f78c6b','#9b5de5'];
+  for(let i=0;i<70;i++){
+    const el=document.createElement('div');el.className='confetti';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.left=Math.random()*window.innerWidth+'px';el.style.top='-10px';
+    document.body.appendChild(el);
+    let vy=3+Math.random()*6,vx=(Math.random()-0.5)*6,y=-10,x=parseFloat(el.style.left),rot=Math.random()*360;
+    function drop(){y+=vy;x+=vx;vy+=0.15;rot+=8;el.style.top=y+'px';el.style.left=x+'px';el.style.transform=`rotate(${rot}deg)`;if(y<window.innerHeight+20)requestAnimationFrame(drop);else el.remove();}
+    requestAnimationFrame(drop);
+  }
+}
 
-        ctx.save();
+function showToast(m){
+  const t=document.getElementById('toast');
+  t.textContent=m; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
 
-        // Brilho vermelho ao redor
-        ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
-        ctx.shadowBlur = 20;
-
-        // Corpo do bombeiro (círculo vermelho)
-        ctx.beginPath();
-        ctx.arc(firefighterPos.x, firefighterPos.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff2222';
-        ctx.fill();
-        ctx.strokeStyle = '#ffaaaa';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Capacete (pequeno reflexo)
-        ctx.beginPath();
-        ctx.arc(firefighterPos.x - radius * 0.3, firefighterPos.y - radius * 0.3, radius * 0.35, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.fill();
-
-        // Label "Bombeiro"
-        ctx.font = `bold ${Math.floor(radius * 0.7)}px Roboto, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.strokeText('🚒', firefighterPos.x, firefighterPos.y + radius * 2.2);
-        ctx.fillText('🚒', firefighterPos.x, firefighterPos.y + radius * 2.2);
-
-        ctx.restore();
-    }
-
-    function drawTripod(nodeId) {
-        const p = getPos(nodeId);
-        const size = Math.min(canvas.width, canvas.height) * 0.04;
-
-        ctx.save();
-        ctx.shadowColor = 'rgba(255, 200, 0, 0.6)';
-        ctx.shadowBlur = 15;
-
-        // Tripé simplificado (triângulo amarelo)
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y - size * 1.5);
-        ctx.lineTo(p.x - size * 0.7, p.y - size * 0.3);
-        ctx.lineTo(p.x + size * 0.7, p.y - size * 0.3);
-        ctx.closePath();
-        ctx.fillStyle = '#ffcc00';
-        ctx.fill();
-        ctx.strokeStyle = '#aa8800';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Label
-        ctx.font = `bold ${Math.floor(size * 0.5)}px Roboto, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffcc00';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.strokeText('TRIPÉ', p.x, p.y - size * 2);
-        ctx.fillText('TRIPÉ', p.x, p.y - size * 2);
-
-        ctx.restore();
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Desenha todas as tubulações
-        for (const [a, b] of allEdges) {
-            drawPipe(a, b, usedEdges.has(edgeKey(a, b)));
-        }
-
-        // Desenha os poços
-        for (let id = 1; id <= 7; id++) {
-            drawNode(id, id === currentNode);
-        }
-
-        // Desenha o tripé no primeiro poço
-        if (path.length > 0) {
-            drawTripod(path[0]);
-        }
-
-        // Desenha o bombeiro
-        drawFirefighter();
-    }
-
-    // ================== ANIMAÇÃO ==================
-    function animateMove(fromId, toId) {
-        const from = getPos(fromId);
-        const to = getPos(toId);
-        targetPos = to;
-        animProgress = 0;
-
-        function step() {
-            animProgress += 0.04;
-            if (animProgress >= 1) {
-                firefighterPos = targetPos;
-                draw();
-                animationFrame = null;
-                checkGameState();
-                return;
-            }
-
-            // Easing suave
-            const t = animProgress;
-            const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-            firefighterPos = {
-                x: from.x + (to.x - from.x) * ease,
-                y: from.y + (to.y - from.y) * ease
-            };
-
-            draw();
-            animationFrame = requestAnimationFrame(step);
-        }
-
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        step();
-    }
-
-    // ================== LÓGICA DO JOGO ==================
-    function handleKey(e) {
-        if (e.key === 'Enter') makeMove();
-    }
-
-    function makeMove() {
-        const input = document.getElementById('nextNode');
-        const val = parseInt(input.value);
-
-        if (!val || val < 1 || val > 7) {
-            alert('Digite um número de poço válido (1 a 7).');
-            input.value = '';
-            return;
-        }
-
-        // Fase de seleção do ponto de acesso
-        if (gameState === 'selecting') {
-            currentNode = val;
-            path = [val];
-            firefighterPos = getPos(val);
-            gameState = 'playing';
-            document.querySelector('.input-group label').textContent = 'Próximo Poço:';
-            input.value = '';
-            updateUI();
-            draw();
-            return;
-        }
-
-        // Fase de movimentação
-        if (gameState !== 'playing') return;
-
-        // Verifica se é vizinho
-        if (!adj[currentNode].includes(val)) {
-            alert(`Poço ${val} não está conectado diretamente ao poço ${currentNode}!`);
-            input.value = '';
-            return;
-        }
-
-        // Verifica se a aresta já foi usada
-        const eKey = edgeKey(currentNode, val);
-        if (usedEdges.has(eKey)) {
-            alert('Essa tubulação já foi percorrida! Escolha outra.');
-            input.value = '';
-            return;
-        }
-
-        // Move!
-        usedEdges.add(eKey);
-        path.push(val);
-        const fromNode = currentNode;
-        currentNode = val;
-        input.value = '';
-        updateUI();
-        animateMove(fromNode, val);
-    }
-
-    function checkGameState() {
-        // Verifica vitória
-        if (usedEdges.size === allEdges.length) {
-            gameState = 'won';
-            if (typeof window.reportarSucessoPadrao === 'function') window.reportarSucessoPadrao();
-            return;
-        }
-
-        // Verifica se há movimentos possíveis
-        const neighbors = adj[currentNode];
-        let hasMove = false;
-        for (const n of neighbors) {
-            if (!usedEdges.has(edgeKey(currentNode, n))) {
-                hasMove = true;
-                break;
-            }
-        }
-
-        if (!hasMove) {
-            gameState = 'lost';
-            attempts++;
-            document.getElementById('attemptCount').textContent = attempts;
-            const msg = document.getElementById('failMessage');
-            const hint = document.getElementById('failHint');
-            msg.innerHTML = `Você ficou preso no poço <strong>${currentNode}</strong>!<br>
-                Tubulações percorridas: ${usedEdges.size} de ${allEdges.length}.`;
-            if (path[0] !== 2 && path[0] !== 5) {
-                hint.innerHTML = '<strong>Dica:</strong> Para um Caminho Euleriano, o ponto de partida deve ser um vértice de <em>grau ímpar</em> (poço 2 ou poço 5).';
-            } else {
-                hint.innerHTML = 'Você escolheu o poço de partida correto, mas a rota precisa ser melhor planejada. Tente novamente!';
-            }
-            document.getElementById('failOverlay').classList.add('active');
-        }
-    }
-
-    function updateUI() {
-        document.getElementById('pathText').textContent = path.join(' → ');
-        document.getElementById('pipeCount').textContent = `${usedEdges.size}/${allEdges.length}`;
-
-        if (gameState === 'selecting') {
-            document.querySelector('.input-group label').textContent = 'Colocar Tripé no Poço:';
-        }
-    }
-
-    function resetGame() {
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        currentNode = null;
-        usedEdges.clear();
-        path = [];
-        firefighterPos = null;
-        gameState = 'selecting';
-        animProgress = 0;
-        document.getElementById('attemptCount').textContent = attempts;
-        document.getElementById('successOverlay').classList.remove('active');
-        document.getElementById('failOverlay').classList.remove('active');
-        document.querySelector('.input-group label').textContent = 'Colocar Tripé no Poço:';
-        document.getElementById('nextNode').value = '';
-        document.getElementById('pathText').textContent = '---';
-        document.getElementById('pipeCount').textContent = '0/10';
-
-        draw();
-    }
-
-    // ================== INICIALIZAÇÃO ==================
-    // Aguarda a imagem carregar para redimensionar corretamente
-    const bgImg = document.getElementById('bgImage');
-    bgImg.onload = function() {
-        resizeCanvas();
-    };
-    if (bgImg.complete) {
-        resizeCanvas();
-    }
-
-    // Inicializa UI
-    updateUI();
+// ============================================================
+// INIT
+// ============================================================
+acertos=0;
+resetGame();
+requestAnimationFrame(loop);
 </script>
 <script>
 // Ponte comum entre cada simulador e o jogo principal.
-// O build substitui 2 pelo índice da missão.
+// O build substitui 1 pelo índice da missão.
 (function () {
-  const MISSION_ID = 2;
+  const MISSION_ID = 1;
   let sucessoJaReportado = false;
+  let tentativasPadrao = 0;
   function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
   function lerTentativas(){
     for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
       const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
     }
-    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):0;
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):tentativasPadrao;
   }
   function reportarEstado(pedirConclusao=false){
     try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
   }
   window.atualizarTentativasPadrao=function(total){
-    const valor=Math.max(0,Math.floor(Number(total)||0));const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+    const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
   };
   window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
   window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.controlarTrilhaSimulacaoPadrao=function(action){
+    const acao=String(action||'').toLowerCase();
+    if(!['start','pause','resume','stop'].includes(acao))return;
+    try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
+  };
   window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
   ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
   setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Operação Salvamento — Aceiro Florestal</title>
+<style>
+:root{
+  --orange:#ff6a00; --orange2:#ff8c32; --ink:#111827; --panel:rgba(15,23,42,.93);
+  --muted:#9ca3af; --line:rgba(255,255,255,.28); --ok:#22c55e; --bad:#ef4444;
+}
+*{box-sizing:border-box} html,body{height:100%;margin:0;background:#0b1220;color:white;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+button{font:inherit}.app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 340px;background:radial-gradient(circle at 30% 10%,#1f2937 0,#0b1220 55%)}
+.stage-wrap{position:relative;display:flex;align-items:center;justify-content:center;padding:18px;min-width:0}.stage{position:relative;width:min(calc(100vh - 36px),calc(100vw - 376px));aspect-ratio:1/1;overflow:hidden;border-radius:18px;box-shadow:0 18px 55px rgba(0,0,0,.4);background:#152238;user-select:none;touch-action:none}
+.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.shade{position:absolute;inset:0;background:rgba(4,10,16,.08);pointer-events:none}
+svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.grid line{stroke:rgba(255,255,255,.23);stroke-width:.8;vector-effect:non-scaling-stroke}.grid line.major{stroke:rgba(255,255,255,.4);stroke-width:1.2}.grid-dot{fill:rgba(255,255,255,.65)}
+.fire-core{fill:#ff3d00;filter:drop-shadow(0 0 6px #ff8a00)}.snap-focus{fill:none;stroke:#67e8f9;stroke-width:3;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 8px rgba(103,232,249,.9));pointer-events:none}.fire-front{fill:rgba(255,89,0,.28);stroke:#ff6a00;stroke-width:3;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 8px rgba(255,90,0,.8))}.fire-ring{fill:none;stroke:#ffd166;stroke-width:1.6;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.operational-boundary{fill:none;stroke:rgba(74,222,128,.60);stroke-width:2;stroke-dasharray:10 10;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 4px rgba(34,197,94,.45));pointer-events:none}.plan{fill:none;stroke:#fff;stroke-width:3.2;stroke-dasharray:10 8;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 3px #000)}.plan.invalid{stroke:#ef4444}.invalid-segment{stroke:#ef4444;stroke-width:7;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 7px rgba(239,68,68,.9));pointer-events:none}.plan.done{stroke:#9b6a3c;stroke-width:9;stroke-dasharray:none;filter:drop-shadow(0 1px 2px #000)}.vertex{fill:#fff;stroke:#172033;stroke-width:1.4;vector-effect:non-scaling-stroke}.critical{fill:#ef4444;stroke:white;stroke-width:2.2;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 9px #ef4444)}
+.hud{position:absolute;left:14px;top:14px;display:flex;gap:8px;pointer-events:none}.chip{background:rgba(9,15,26,.85);border:1px solid rgba(255,255,255,.16);padding:8px 10px;border-radius:10px;font-weight:700;font-size:12px;backdrop-filter:blur(8px)}
+.mode-help{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);background:rgba(9,15,26,.88);border:1px solid rgba(255,255,255,.15);padding:9px 14px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;pointer-events:none}.toast{position:absolute;top:14px;right:14px;max-width:300px;padding:10px 12px;border-radius:10px;background:rgba(9,15,26,.9);border:1px solid rgba(255,255,255,.15);font-size:12px;line-height:1.35;opacity:0;transform:translateY(-8px);transition:.22s;pointer-events:none}.toast.show{opacity:1;transform:none}
+.side{background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,13,24,.98));border-left:1px solid rgba(255,255,255,.08);padding:20px 18px;overflow:auto}.brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}.brand-mark{width:42px;height:42px;border:2px solid var(--orange);border-radius:12px;display:grid;place-items:center;font-weight:900;color:var(--orange)}.brand h1{font-size:16px;margin:0;letter-spacing:.02em}.brand p{font-size:11px;color:#aeb7c5;margin:3px 0 0}
+.card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;margin-bottom:11px}.card h2{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:#aab4c4;margin:0 0 10px}.metric{display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:12px}.metric b{font-variant-numeric:tabular-nums}.orange{color:#ff8c32}.green{color:#53d17e}.red{color:#ff6b6b}
+.toolrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.btn{border:1px solid rgba(255,255,255,.14);background:#202b3d;color:white;border-radius:10px;padding:10px 8px;font-weight:800;font-size:12px;cursor:pointer;transition:.16s}.btn:hover{transform:translateY(-1px);background:#2a374d}.btn.active{background:var(--orange);border-color:var(--orange);color:#fff}.btn.primary{width:100%;background:var(--orange);border-color:var(--orange);font-size:13px}.btn.primary:hover{background:#ff7b20}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}.btn.ghost{background:transparent}.btn.danger{border-color:rgba(239,68,68,.5)}
+.progress-shell{height:16px;background:#080d16;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.09)}.progress{height:100%;width:0;background:linear-gradient(90deg,#ff7a18,#ffb347);transition:width .08s linear}.progress.ok{background:linear-gradient(90deg,#16a34a,#4ade80)}.progress.bad{background:linear-gradient(90deg,#dc2626,#fb7185)}.progress-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:7px}.status{font-size:12px;color:#dbe4f0;line-height:1.45;min-height:34px}.small{font-size:10.5px;color:#9aa5b6;line-height:1.4}
+.result{display:none;margin-top:10px;border-radius:12px;padding:11px;font-size:12px;line-height:1.45}.result.show{display:block}.result.ok{background:rgba(34,197,94,.11);border:1px solid rgba(34,197,94,.35)}.result.bad{background:rgba(239,68,68,.11);border:1px solid rgba(239,68,68,.35)}
+@media(max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) 300px}.side{border-left:0;border-top:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;overflow:auto}.brand{grid-column:1/-1;margin:0}.card{margin:0}.stage{width:min(calc(100vw - 20px),calc(100vh - 320px))}.stage-wrap{padding:10px}}
+
+.hidden{display:none!important}.objective{border-color:rgba(255,106,0,.28);background:linear-gradient(145deg,rgba(255,106,0,.10),rgba(255,255,255,.045))}
+.phase-kicker{font-size:10px;font-weight:900;letter-spacing:.15em;color:#ff9a52;margin-bottom:6px}.objective h2{font-size:18px!important;letter-spacing:.01em!important;text-transform:none!important;color:#fff!important;margin-bottom:8px!important}.objective .status{font-size:13px;line-height:1.5}.step-badge{display:inline-flex;align-items:center;gap:7px;border-radius:999px;background:rgba(255,106,0,.14);border:1px solid rgba(255,106,0,.35);color:#ffad70;font-size:10px;font-weight:900;letter-spacing:.1em;padding:6px 9px;margin-bottom:9px}.action-title{font-size:15px;font-weight:900;margin:0 0 6px}.action-text{font-size:12px;line-height:1.45;color:#d5deea;margin-bottom:10px}.plan-summary{border-top:1px solid rgba(255,255,255,.08);margin-top:10px;padding-top:8px}.plan-summary .metric{font-size:13px}.execute-note{font-size:11px;line-height:1.4;color:#f9c79e;background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.18);border-radius:9px;padding:8px;margin:8px 0}.data-toggle{width:100%;margin-top:2px}.conditions{display:none}.conditions.open{display:block}.unlock{display:none;margin-top:10px;border-radius:12px;padding:11px;background:linear-gradient(145deg,rgba(255,106,0,.15),rgba(34,197,94,.07));border:1px solid rgba(255,106,0,.35)}.unlock.show{display:block}.unlock strong{color:#ff9a52}.best-box{display:none;margin-top:8px;padding:9px;border-radius:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);font-size:12px}.best-box.show{display:block}.best-num{font-size:20px;font-weight:900;color:#6ee7a1}.phase2tools{display:none}.phase2tools.show{display:grid}.side{scrollbar-width:thin}.ghost-note{font-size:10px;color:#8f9bad;text-align:center;margin-top:7px}
+
+.radius-methods{display:none;margin-top:8px;gap:8px;grid-template-columns:1fr 1fr}.radius-methods.show{display:grid}.radius-panel{display:none;margin-top:9px;padding:10px;border-radius:11px;background:rgba(103,232,249,.07);border:1px solid rgba(103,232,249,.22)}.radius-panel.show{display:block}.radius-panel label{display:block;font-size:11px;font-weight:900;color:#dff8ff;margin-bottom:6px}.radius-entry{display:grid;grid-template-columns:1fr auto;gap:7px}.radius-entry input{min-width:0;width:100%;border:1px solid rgba(255,255,255,.2);background:#0d1727;color:#fff;border-radius:9px;padding:10px 11px;font:inherit;font-weight:800;outline:none}.radius-entry input:focus{border-color:#67e8f9;box-shadow:0 0 0 2px rgba(103,232,249,.12)}.radius-entry .unit{display:grid;place-items:center;color:#9fb0be;font-size:12px;font-weight:800}.radius-apply{width:100%;margin-top:7px}.radius-readout{font-size:11px;color:#9fb0be;margin-top:7px;line-height:1.35}.mission-complete{display:none;margin-top:10px;padding:11px;border-radius:12px;background:linear-gradient(145deg,rgba(34,197,94,.15),rgba(255,106,0,.08));border:1px solid rgba(74,222,128,.38)}.mission-complete.show{display:block}.mission-complete strong{color:#6ee7a1}.attempt-chip{position:absolute;right:14px;bottom:15px;background:rgba(9,15,26,.85);border:1px solid rgba(255,255,255,.16);padding:7px 10px;border-radius:10px;font-size:11px;font-weight:800;pointer-events:none}.phase2-only{display:none}.phase2-only.show{display:block}
+@media(max-width:900px){.radius-methods{grid-template-columns:1fr}.attempt-chip{right:auto;left:14px;bottom:56px}}
+.preview-circle{fill:rgba(103,232,249,.05);stroke:#67e8f9;stroke-width:2.5;stroke-dasharray:8 6;vector-effect:non-scaling-stroke;pointer-events:none;filter:drop-shadow(0 0 6px rgba(103,232,249,.45))}
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="stage-wrap">
+    <div class="stage" id="stage">
+      <img alt="Mapa aéreo da área de conservação" src="../assets/embedded/397799c9542447cde26d.webp">
+      <div class="shade"></div>
+      <svg id="svg" viewBox="0 0 2000 2000" aria-label="Área interativa da missão">
+        <g class="grid" id="grid"></g>
+        <g id="operationalLayer"></g>
+        <g id="fireLayer">
+          <circle id="fireFront" class="fire-front" cx="1000" cy="1000" r="50"></circle>
+          <circle id="fireRing" class="fire-ring" cx="1000" cy="1000" r="50"></circle>
+          <circle class="fire-core" cx="1000" cy="1000" r="11"></circle>
+        </g>
+        <g id="planLayer"></g>
+        <g id="overlayLayer"></g>
+      </svg>
+      <div class="hud"><div class="chip">ESCALA · 1 quadrícula = 100 m</div><div class="chip" id="clockChip">T+ 00:00</div></div>
+      <div class="toast" id="toast"></div>
+      <div class="mode-help" id="modeHelp">FASE 1 · Trace um POLÍGONO para conter o incêndio</div>
+      <div class="attempt-chip">Tentativas · <span id="contadorTentativasBridge">0</span></div>
+    </div>
+  </main>
+  <aside class="side">
+    <div class="brand"><div class="brand-mark">OS</div><div><h1>Operação Salvamento</h1><p>Missão 7 · Aceiro florestal</p></div></div>
+
+    <section class="card objective" id="phaseCard">
+      <div class="phase-kicker" id="phaseKicker">FASE 1</div>
+      <h2 id="phaseTitle">Contenha o incêndio</h2>
+      <div class="status" id="phaseText">Construa um <b>aceiro poligonal</b> ao redor do foco e conclua-o antes que a frente do fogo alcance o seu traçado.</div>
+      <div class="best-box" id="bestBox"><div>Área da primeira contenção</div><div class="best-num" id="bestAreaOut">—</div><div class="small" id="phaseBaseline"></div></div>
+    </section>
+
+    <section class="card" id="actionCard">
+      <div class="step-badge" id="stepBadge">PASSO 1 DE 3</div>
+      <div class="action-title" id="actionTitle">Desenhe o aceiro</div>
+      <div class="action-text" id="actionText">Clique nos vértices da malha para marcar o contorno. Use pelo menos 3 pontos e mantenha todo o traçado dentro do limite verde.</div>
+
+      <div id="drawingControls">
+        <div class="toolrow" id="phase1Tools">
+          <button class="btn active" id="polyBtn">⬡ Desenhar polígono</button>
+          <button class="btn" id="circleBtn" disabled>🔒 Círculo</button>
+        </div>
+        <div class="toolrow" id="polyActions" style="margin-top:8px">
+          <button class="btn ghost" id="closePolyBtn" disabled>Fechar aceiro</button>
+          <button class="btn ghost danger" id="clearBtn">Limpar</button>
+        </div>
+
+        <div class="phase2-only" id="phase2Tools">
+          <div class="small" style="margin-bottom:7px">Escolha como deseja definir o raio do aceiro circular:</div>
+          <div class="radius-methods show">
+            <button class="btn active" id="radiusClickBtn">◎ Centro + ponto</button>
+            <button class="btn" id="radiusExactBtn">⌨ Centro + raio</button>
+          </div>
+          <button class="btn ghost danger" id="clearCircleBtn" style="width:100%;margin-top:8px">Limpar círculo</button>
+          <div class="radius-panel" id="radiusPanel">
+            <label for="radiusInput">Raio do aceiro circular</label>
+            <div class="radius-entry"><input id="radiusInput" type="text" inputmode="decimal" placeholder="Informe o raio"><span class="unit">m</span></div>
+            <button class="btn radius-apply" id="radiusApplyBtn">Aplicar raio</button>
+            <div class="radius-readout" id="radiusReadout">Primeiro selecione o centro do círculo no mapa.</div>
+          </div>
+        </div>
+        <div class="small" id="toolHelp" style="margin-top:9px">Marque os vértices do aceiro no mapa.</div>
+      </div>
+
+      <div class="plan-summary hidden" id="planSummary">
+        <div class="metric"><span>Forma</span><b id="shapeOut">—</b></div>
+        <div class="metric"><span>Comprimento projetado</span><b id="lengthOut">—</b></div>
+        <div class="metric"><span>Área delimitada</span><b id="areaOut">—</b></div>
+        <div class="metric phase2-only" id="radiusMetric"><span>Raio</span><b id="radiusOut">—</b></div>
+        <div class="hidden"><b id="distanceOut">—</b><b id="buildTimeOut">—</b><b id="fireTimeOut">—</b></div>
+      </div>
+
+      <div id="executionBlock" class="hidden">
+        <div class="progress-label"><span>Aceiro executado</span><b id="pctOut">0%</b></div>
+        <div class="progress-shell"><div class="progress" id="progress"></div></div>
+      </div>
+
+      <div class="status" id="status" style="margin-top:9px">Marque os vértices do aceiro no mapa.</div>
+      <div class="execute-note hidden" id="executeNote">🔥 Ao iniciar, o incêndio continuará avançando enquanto as equipes executam o aceiro.</div>
+      <button class="btn primary hidden" id="runBtn" disabled style="margin-top:8px">▶ EXECUTAR ACEIRO</button>
+      <button class="btn ghost hidden" id="resetBtn" style="width:100%;margin-top:7px">↺ Tentar novamente</button>
+      <div class="result" id="result"></div>
+      <div class="unlock" id="unlockBox"><strong>🔓 NOVO DESAFIO</strong><br><b>Otimize o aceiro circular</b><div class="small" style="margin-top:4px">Agora determine o menor raio circular que ainda permite concluir a linha antes da chegada do fogo.</div></div>
+      <button class="btn primary" id="nextPhaseBtn" style="display:none;margin-top:9px">CONTINUAR PARA A FASE 2 →</button>
+      <div class="mission-complete" id="missionComplete"><strong>✓ ESTRATÉGIA OTIMIZADA</strong><div class="small" id="missionCompleteText" style="margin-top:5px"></div></div>
+    </section>
+
+    <button class="btn ghost data-toggle" id="dataBtn">ⓘ Ver dados da ocorrência</button>
+    <section class="card conditions" id="conditionsCard">
+      <h2>Dados da ocorrência</h2>
+      <div class="metric"><span>Raio inicial</span><b>50 m</b></div>
+      <div class="metric"><span>Propagação do fogo</span><b>2,2 m/min</b></div>
+      <div class="metric"><span>Execução conjunta</span><b>17,5 m/min</b></div>
+      <div class="metric"><span>Escala</span><b>100 m/quadrícula</b></div>
+      <div class="small">Hipótese do modelo: propagação circular e uniforme. O aceiro só é considerado eficaz quando 100% concluído.</div>
+    </section>
+  </aside>
+</div>
+<script>
+(() => {
+const NS='http://www.w3.org/2000/svg';
+const SIZE=2000,R0=50,VF=2.2,VA=17.5,FX=1000,FY=1000;
+const R_THRESHOLD=875/(17.5-4.4*Math.PI);
+const OPTIMAL_ROUNDED=238;
+const OPTIMAL_UPPER=238.5;
+const OP_AREA=[
+  {x:280,y:215},{x:430,y:165},{x:620,y:135},{x:830,y:125},{x:1040,y:125},{x:1250,y:140},{x:1440,y:175},{x:1600,y:235},
+  {x:1720,y:340},{x:1790,y:500},{x:1820,y:690},{x:1830,y:900},{x:1820,y:1110},{x:1790,y:1320},{x:1725,y:1500},{x:1620,y:1640},
+  {x:1470,y:1730},{x:1280,y:1790},{x:1070,y:1815},{x:860,y:1805},{x:650,y:1765},{x:485,y:1705},{x:350,y:1610},{x:255,y:1480},
+  {x:205,y:1320},{x:185,y:1130},{x:180,y:930},{x:185,y:730},{x:200,y:540},{x:230,y:370}
+];
+
+const $=id=>document.getElementById(id);
+const svg=$('svg'),grid=$('grid'),operationalLayer=$('operationalLayer'),planLayer=$('planLayer'),overlay=$('overlayLayer');
+const fire=$('fireFront'),ring=$('fireRing'),clockChip=$('clockChip'),toast=$('toast'),modeHelp=$('modeHelp');
+const polyBtn=$('polyBtn'),circleBtn=$('circleBtn'),closePolyBtn=$('closePolyBtn'),clearBtn=$('clearBtn'),clearCircleBtn=$('clearCircleBtn');
+const runBtn=$('runBtn'),resetBtn=$('resetBtn'),nextPhaseBtn=$('nextPhaseBtn');
+const phaseKicker=$('phaseKicker'),phaseTitle=$('phaseTitle'),phaseText=$('phaseText'),stepBadge=$('stepBadge'),actionTitle=$('actionTitle'),actionText=$('actionText');
+const planSummary=$('planSummary'),drawingControls=$('drawingControls'),executionBlock=$('executionBlock'),executeNote=$('executeNote'),unlockBox=$('unlockBox');
+const bestBox=$('bestBox'),bestAreaOut=$('bestAreaOut'),phaseBaseline=$('phaseBaseline');
+const dataBtn=$('dataBtn'),conditionsCard=$('conditionsCard'),toolHelp=$('toolHelp');
+const phase1Tools=$('phase1Tools'),polyActions=$('polyActions'),phase2Tools=$('phase2Tools'),radiusMetric=$('radiusMetric');
+const radiusClickBtn=$('radiusClickBtn'),radiusExactBtn=$('radiusExactBtn'),radiusPanel=$('radiusPanel'),radiusInput=$('radiusInput'),radiusApplyBtn=$('radiusApplyBtn'),radiusReadout=$('radiusReadout');
+const missionComplete=$('missionComplete'),missionCompleteText=$('missionCompleteText');
+const progress=$('progress'),pctOut=$('pctOut'),status=$('status'),result=$('result');
+const shapeOut=$('shapeOut'),lengthOut=$('lengthOut'),areaOut=$('areaOut'),radiusOut=$('radiusOut'),distanceOut=$('distanceOut'),buildTimeOut=$('buildTimeOut'),fireTimeOut=$('fireTimeOut');
+
+let mode='poly',radiusMethod='click',points=[],circleCenter=null,plan=null,planEl=null,running=false,raf=null,phase=1,baselineArea=null,bestArea=null,tentativas=0,pausedExternally=false,pauseStarted=0,pausedAccum=0;
+
+function el(tag,attrs={}){const e=document.createElementNS(NS,tag);for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);return e;}
+for(let i=0;i<=20;i++){const p=i*100;grid.append(el('line',{x1:p,y1:0,x2:p,y2:SIZE,class:i%5===0?'major':''}),el('line',{x1:0,y1:p,x2:SIZE,y2:p,class:i%5===0?'major':''}));}
+operationalLayer.appendChild(el('polygon',{points:OP_AREA.map(p=>`${p.x},${p.y}`).join(' '),class:'operational-boundary'}));
+
+function fmt(n,d=0){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:d,minimumFractionDigits:d});}
+function fmtTime(min){if(!isFinite(min)||min<0)return '—';const total=Math.round(min*60),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;return h?`${h}h ${String(m).padStart(2,'0')}min`:`${m}min ${String(s).padStart(2,'0')}s`;}
+function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove('show'),2400);}
+function guide(step,title,text){stepBadge.textContent=step;actionTitle.textContent=title;actionText.innerHTML=text;}
+function registrarTentativa(){tentativas+=1;const c=$('contadorTentativasBridge');if(c)c.textContent=String(tentativas);if(typeof window.atualizarTentativasPadrao==='function')window.atualizarTentativasPadrao(tentativas);}
+function reportarSucesso(){if(typeof window.reportarSucessoPadrao==='function')window.reportarSucessoPadrao();}
+
+function resetFire(){fire.setAttribute('r',R0);ring.setAttribute('r',R0);clockChip.textContent='T+ 00:00';progress.style.width='0%';progress.className='progress';pctOut.textContent='0%';overlay.innerHTML='';if(planEl)planEl.setAttribute('class','plan');}
+function hideResult(){result.className='result';result.innerHTML='';missionComplete.classList.remove('show');}
+function clearVisualPlan(){planLayer.innerHTML='';overlay.innerHTML='';planEl=null;plan=null;runBtn.disabled=true;planSummary.classList.add('hidden');shapeOut.textContent=lengthOut.textContent=areaOut.textContent=distanceOut.textContent=buildTimeOut.textContent=fireTimeOut.textContent=radiusOut.textContent='—';hideResult();resetFire();}
+function addVertex(p){planLayer.appendChild(el('circle',{cx:p.x,cy:p.y,r:8,class:'vertex'}));}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function segNearest(P,A,B){const dx=B.x-A.x,dy=B.y-A.y,l2=dx*dx+dy*dy;if(!l2)return {d:dist(P,A),p:A};let t=((P.x-A.x)*dx+(P.y-A.y)*dy)/l2;t=Math.max(0,Math.min(1,t));const q={x:A.x+t*dx,y:A.y+t*dy};return {d:dist(P,q),p:q};}
+function pointInPoly(P,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];const hit=((a.y>P.y)!=(b.y>P.y))&&(P.x<(b.x-a.x)*(P.y-a.y)/(b.y-a.y)+a.x);if(hit)inside=!inside;}return inside;}
+function orient(a,b,c){return (b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);}
+function onSeg(a,b,p){return Math.min(a.x,b.x)-1e-6<=p.x&&p.x<=Math.max(a.x,b.x)+1e-6&&Math.min(a.y,b.y)-1e-6<=p.y&&p.y<=Math.max(a.y,b.y)+1e-6&&Math.abs(orient(a,b,p))<1e-6;}
+function segIntersect(a,b,c,d){const o1=orient(a,b,c),o2=orient(a,b,d),o3=orient(c,d,a),o4=orient(c,d,b);if(((o1>0&&o2<0)||(o1<0&&o2>0))&&((o3>0&&o4<0)||(o3<0&&o4>0)))return true;return onSeg(a,b,c)||onSeg(a,b,d)||onSeg(c,d,a)||onSeg(c,d,b);}
+function pointInOperational(p){return pointInPoly(p,OP_AREA);}
+function segmentInsideOperational(a,b){if(!pointInOperational(a)||!pointInOperational(b))return false;for(let i=0;i<OP_AREA.length;i++){const c=OP_AREA[i],d=OP_AREA[(i+1)%OP_AREA.length];if(segIntersect(a,b,c,d)&&!onSeg(c,d,a)&&!onSeg(c,d,b))return false;}for(let k=1;k<10;k++){const t=k/10;if(!pointInOperational({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}))return false;}return true;}
+function circleInsideOperational(center,R){for(let i=0;i<180;i++){const a=i*Math.PI*2/180;if(!pointInOperational({x:center.x+R*Math.cos(a),y:center.y+R*Math.sin(a)}))return false;}return true;}
+function invalidPolySegments(poly){const bad=[];for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length];if(!segmentInsideOperational(a,b))bad.push([a,b]);}return bad;}
+function drawInvalidSegments(list){list.forEach(([a,b])=>overlay.appendChild(el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:'invalid-segment'})));}
+function polyArea(poly){let s=0;for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length];s+=a.x*b.y-b.x*a.y;}return Math.abs(s)/2;}
+function snapCoord(v){return Math.max(0,Math.min(SIZE,Math.round(v/100)*100));}
+function rawPointer(evt){const r=svg.getBoundingClientRect();return {x:Math.max(0,Math.min(SIZE,(evt.clientX-r.left)/r.width*SIZE)),y:Math.max(0,Math.min(SIZE,(evt.clientY-r.top)/r.height*SIZE))};}
+function gridPointer(evt){const p=rawPointer(evt);return {x:snapCoord(p.x),y:snapCoord(p.y)};}
+function centerIsFocus(c){return !!c&&Math.abs(c.x-FX)<1e-6&&Math.abs(c.y-FY)<1e-6;}
+
+function setPlanningUI(){drawingControls.classList.remove('hidden');executionBlock.classList.add('hidden');executeNote.classList.add('hidden');runBtn.classList.add('hidden');resetBtn.classList.add('hidden');unlockBox.classList.remove('show');}
+function setupPhase1(){phase=1;mode='poly';points=[];circleCenter=null;phaseKicker.textContent='FASE 1';phaseTitle.textContent='Contenha o incêndio';phaseText.innerHTML='Construa um <b>aceiro poligonal</b> ao redor do foco e conclua-o antes que a frente do fogo alcance o seu traçado.';phase1Tools.style.display='grid';polyActions.style.display='grid';phase2Tools.classList.remove('show');radiusMetric.classList.remove('show');circleBtn.disabled=true;circleBtn.textContent='🔒 Círculo';polyBtn.classList.add('active');guide('PASSO 1 DE 3','Desenhe o aceiro','Clique nos vértices da malha para marcar o contorno. Use pelo menos 3 pontos e mantenha todo o traçado dentro do limite verde.');toolHelp.textContent='Marque os vértices do aceiro no mapa.';modeHelp.textContent='FASE 1 · Trace um POLÍGONO para conter o incêndio';status.textContent='Marque os vértices do aceiro no mapa.';setPlanningUI();}
+function setupPhase2(){phase=2;mode='circle';radiusMethod='click';points=[];circleCenter=null;clearVisualPlan();phaseKicker.textContent='FASE 2';phaseTitle.textContent='Encontre o menor aceiro circular';phaseText.innerHTML='Agora determine o <b>menor raio possível</b> de um aceiro circular que ainda seja concluído antes da chegada do fogo.';bestBox.classList.add('show');bestAreaOut.textContent=`${fmt(baselineArea/10000,1)} ha`;phaseBaseline.textContent='Referência: área delimitada na Fase 1';phase1Tools.style.display='none';polyActions.style.display='none';phase2Tools.classList.add('show');radiusMetric.classList.add('show');radiusClickBtn.classList.add('active');radiusExactBtn.classList.remove('active');radiusPanel.classList.remove('show');guide('PASSO 1 DE 3','Defina o círculo','Escolha o centro do aceiro. Você pode definir o raio por um segundo ponto no mapa ou informar o valor exato em metros.');toolHelp.textContent='Clique em um vértice da malha para definir o centro do círculo.';modeHelp.textContent='FASE 2 · Escolha o CENTRO do círculo';status.textContent='Selecione o centro do aceiro circular.';setPlanningUI();showToast('🔓 Fase 2: aceiro circular liberado!');}
+
+function finalizePlan(p){p.tBuild=p.L/VA;p.tFire=(p.dmin-R0)/VF;p.validContain=p.contains&&p.dmin>R0&&p.tFire>0;p.validArea=p.insideArea!==false;p.valid=p.validContain&&p.validArea;plan=p;shapeOut.textContent=p.type;lengthOut.textContent=`${fmt(p.L,0)} m`;areaOut.textContent=`${fmt(p.A/10000,2)} ha`;distanceOut.textContent=`${fmt(p.dmin,0)} m`;buildTimeOut.textContent=fmtTime(p.tBuild);fireTimeOut.textContent=fmtTime(p.tFire);radiusOut.textContent=p.R?`${fmt(p.R,2)} m`:'—';planSummary.classList.remove('hidden');hideResult();unlockBox.classList.remove('show');
+  if(p.valid){runBtn.disabled=false;runBtn.classList.remove('hidden');executeNote.classList.remove('hidden');resetBtn.classList.add('hidden');guide('PASSO 2 DE 3','Confira seu plano',phase===1?`Seu aceiro tem <b>${fmt(p.L,0)} m</b> e delimita <b>${fmt(p.A/10000,1)} ha</b>. Quando estiver pronto, inicie a operação.`:`Círculo com raio de <b>${fmt(p.R,2)} m</b>. Execute para verificar se as equipes terminam antes da chegada do fogo.`);status.innerHTML='<b class="green">Traçado válido.</b> O resultado dependerá da relação entre o avanço do fogo e o tempo de execução.';modeHelp.textContent='Plano pronto. Confira os dados e execute.';return;}
+  runBtn.classList.add('hidden');executeNote.classList.add('hidden');if(planEl)planEl.setAttribute('class','plan invalid');const msgs=[];if(!p.validContain)msgs.push('o aceiro não envolve completamente a frente inicial do incêndio');if(!p.validArea)msgs.push('parte do traçado ultrapassa o limite operacional seguro');guide('AJUSTE NECESSÁRIO','Corrija o traçado',msgs.map(m=>'• '+m.charAt(0).toUpperCase()+m.slice(1)+'.').join('<br>'));status.innerHTML='<b class="red">Não é possível executar.</b> Ajuste o aceiro indicado em vermelho.';result.className='result show bad';result.innerHTML='<b>⚠ ESTRATÉGIA INVÁLIDA</b><br>Corrija o contorno antes de iniciar a operação.';modeHelp.textContent='Corrija o traçado indicado em vermelho.';
+}
+function commitCircleRadius(center,R){R=Number(R);if(!isFinite(R)||R<=R0){showToast('Informe um raio maior que 50 m.');return;}if(R>800){showToast('Use um raio de até 800 m nesta área.');return;}planLayer.innerHTML='';overlay.innerHTML='';planEl=el('circle',{cx:center.x,cy:center.y,r:R,class:'plan'});planLayer.appendChild(planEl);addVertex(center);const fc=dist({x:FX,y:FY},center),dmin=Math.abs(R-fc),contains=fc+R0<R,insideArea=circleInsideOperational(center,R);let near;if(fc===0)near={x:center.x+R,y:center.y};else{const ux=(FX-center.x)/fc,uy=(FY-center.y)/fc;near={x:center.x+ux*R,y:center.y+uy*R};}const L=2*Math.PI*R,A=Math.PI*R*R;finalizePlan({type:'Círculo',L,A,dmin,near,contains,insideArea,R,center:{...center}});}
+function commitCircle(center,edge){const R=dist(center,edge);if(R<100){showToast('No modo gráfico, escolha um raio de pelo menos 100 m.');return;}commitCircleRadius(center,R);}
+function commitPoly(poly){planLayer.innerHTML='';overlay.innerHTML='';planEl=el('polygon',{points:poly.map(p=>`${p.x},${p.y}`).join(' '),class:'plan'});planLayer.appendChild(planEl);poly.forEach(addVertex);let L=0,dmin=Infinity,near=null;for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length];L+=dist(a,b);const q=segNearest({x:FX,y:FY},a,b);if(q.d<dmin){dmin=q.d;near=q.p;}}const A=polyArea(poly),contains=pointInPoly({x:FX,y:FY},poly)&&dmin>R0,badSegments=invalidPolySegments(poly),insideArea=badSegments.length===0;if(!insideArea)drawInvalidSegments(badSegments);finalizePlan({type:'Polígono',L,A,dmin,near,contains,insideArea});}
+
+function clearCurrent(){if(running)return;points=[];circleCenter=null;clearVisualPlan();setPlanningUI();if(phase===1){mode='poly';closePolyBtn.disabled=true;guide('PASSO 1 DE 3','Desenhe o aceiro','Clique nos vértices da malha para marcar o contorno. Use pelo menos 3 pontos e mantenha todo o traçado dentro do limite verde.');toolHelp.textContent='Marque os vértices do aceiro no mapa.';status.textContent=toolHelp.textContent;modeHelp.textContent='FASE 1 · Trace um POLÍGONO para conter o incêndio';}else{mode='circle';guide('PASSO 1 DE 3','Defina o círculo','Escolha o centro do aceiro e depois defina o raio pelo método selecionado.');toolHelp.textContent='Clique em um vértice da malha para definir o centro do círculo.';status.textContent='Selecione o centro do aceiro circular.';modeHelp.textContent='FASE 2 · Escolha o CENTRO do círculo';radiusInput.value='';radiusReadout.textContent='Primeiro selecione o centro do círculo no mapa.';}}
+
+function setRadiusMethod(method){if(phase!==2||running)return;radiusMethod=method;radiusClickBtn.classList.toggle('active',method==='click');radiusExactBtn.classList.toggle('active',method==='exact');radiusPanel.classList.toggle('show',method==='exact');circleCenter=null;clearVisualPlan();setPlanningUI();if(method==='click'){radiusReadout.textContent='';toolHelp.textContent='Clique no centro e depois em outro ponto para definir o raio.';modeHelp.textContent='Clique no CENTRO do círculo';}else{radiusReadout.textContent='Primeiro selecione o centro do círculo no mapa.';toolHelp.textContent='Clique no centro; depois digite o raio em metros.';modeHelp.textContent='Clique no CENTRO do círculo';}}
+function parseRadius(){const raw=String(radiusInput.value||'').trim().replace(',','.');const value=Number(raw);return isFinite(value)?value:NaN;}
+function previewExactRadius(){if(phase!==2||radiusMethod!=='exact'||!circleCenter)return;overlay.innerHTML='';const R=parseRadius();if(isFinite(R)&&R>R0&&R<=800){overlay.appendChild(el('circle',{cx:circleCenter.x,cy:circleCenter.y,r:R,class:'preview-circle'}));radiusReadout.textContent=`Pré-visualização: raio ${fmt(R,2)} m · área ${fmt(Math.PI*R*R/10000,2)} ha`;}else radiusReadout.textContent='Informe um raio maior que 50 m.';}
+
+svg.addEventListener('pointermove',e=>{if(running||phase!==2||mode!=='circle'||circleCenter)return;overlay.innerHTML='';const p=gridPointer(e);overlay.appendChild(el('circle',{cx:p.x,cy:p.y,r:p.x===FX&&p.y===FY?32:12,class:'snap-focus'}));modeHelp.textContent=p.x===FX&&p.y===FY?'Centro sobre o FOCO: clique para selecionar este vértice':'Centro será encaixado neste vértice da malha';});
+svg.addEventListener('pointerleave',()=>{if(!running&&phase===2&&!circleCenter){overlay.innerHTML='';modeHelp.textContent='Clique em um VÉRTICE da malha para definir o CENTRO do círculo';}});
+svg.addEventListener('pointerdown',e=>{if(running)return;if(phase===1){const p=gridPointer(e);if(points.length&&dist(p,points[points.length-1])<1)return;points.push(p);planLayer.innerHTML='';const pl=el('polyline',{points:points.map(q=>`${q.x},${q.y}`).join(' '),class:'plan'});planLayer.appendChild(pl);points.forEach(addVertex);closePolyBtn.disabled=points.length<3;toolHelp.textContent=points.length<3?`${points.length} vértice(s) marcado(s). Marque mais ${3-points.length}.`:`${points.length} vértices marcados. Continue adicionando pontos ou feche o aceiro.`;guide('PASSO 1 DE 3','Desenhe o aceiro',toolHelp.textContent);modeHelp.textContent=points.length<3?`Marque mais ${3-points.length} ponto(s)`:'Continue marcando ou clique em FECHAR ACEIRO';return;}
+  if(phase===2){if(!circleCenter){const cp=gridPointer(e);circleCenter={x:cp.x,y:cp.y};overlay.innerHTML='';planLayer.innerHTML='';addVertex(circleCenter);if(centerIsFocus(circleCenter))showToast('Centro alinhado exatamente ao foco do incêndio.');if(radiusMethod==='click'){modeHelp.textContent='Centro definido. Agora clique em outro vértice para definir o RAIO';toolHelp.textContent='Clique em outro ponto da malha para definir o raio.';}else{modeHelp.textContent='Centro definido. Informe o RAIO no painel.';radiusReadout.textContent=`Centro selecionado em (${fmt(circleCenter.x,0)}, ${fmt(circleCenter.y,0)}). Digite o raio.`;radiusInput.focus();previewExactRadius();}}else if(radiusMethod==='click'){const p=gridPointer(e);commitCircle(circleCenter,p);circleCenter=null;modeHelp.textContent=plan&&plan.valid?'Círculo válido. Execute a estratégia.':'Círculo definido, mas inválido. Consulte a mensagem no painel.';}}
+});
+
+closePolyBtn.onclick=()=>{if(points.length>=3){commitPoly([...points]);points=[];closePolyBtn.disabled=true;modeHelp.textContent=plan&&plan.valid?'Polígono válido. Execute a estratégia.':'Polígono definido, mas inválido. Consulte a mensagem no painel.';}};
+clearBtn.onclick=clearCurrent;clearCircleBtn.onclick=clearCurrent;radiusClickBtn.onclick=()=>setRadiusMethod('click');radiusExactBtn.onclick=()=>setRadiusMethod('exact');
+radiusInput.addEventListener('input',previewExactRadius);radiusInput.addEventListener('keydown',e=>{if(e.key==='Enter')radiusApplyBtn.click();});
+radiusApplyBtn.onclick=()=>{if(!circleCenter){showToast('Selecione primeiro o centro do círculo no mapa.');return;}const R=parseRadius();if(!isFinite(R)){showToast('Informe um raio válido em metros.');return;}commitCircleRadius(circleCenter,R);circleCenter=null;radiusReadout.textContent=`Raio aplicado: ${fmt(R,2)} m.`;modeHelp.textContent=plan&&plan.valid?'Círculo válido. Execute a estratégia.':'Círculo definido, mas inválido. Consulte a mensagem no painel.';};
+dataBtn.onclick=()=>{const open=conditionsCard.classList.toggle('open');dataBtn.textContent=open?'✕ Ocultar dados da ocorrência':'ⓘ Ver dados da ocorrência';};
+
+function markCritical(){overlay.innerHTML='';if(plan?.near)overlay.appendChild(el('circle',{cx:plan.near.x,cy:plan.near.y,r:13,class:'critical'}));}
+function finish(success){running=false;cancelAnimationFrame(raf);raf=null;pausedExternally=false;resetBtn.disabled=false;markCritical();executionBlock.classList.remove('hidden');resetBtn.classList.remove('hidden');runBtn.classList.add('hidden');executeNote.classList.add('hidden');drawingControls.classList.add('hidden');
+  if(success){progress.classList.add('ok');status.innerHTML='<b class="green">ACEIRO CONCLUÍDO.</b> A linha ficou pronta antes da chegada da frente.';result.className='result show ok';const areaHa=plan.A/10000;
+    if(phase===1){baselineArea=plan.A;bestArea=plan.A;guide('FASE 1 CONCLUÍDA','Incêndio contido',`Você protegeu as residências. O aceiro delimitou <b>${fmt(areaHa,1)} ha</b> de vegetação.`);result.innerHTML=`<b>✓ CONTENÇÃO OBTIDA</b><br>O aceiro ficou pronto <b>${fmtTime(plan.tFire-plan.tBuild)}</b> antes da chegada da frente.<br>Comprimento construído: <b>${fmt(plan.L,0)} m</b><br>Área potencialmente queimada: <b>${fmt(areaHa,1)} ha</b>`;unlockBox.classList.add('show');nextPhaseBtn.style.display='block';modeHelp.textContent='Fase 1 concluída. Continue para o desafio de otimização.';}
+    else{if(plan.A<bestArea)bestArea=plan.A;bestAreaOut.textContent=`${fmt(bestArea/10000,2)} ha`;const centered=centerIsFocus(plan.center),optimal=centered&&plan.R>=R_THRESHOLD-1e-6&&plan.R<OPTIMAL_UPPER;if(optimal){guide('MISSÃO CONCLUÍDA','Estratégia otimizada!',`Você encontrou um aceiro circular praticamente no limite entre o tempo de construção e a chegada do fogo.`);result.innerHTML=`<b>✓ MENOR RAIO ENCONTRADO</b><br>Raio utilizado: <b>${fmt(plan.R,2)} m</b><br>Comprimento: <b>${fmt(plan.L,0)} m</b><br>Área potencialmente queimada: <b>${fmt(areaHa,2)} ha</b><br>Margem de tempo: <b>${fmtTime(plan.tFire-plan.tBuild)}</b>`;missionComplete.classList.add('show');missionCompleteText.textContent='A solução será formalizada no relatório da missão.';modeHelp.textContent='Estratégia otimizada. Missão concluída.';setTimeout(reportarSucesso,650);}else{guide('RESULTADO','Contenção obtida',centered?'O círculo funcionou, mas ainda existe uma estratégia circular com área menor.':'O círculo funcionou, mas deslocar o centro cria um ponto mais próximo da frente do incêndio.');result.className='result show';result.innerHTML=`<b>✓ INCÊNDIO CONTIDO</b><br>Raio: <b>${fmt(plan.R,2)} m</b><br>Área: <b>${fmt(areaHa,2)} ha</b><br><br>${centered?'Tente reduzir o raio sem deixar o fogo chegar primeiro.':'Para buscar a menor área, reavalie também a posição do centro.'}`;modeHelp.textContent='A contenção funcionou. Continue otimizando.';}}
+  }else{progress.classList.add('bad');const pct=Math.min(99.9,plan.tFire/plan.tBuild*100);status.innerHTML='<b class="red">O fogo alcançou o aceiro.</b>';result.className='result show bad';guide('TENTATIVA NÃO CONCLUÍDA','O fogo chegou primeiro',`A frente atingiu o traçado quando <b>${pct.toFixed(1).replace('.',',')}%</b> do aceiro estava concluído.`);result.innerHTML=`<b>🔥 LINHA DE DEFESA ATINGIDA</b><br>A frente do incêndio chegou com <b>${pct.toFixed(1).replace('.',',')}%</b> da execução concluída.<br><br>${phase===2?'Se o círculo estiver centralizado, aumente o raio e compare novamente os tempos.':'Tente modificar a forma ou a distância do aceiro.'}`;modeHelp.textContent='O ponto de primeiro contato está destacado.';}
+}
+function run(){if(!plan||!plan.valid||running)return;registrarTentativa();resetFire();hideResult();running=true;runBtn.disabled=true;drawingControls.classList.add('hidden');planSummary.classList.add('hidden');executionBlock.classList.remove('hidden');executeNote.classList.add('hidden');guide('PASSO 3 DE 3','Operação em andamento','Acompanhe a execução do aceiro enquanto a frente do incêndio avança.');const success=plan.tBuild<plan.tFire,stopT=plan.tFire,realDuration=Math.max(6500,Math.min(15000,stopT*45)),start=performance.now();pausedAccum=0;pauseStarted=0;status.textContent='Aceiro em execução...';
+  function frame(now){if(pausedExternally){raf=requestAnimationFrame(frame);return;}const f=Math.min(1,(now-start-pausedAccum)/realDuration),t=stopT*f,r=R0+VF*t;fire.setAttribute('r',r);ring.setAttribute('r',r);clockChip.textContent='T+ '+fmtTime(t).replace('min ',' : ').replace('s','').replace('h ',':');const pct=Math.min(100,t/plan.tBuild*100);progress.style.width=pct+'%';pctOut.textContent=fmt(pct,0)+'%';if(success&&t>=plan.tBuild){progress.style.width='100%';pctOut.textContent='100%';planEl.setAttribute('class','plan done');}if(f<1)raf=requestAnimationFrame(frame);else finish(success);}
+  raf=requestAnimationFrame(frame);
+}
+runBtn.onclick=run;
+nextPhaseBtn.onclick=()=>{if(phase!==1||baselineArea==null)return;nextPhaseBtn.style.display='none';unlockBox.classList.remove('show');setupPhase2();};
+resetBtn.onclick=()=>{if(raf)cancelAnimationFrame(raf);raf=null;running=false;pausedExternally=false;clearCurrent();};
+
+window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='simulation-control'&&d.action==='pause'&&running&&!pausedExternally){pausedExternally=true;pauseStarted=performance.now();}if(d.type==='simulation-control'&&d.action==='resume'&&running&&pausedExternally){pausedAccum+=performance.now()-pauseStarted;pauseStarted=0;pausedExternally=false;}});
+
+setupPhase1();
+})();
+</script>
+<script>
+// Ponte comum entre cada simulador e o jogo principal.
+// O build substitui 6 pelo índice da missão.
+(function () {
+  const MISSION_ID = 6;
+  let sucessoJaReportado = false;
+  let tentativasPadrao = 0;
+  function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
+  function lerTentativas(){
+    for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
+      const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
+    }
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):tentativasPadrao;
+  }
+  function reportarEstado(pedirConclusao=false){
+    try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
+  }
+  window.atualizarTentativasPadrao=function(total){
+    const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+  };
+  window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.controlarTrilhaSimulacaoPadrao=function(action){
+    const acao=String(action||'').toLowerCase();
+    if(!['start','pause','resume','stop'].includes(acao))return;
+    try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
+  };
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
+  ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
+  setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
+})();
+</script>
+</body>
+</html>
