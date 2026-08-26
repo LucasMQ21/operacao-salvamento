@@ -108,10 +108,36 @@ function iniciarAnimacaoEmblemaLogin(){
 }
 
 /* =========================================================
-   ÁUDIO E SIRENE — RUNTIME
+   ÁUDIO GLOBAL E SIRENE — FASE 34
    Centraliza trilha do menu, chamadas, trilhas das missões,
-   som sintético da sirene e seu estado visual no cabeçalho.
+   promoção, vídeo de abertura e som sintético da sirene.
+
+   Acessibilidade:
+   - um único estado global liga/desliga todos os sons;
+   - a preferência é persistida no navegador;
+   - mutar interrompe imediatamente qualquer som em execução;
+   - chamadas de despacho são puladas quando o áudio está desativado,
+     sem impor ao jogador o tempo de espera do arquivo de áudio;
+   - a sirene visual permanece funcional independentemente do som.
    ========================================================= */
+
+const AUDIO_GLOBAL_STORAGE_KEY='operacao-salvamento:preferencia-audio-mutado';
+let audioGlobalMutado=lerPreferenciaAudioGlobal();
+let audioChamadaProsseguirAtual=null;
+let audioChamadaFallbackAtual=null;
+const sireneNosAtivos=new Set();
+
+function lerPreferenciaAudioGlobal(){
+  try{return localStorage.getItem(AUDIO_GLOBAL_STORAGE_KEY)==='1';}
+  catch(_erro){return false;}
+}
+
+function salvarPreferenciaAudioGlobal(){
+  try{localStorage.setItem(AUDIO_GLOBAL_STORAGE_KEY,audioGlobalMutado?'1':'0');}
+  catch(_erro){}
+}
+
+function audioEstaMutado(){return !!audioGlobalMutado;}
 
 function audioSrc(chave){const dados=AUDIO_B64[chave];return dados||'';}
 
@@ -143,30 +169,67 @@ function pararAudioObj(audio) {
 }
 
 function tocarMenuMusica() {
+  if(audioEstaMutado())return false;
   audioMenu.currentTime = 0;
   audioMenu.play().catch(() => {});
+  return true;
 }
 
 function pararMenuMusica() {
   pararAudioObj(audioMenu);
 }
 
+function tocarPromocaoMusica(){
+  if(audioEstaMutado())return false;
+  pararAudioObj(audioPromocao);
+  audioPromocao.currentTime=0;
+  audioPromocao.play().catch(()=>{});
+  return true;
+}
+
+function limparEsperaChamadaAtual(){
+  if(audioChamadaFallbackAtual!==null){
+    clearTimeout(audioChamadaFallbackAtual);
+    audioChamadaFallbackAtual=null;
+  }
+}
+
+function finalizarChamadaAtual(){
+  limparEsperaChamadaAtual();
+  const prosseguir=audioChamadaProsseguirAtual;
+  audioChamadaProsseguirAtual=null;
+  if(typeof prosseguir==='function')prosseguir();
+}
+
 function tocarChamada(id, callback) {
   pararAudioObj(audioChamadaAtual);
-  audioChamadaAtual = new Audio(audioSrc(chaveAudioMissao('chamada',id)));
-  audioChamadaAtual.volume = AUDIO_CONFIG.volumes.dispatchCall;
+  limparEsperaChamadaAtual();
+  audioChamadaProsseguirAtual=null;
 
   let callbackExecutado = false;
   const prosseguir = () => {
     if (callbackExecutado) return;
     callbackExecutado = true;
+    limparEsperaChamadaAtual();
+    audioChamadaProsseguirAtual=null;
     callback();
   };
+
+  // Fase 34: sem áudio, o despacho não cria uma espera silenciosa.
+  if(audioEstaMutado()){
+    prosseguir();
+    return false;
+  }
+
+  audioChamadaAtual = new Audio(audioSrc(chaveAudioMissao('chamada',id)));
+  audioChamadaAtual.volume = AUDIO_CONFIG.volumes.dispatchCall;
+  audioChamadaProsseguirAtual=prosseguir;
 
   audioChamadaAtual.addEventListener('ended', prosseguir, { once: true });
   audioChamadaAtual.addEventListener('error', prosseguir, { once: true });
   audioChamadaAtual.play().catch(prosseguir);
-  setTimeout(prosseguir, AUDIO_CONFIG.dispatchFallbackMs);
+  audioChamadaFallbackAtual=setTimeout(prosseguir, AUDIO_CONFIG.dispatchFallbackMs);
+  return true;
 }
 
 function precarregarAudioMissao(id) {
@@ -186,12 +249,17 @@ function precarregarAudioMissao(id) {
 
 function tocarMusicaMissao(id) {
   pararAudioObj(audioMissaoAtual);
+  if(audioEstaMutado()){
+    audioMissaoAtual=null;
+    return false;
+  }
   const chave=chaveAudioMissao('musica',id);
   audioMissaoAtual = CACHE_AUDIO_MISSAO.get(chave) || precarregarAudioMissao(id) || new Audio(audioSrc(chave));
   audioMissaoAtual.currentTime=0;
   audioMissaoAtual.loop = true;
   audioMissaoAtual.volume = AUDIO_CONFIG.volumes.mission;
   audioMissaoAtual.play().catch(() => {});
+  return true;
 }
 
 function pararMusicaMissao() {
@@ -199,11 +267,28 @@ function pararMusicaMissao() {
   audioMissaoAtual = null;
 }
 
+function registrarNoSirene(...nos){
+  nos.filter(Boolean).forEach(no=>sireneNosAtivos.add(no));
+}
+
+function removerNoSirene(...nos){
+  nos.filter(Boolean).forEach(no=>sireneNosAtivos.delete(no));
+}
+
+function pararSireneAudio(){
+  sireneNosAtivos.forEach(no=>{
+    try{if(typeof no.stop==='function')no.stop();}catch(_erro){}
+    try{if(typeof no.disconnect==='function')no.disconnect();}catch(_erro){}
+  });
+  sireneNosAtivos.clear();
+}
+
 function tocarSirene() {
+  if(audioEstaMutado())return false;
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    if (!sireneAudioCtx) sireneAudioCtx = new AudioContextClass();
+    if (!AudioContextClass) return false;
+    if (!sireneAudioCtx || sireneAudioCtx.state==='closed') sireneAudioCtx = new AudioContextClass();
 
     const contexto = sireneAudioCtx;
     const osciladorPrincipal = contexto.createOscillator();
@@ -214,6 +299,7 @@ function tocarSirene() {
     ganho.connect(contexto.destination);
     osciladorPrincipal.connect(ganho);
     osciladorSecundario.connect(ganho);
+    registrarNoSirene(osciladorPrincipal,osciladorSecundario,ganho);
     osciladorPrincipal.type = 'square';
     osciladorSecundario.type = 'sawtooth';
 
@@ -232,8 +318,12 @@ function tocarSirene() {
       AUDIO_CONFIG.siren.finalGain,
       inicio + AUDIO_CONFIG.siren.durationSeconds
     );
+
+    osciladorPrincipal.addEventListener('ended',()=>removerNoSirene(osciladorPrincipal,osciladorSecundario,ganho),{once:true});
+    return true;
   } catch (erro) {
     // Falhas do Web Audio não impedem o fluxo visual da ocorrência.
+    return false;
   }
 }
 
@@ -255,6 +345,106 @@ function desligarSireneVisual() {
   if (luz) luz.classList.remove('sirene-ligada');
   if (raio) raio.style.display = 'none';
   if (envoltorio) envoltorio.classList.remove('sirene-ativa');
+}
+
+function elementoEstaVisivel(elemento){
+  if(!elemento)return false;
+  if(elemento.hidden)return false;
+  const estilo=getComputedStyle(elemento);
+  return estilo.display!=='none'&&estilo.visibility!=='hidden';
+}
+
+function sincronizarVideoAberturaComAudio(){
+  const video=document.getElementById('video-abertura');
+  if(!video)return;
+  video.muted=audioEstaMutado();
+  video.volume=1;
+}
+
+function atualizarBotaoAudioGlobal(){
+  const botao=document.getElementById('audio-global-toggle');
+  if(!botao)return;
+  const mutado=audioEstaMutado();
+  const texto=mutado?'Áudio do jogo desativado. Clique para ativar.':'Áudio do jogo ativado. Clique para desativar.';
+  botao.classList.toggle('mutado',mutado);
+  botao.setAttribute('aria-pressed',mutado?'true':'false');
+  botao.setAttribute('aria-label',texto);
+  botao.title=texto;
+  botao.dataset.tooltip=mutado?'Ativar áudio':'Desativar áudio';
+  document.documentElement.classList.toggle('audio-global-mutado',mutado);
+}
+
+function retomarAudioDoContextoAtual(){
+  if(audioEstaMutado())return;
+  const video=document.getElementById('video-abertura');
+  const overlayAbertura=document.getElementById('abertura-cinematografica');
+  if(video&&elementoEstaVisivel(overlayAbertura)&&!video.paused){
+    sincronizarVideoAberturaComAudio();
+    return;
+  }
+  const promocao=document.getElementById('overlay-promocao');
+  if(promocao?.classList.contains('mostrar')){
+    tocarPromocaoMusica();
+    return;
+  }
+  if(elementoEstaVisivel(document.getElementById('tela-missao'))&&missaoAtual!==null){
+    const estado=typeof obterEstadoMissao==='function'?obterEstadoMissao(missaoAtual):null;
+    if(!MISSOES?.[missaoAtual]?.resolvida&&!estado?.successDetected)tocarMusicaMissao(missaoAtual);
+    return;
+  }
+  if(elementoEstaVisivel(document.getElementById('tela-mapa'))){
+    tocarMenuMusica();
+  }
+}
+
+function interromperTodosOsSons(){
+  pararMenuMusica();
+  pararMusicaMissao();
+  pararAudioObj(audioPromocao);
+  pararAudioObj(audioChamadaAtual);
+  pararSireneAudio();
+  sincronizarVideoAberturaComAudio();
+
+  // Se o jogador silenciar durante a chamada, a ocorrência prossegue imediatamente.
+  if(audioChamadaProsseguirAtual){
+    const prosseguir=audioChamadaProsseguirAtual;
+    audioChamadaProsseguirAtual=null;
+    limparEsperaChamadaAtual();
+    try{prosseguir();}catch(_erro){}
+    if(typeof mostrarToast==='function'){
+      try{mostrarToast('toast-mapa','🔇 Áudio desativado — despacho visual iniciado.');}catch(_erro){}
+    }
+  }
+}
+
+function definirAudioGlobalMutado(mutado,{persistir=true,retomar=true}={}){
+  const novo=!!mutado;
+  if(audioGlobalMutado===novo){
+    atualizarBotaoAudioGlobal();
+    sincronizarVideoAberturaComAudio();
+    return novo;
+  }
+  audioGlobalMutado=novo;
+  if(persistir)salvarPreferenciaAudioGlobal();
+  atualizarBotaoAudioGlobal();
+  sincronizarVideoAberturaComAudio();
+  if(novo)interromperTodosOsSons();
+  else if(retomar)retomarAudioDoContextoAtual();
+  return novo;
+}
+
+function alternarAudioGlobal(){
+  return definirAudioGlobalMutado(!audioEstaMutado());
+}
+
+function inicializarControleAudioGlobal(){
+  atualizarBotaoAudioGlobal();
+  sincronizarVideoAberturaComAudio();
+  const botao=document.getElementById('audio-global-toggle');
+  if(botao&&!botao.dataset.audioEventoRegistrado){
+    botao.dataset.audioEventoRegistrado='1';
+    botao.addEventListener('click',alternarAudioGlobal);
+  }
 }
 
 /* =========================================================
@@ -712,11 +902,11 @@ function atualizarPatenteDisplay(){ document.getElementById('patente-display').t
 function abrirCarreira(){ if(typeof priorizarPrecarregamentoInsigniasCarreira==='function')priorizarPrecarregamentoInsigniasCarreira(); renderCarreiraLista(); document.getElementById('modal-carreira').classList.add('mostrar'); }
 function fecharCarreira(){ document.getElementById('modal-carreira').classList.remove('mostrar'); }
 function renderCarreiraLista(){ const lista=document.getElementById('carreira-lista'); lista.innerHTML=''; PATENTES.forEach((nome,idx)=>{ const div=document.createElement('div'); let cls='carreira-item'; if(idx===patenteIndex)cls+=' atual'; else if(idx<patenteIndex)cls+=' conquistada'; div.className=cls; const conquistado = idx<patenteIndex; const atual = idx===patenteIndex; div.innerHTML = `<div class="carreira-insignia">${insigniaSVG(idx)}</div><div class="carreira-nome">${nome}${atual?' (atual)':''}</div>${conquistado?'<div class="carreira-check">✓</div>':''}`; lista.appendChild(div); }); document.getElementById('carreira-progresso-fill').style.width = Math.min(100,(pontosCarreira/PONTOS_PROMOCAO)*100)+'%'; }
-function mostrarPromocao(novoIdx){ pararMenuMusica(); audioPromocao.currentTime=0; audioPromocao.play().catch(()=>{}); document.getElementById('promocao-insignia').innerHTML = insigniaSVG(novoIdx); document.getElementById('promocao-texto').textContent = `Parabéns, o senhor foi promovido à patente de ${PATENTES[novoIdx]}. Vamos prosseguir nas missões, senhor(a) ${PATENTES[novoIdx]} ${nomeJogador}.`; document.getElementById('overlay-promocao').classList.add('mostrar'); }
+function mostrarPromocao(novoIdx){ pararMenuMusica(); tocarPromocaoMusica(); document.getElementById('promocao-insignia').innerHTML = insigniaSVG(novoIdx); document.getElementById('promocao-texto').textContent = `Parabéns, o senhor foi promovido à patente de ${PATENTES[novoIdx]}. Vamos prosseguir nas missões, senhor(a) ${PATENTES[novoIdx]} ${nomeJogador}.`; document.getElementById('overlay-promocao').classList.add('mostrar'); }
 function fecharPromocao(){ document.getElementById('overlay-promocao').classList.remove('mostrar'); pararAudioObj(audioPromocao); tocarMenuMusica(); }
 
 /* =========================================================
-   FASE 33.2 — APRESENTAÇÃO + ABERTURA SEM FLASH INICIAL
+   FASE 34 — APRESENTAÇÃO + ABERTURA COM PREFERÊNCIA GLOBAL DE ÁUDIO
    - a capa é o estado HTML inicial real da primeira abertura;
    - um bootstrap síncrono no <head> decide, antes da primeira pintura,
      se a sessão deve mostrar a capa ou ir direto ao portal;
@@ -724,7 +914,7 @@ function fecharPromocao(){ document.getElementById('overlay-promocao').classList
      reparenting tardio e mudanças perceptíveis de layout;
    - F5 antes de iniciar o vídeo: capa; F5 durante/depois: portal.
    ========================================================= */
-const ABERTURA_SESSION_KEY='operacao-salvamento:fase33:abertura-exibida';
+const ABERTURA_SESSION_KEY='operacao-salvamento:fase34:abertura-exibida';
 const ABERTURA_FADE_MS=650;
 const APRESENTACAO_FADE_MS=480;
 let aberturaEncerrando=false;
@@ -782,8 +972,8 @@ function reproduzirAberturaCinematografica(){
   aberturaEncerrando=false;
   if(botaoPlay)botaoPlay.hidden=true;
   try{video.currentTime=0;}catch(_erro){}
-  video.muted=false;
-  video.volume=1;
+  if(typeof sincronizarVideoAberturaComAudio==='function')sincronizarVideoAberturaComAudio();
+  else{video.muted=false;video.volume=1;}
 
   overlay.classList.add('entrando');
   overlay.hidden=false;
@@ -823,7 +1013,8 @@ function registrarEventosAbertura(){
     if(video?.error){encerrarAberturaCinematografica();return;}
     botaoPlay.hidden=true;
     if(video){
-      video.muted=false;
+      if(typeof sincronizarVideoAberturaComAudio==='function')sincronizarVideoAberturaComAudio();
+      else video.muted=false;
       const tentativa=video.play();
       if(tentativa&&typeof tentativa.catch==='function')tentativa.catch(()=>{botaoPlay.hidden=false;});
     }
@@ -1128,6 +1319,7 @@ function iniciarSelecaoMissao(id){
     }
   });
   pararMenuMusica();
+  if(typeof audioEstaMutado==='function'&&audioEstaMutado())mostrarToast('toast-mapa','🚨 Ocorrência recebida — áudio desativado.');
   tocarChamada(id,()=>{
     tocarSirene();
     ligarSireneVisual();
@@ -2092,6 +2284,7 @@ function irParaMapaSemPenalidade(motivoSalvamento='retorno-ao-mapa'){
 
 
 document.addEventListener('DOMContentLoaded',()=>{
+  if(typeof inicializarControleAudioGlobal==='function')inicializarControleAudioGlobal();
   if(typeof iniciarAberturaCinematografica==='function')iniciarAberturaCinematografica();
   if(typeof iniciarAnimacaoEmblemaLogin==='function')iniciarAnimacaoEmblemaLogin();
   // Fase 31: inicia imediatamente o pequeno pacote otimizado de insígnias.

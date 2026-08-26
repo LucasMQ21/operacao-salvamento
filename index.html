@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Operação Salvamento — Missões Integradas</title>
-<script id="fase33-bootstrap-abertura">
+<script id="fase34-bootstrap-inicial">
 (function(){
   var classe='fase33-apresentacao-pendente';
-  try{if(sessionStorage.getItem('operacao-salvamento:fase33:abertura-exibida')==='1')classe='fase33-abertura-ja-iniciada';}catch(_erro){}
+  try{if(sessionStorage.getItem('operacao-salvamento:fase34:abertura-exibida')==='1')classe='fase33-abertura-ja-iniciada';}catch(_erro){}
   document.documentElement.classList.add(classe);
+  try{if(localStorage.getItem('operacao-salvamento:preferencia-audio-mutado')==='1')document.documentElement.classList.add('audio-global-mutado');}catch(_erro){}
 })();
 </script>
 <link rel="preload" as="image" href="./assets/embedded/802e4bf957152df4c1c3.webp" type="image/webp" fetchpriority="high">
@@ -83,6 +84,15 @@
     </button>
   </div>
 </section>
+
+<button id="audio-global-toggle" class="audio-global-toggle" type="button" aria-pressed="false" aria-label="Áudio do jogo ativado. Clique para desativar." title="Áudio do jogo ativado. Clique para desativar." data-tooltip="Desativar áudio">
+  <svg class="audio-global-icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path class="audio-icone-base" d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
+    <path class="audio-icone-ondas" d="M16 8.2a5 5 0 0 1 0 7.6M18.7 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <path class="audio-icone-mudo" d="M16.2 9.2l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <span class="sr-only">Controle global de áudio</span>
+</button>
 
 <div id="abertura-cinematografica" class="abertura-cinematografica" hidden aria-hidden="true" aria-label="Abertura do jogo Operação Salvamento">
   <video id="video-abertura" class="abertura-video" preload="auto" playsinline>

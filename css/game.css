@@ -2226,3 +2226,72 @@ html.fase33-abertura-ja-iniciada .apresentacao-inicial{display:none!important}
   .apresentacao-emblema-host,.apresentacao-titulo,.apresentacao-subtitulo,.apresentacao-resumo,.apresentacao-iniciar{animation:none!important}
 }
 
+
+/* ========================================================================== 
+   FASE 34 — CONTROLE GLOBAL DE ÁUDIO / ACESSIBILIDADE AUDITIVA
+   ========================================================================== */
+.sr-only{
+  position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;
+  overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;
+}
+.audio-global-toggle{
+  position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));
+  z-index:100020;width:42px;height:42px;padding:0;border-radius:50%;
+  display:grid;place-items:center;color:#eef5fb;
+  border:1px solid rgba(205,224,238,.28);
+  background:rgba(7,18,29,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 6px 18px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.07);
+  cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease,color .18s ease,box-shadow .18s ease;
+}
+.audio-global-toggle:hover{
+  transform:translateY(-1px);background:rgba(12,29,43,.92);border-color:rgba(255,178,73,.52);
+  box-shadow:0 8px 22px rgba(0,0,0,.32),0 0 0 2px rgba(247,127,0,.08);
+}
+.audio-global-toggle:focus-visible{outline:3px solid #ffae48;outline-offset:3px}
+.audio-global-toggle.mutado,.audio-global-mutado .audio-global-toggle{
+  color:#ffb14c;border-color:rgba(255,177,76,.48);background:rgba(36,25,17,.82);
+}
+.audio-global-icone{width:22px;height:22px;display:block}
+.audio-icone-mudo{display:none}
+.audio-global-toggle.mutado .audio-icone-ondas,.audio-global-mutado .audio-global-toggle .audio-icone-ondas{display:none}
+.audio-global-toggle.mutado .audio-icone-mudo,.audio-global-mutado .audio-global-toggle .audio-icone-mudo{display:block}
+.audio-global-toggle::after{
+  content:attr(data-tooltip);position:absolute;right:calc(100% + 9px);top:50%;transform:translateY(-50%) translateX(3px);
+  padding:6px 9px;border-radius:8px;background:rgba(4,12,20,.92);border:1px solid rgba(255,255,255,.12);
+  color:#e9f1f7;font-size:.72rem;font-weight:700;line-height:1;white-space:nowrap;
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s ease,transform .15s ease;
+  box-shadow:0 6px 18px rgba(0,0,0,.28);
+}
+.audio-global-toggle:hover::after,.audio-global-toggle:focus-visible::after{opacity:1;visibility:visible;transform:translateY(-50%) translateX(0)}
+
+/* Reserva um pequeno espaço para o controle fixo sem encobrir comandos. */
+#tela-mapa .top-bar{padding-right:64px!important}
+#tela-missao .mission-toolbar{padding-right:68px}
+#tela-briefing .briefing-header{padding-right:66px}
+@media (min-width:901px){
+  #tela-mapa .top-bar .btn-voltar{right:66px!important}
+  #tela-mapa .top-bar .header-missions{right:298px!important}
+  #tela-mapa .top-bar .header-progress{right:168px!important}
+}
+@media (max-width:640px){
+  .audio-global-toggle{width:38px;height:38px;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right))}
+  .audio-global-icone{width:20px;height:20px}
+  .audio-global-toggle::after{display:none}
+  #tela-missao .mission-toolbar{padding-right:54px}
+  #tela-briefing .briefing-header{padding-right:52px}
+}
+
+/* A sirene permanece claramente perceptível, mas sem pulsação rápida. */
+.sirene-ligada{animation-duration:.38s!important}
+.header-sirene-wrap .sirene-luz.sirene-ligada{animation-duration:.38s!important}
+.sirene-raio{animation-duration:.8s!important}
+
+@media (prefers-reduced-motion:reduce){
+  .sirene-ligada,.header-sirene-wrap .sirene-luz.sirene-ligada{
+    animation:none!important;
+    background:radial-gradient(circle at 36% 28%,#ff8a7d 0%,#d93324 45%,#65160f 100%)!important;
+    box-shadow:0 0 22px rgba(255,70,45,.58),inset 0 1px rgba(255,255,255,.22)!important;
+  }
+  .sirene-raio{display:none!important;animation:none!important}
+  .audio-global-toggle{transition:none!important}
+}
