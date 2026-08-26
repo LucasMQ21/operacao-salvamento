@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Operação Salvamento — Missões Integradas</title>
+<script id="fase33-bootstrap-abertura">
+(function(){
+  var classe='fase33-apresentacao-pendente';
+  try{if(sessionStorage.getItem('operacao-salvamento:fase33:abertura-exibida')==='1')classe='fase33-abertura-ja-iniciada';}catch(_erro){}
+  document.documentElement.classList.add(classe);
+})();
+</script>
 <link rel="preload" as="image" href="./assets/embedded/802e4bf957152df4c1c3.webp" type="image/webp" fetchpriority="high">
 <link rel="preload" as="image" href="./assets/embedded/2958c1528a341184ab2d.webp" type="image/webp" fetchpriority="high">
 <link rel="preload" as="image" href="./assets/embedded/98372c121463f498cabf.webp" type="image/webp" fetchpriority="high">
@@ -19,7 +26,76 @@
 <link rel="preload" as="image" href="./assets/embedded/bc64d903cf8ca136a4e1.webp" type="image/webp" fetchpriority="high">
 <link rel="stylesheet" href="./css/game.css">
 </head>
-<body>
+<body><section id="apresentacao-inicial" class="apresentacao-inicial" aria-hidden="false" aria-labelledby="apresentacao-titulo">
+  <div class="apresentacao-conteudo">
+    <div id="apresentacao-emblema-host" class="apresentacao-emblema-host logo-area" aria-label="Emblema animado do Operação Salvamento"><div class="escudo-bombeiro"><div class="emblema-login-animado" aria-hidden="false"><svg aria-label="Emblema animado Operação Salvamento" class="apresentacaoEmblema-svg" id="emblema-apresentacao-svg" viewbox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialgradient cx="42%" cy="35%" id="apresentacaoEmblema-bgRed" r="80%">
+<stop offset="0%" stop-color="#ea2817"></stop>
+<stop offset="100%" stop-color="#c8160c"></stop>
+</radialgradient>
+<radialgradient cx="48%" cy="34%" id="apresentacaoEmblema-goldDisk" r="74%">
+<stop offset="0%" stop-color="#ffd168"></stop>
+<stop offset="52%" stop-color="#f8b73b"></stop>
+<stop offset="100%" stop-color="#eea521"></stop>
+</radialgradient>
+<lineargradient id="apresentacaoEmblema-goldStroke" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffd36d"></stop>
+<stop offset="45%" stop-color="#f7b12a"></stop>
+<stop offset="100%" stop-color="#d98c10"></stop>
+</lineargradient>
+<filter height="140%" id="apresentacaoEmblema-shadow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="10" flood-color="#000000" flood-opacity="0.18" stddeviation="10"></fedropshadow>
+</filter>
+<filter height="140%" id="apresentacaoEmblema-softShadow" width="140%" x="-20%" y="-20%">
+<fedropshadow dx="0" dy="6" flood-color="#000000" flood-opacity="0.16" stddeviation="7"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#apresentacaoEmblema-shadow)" id="apresentacaoEmblema-root">
+<!-- preenchimento-base, chapado, para não aparecerem frestas claras -->
+<path fill="url(#apresentacaoEmblema-bgRed)" id="apresentacaoEmblema-underlay"></path>
+<!-- anel externo animado -->
+<g id="apresentacaoEmblema-outerGroup">
+<path fill="url(#apresentacaoEmblema-bgRed)" fill-rule="evenodd" id="apresentacaoEmblema-outerRing" stroke="url(#apresentacaoEmblema-goldStroke)" stroke-linejoin="round" stroke-width="20"></path>
+</g>
+<!-- anel interno animado -->
+<g id="apresentacaoEmblema-innerGroup">
+<path fill="url(#apresentacaoEmblema-bgRed)" fill-rule="evenodd" id="apresentacaoEmblema-innerRing" stroke="url(#apresentacaoEmblema-goldStroke)" stroke-linejoin="round" stroke-width="17"></path>
+</g>
+<!-- medalhão central estático -->
+<g filter="url(#apresentacaoEmblema-softShadow)" id="apresentacaoEmblema-centerGroup">
+<circle cx="512" cy="512" fill="#d31b0d" opacity="0.12" r="284"></circle>
+<circle cx="512" cy="512" fill="url(#apresentacaoEmblema-goldDisk)" r="274" stroke="#f7b12a" stroke-width="6"></circle>
+<image height="299" href="./assets/embedded/9ebe8c9dc58d2dce39b9.png" id="apresentacaoEmblema-truck" preserveaspectratio="xMidYMid meet" width="422" x="301" y="333"/>
+</g>
+</g>
+</svg></div></div></div>
+    <h1 id="apresentacao-titulo" class="apresentacao-titulo">Operação <span>Salvamento</span></h1>
+    <p class="apresentacao-subtitulo">Matemática aplicada às atividades do Corpo de Bombeiros</p>
+    <div class="apresentacao-resumo">
+      <p><strong>Operação Salvamento</strong> é um jogo educacional inspirado em operações reais do Corpo de Bombeiros.</p>
+      <p>Torne-se um bombeiro e enfrente missões de resgate, combate a incêndio, busca e salvamento, utilizando a matemática para solucionar desafios operacionais.</p>
+      <p class="apresentacao-frase">Em cada operação, a matemática pode salvar vidas.</p>
+    </div>
+    <button id="apresentacao-iniciar" class="apresentacao-iniciar" type="button">
+      <span class="apresentacao-iniciar-icone" aria-hidden="true">▶</span>
+      <span>Iniciar abertura</span>
+    </button>
+  </div>
+</section>
+
+<div id="abertura-cinematografica" class="abertura-cinematografica" hidden aria-hidden="true" aria-label="Abertura do jogo Operação Salvamento">
+  <video id="video-abertura" class="abertura-video" preload="auto" playsinline>
+    <source src="./assets/embedded/6bcd7b4ff0362674141c.mp4" type="video/mp4">
+  </video>
+  <div class="abertura-sombra" aria-hidden="true"></div>
+  <button id="abertura-play" class="abertura-play" type="button" hidden aria-label="Iniciar vídeo de abertura">
+    <span class="abertura-play-icone" aria-hidden="true">▶</span>
+    <span>Reproduzir abertura</span>
+  </button>
+  <button id="abertura-pular" class="abertura-pular" type="button">Pular abertura</button>
+</div>
+
 <div id="tela-inicial">
   <div class="logo-area logo-area-portal"><div class="escudo-bombeiro"><div class="emblema-login-animado" aria-hidden="false"><svg aria-label="Emblema animado Operação Salvamento" class="loginEmblema-svg" id="emblema-login-svg" viewbox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
 <defs>

@@ -63,21 +63,20 @@ let pontosCarreira=0;
 let pontosCarreiraTotal=0;
 const MAPA_SIZE=900, CENTRO=450;
 /* =========================================================
-   FASE 32 — EMBLEMA OFICIAL ANIMADO
-   Integra a animação oficial fornecida para a tela inicial.
-   O medalhão central permanece estático; o anel externo gira
-   180° no sentido horário e o interno 180° no anti-horário.
+   FASE 33.2 — EMBLEMAS ANIMADOS SEM SALTO VISUAL
+   A capa e o portal possuem instâncias independentes do mesmo
+   emblema oficial, com IDs próprios. Isso permite que ambos já
+   estejam presentes no primeiro frame da interface correspondente.
    ========================================================= */
-let emblemaLoginRAF=null;
-function iniciarAnimacaoEmblemaLogin(){
-  const svg=document.getElementById('emblema-login-svg');
+function iniciarUmaAnimacaoEmblema(svgId,prefixo){
+  const svg=document.getElementById(svgId);
   if(!svg||svg.dataset.animacaoAtiva==='1')return;
   svg.dataset.animacaoAtiva='1';
-  const underlay=document.getElementById('loginEmblema-underlay');
-  const outerRing=document.getElementById('loginEmblema-outerRing');
-  const innerRing=document.getElementById('loginEmblema-innerRing');
-  const outerGroup=document.getElementById('loginEmblema-outerGroup');
-  const innerGroup=document.getElementById('loginEmblema-innerGroup');
+  const underlay=document.getElementById(`${prefixo}-underlay`);
+  const outerRing=document.getElementById(`${prefixo}-outerRing`);
+  const innerRing=document.getElementById(`${prefixo}-innerRing`);
+  const outerGroup=document.getElementById(`${prefixo}-outerGroup`);
+  const innerGroup=document.getElementById(`${prefixo}-innerGroup`);
   if(!underlay||!outerRing||!innerRing||!outerGroup||!innerGroup)return;
   const CX=512,CY=512,OUTER_R=454,INNER_R=338,INNER_CIRCLE_R=282,UNDERLAY_R=370;
   const OUTER_DUR=1200,INNER_DUR=1200,GAP=180,PAUSE=2000,CYCLE=OUTER_DUR+GAP+INNER_DUR+PAUSE;
@@ -100,8 +99,12 @@ function iniciarAnimacaoEmblemaLogin(){
     innerGroup.setAttribute('transform',`rotate(${innerAngle.toFixed(4)} ${CX} ${CY})`);
   }
   if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){drawAtTime(0);return;}
-  function animate(ts){drawAtTime(ts);emblemaLoginRAF=requestAnimationFrame(animate);}
-  emblemaLoginRAF=requestAnimationFrame(animate);
+  function animate(ts){drawAtTime(ts);requestAnimationFrame(animate);}
+  requestAnimationFrame(animate);
+}
+function iniciarAnimacaoEmblemaLogin(){
+  iniciarUmaAnimacaoEmblema('emblema-apresentacao-svg','apresentacaoEmblema');
+  iniciarUmaAnimacaoEmblema('emblema-login-svg','loginEmblema');
 }
 
 /* =========================================================
@@ -711,6 +714,142 @@ function fecharCarreira(){ document.getElementById('modal-carreira').classList.r
 function renderCarreiraLista(){ const lista=document.getElementById('carreira-lista'); lista.innerHTML=''; PATENTES.forEach((nome,idx)=>{ const div=document.createElement('div'); let cls='carreira-item'; if(idx===patenteIndex)cls+=' atual'; else if(idx<patenteIndex)cls+=' conquistada'; div.className=cls; const conquistado = idx<patenteIndex; const atual = idx===patenteIndex; div.innerHTML = `<div class="carreira-insignia">${insigniaSVG(idx)}</div><div class="carreira-nome">${nome}${atual?' (atual)':''}</div>${conquistado?'<div class="carreira-check">✓</div>':''}`; lista.appendChild(div); }); document.getElementById('carreira-progresso-fill').style.width = Math.min(100,(pontosCarreira/PONTOS_PROMOCAO)*100)+'%'; }
 function mostrarPromocao(novoIdx){ pararMenuMusica(); audioPromocao.currentTime=0; audioPromocao.play().catch(()=>{}); document.getElementById('promocao-insignia').innerHTML = insigniaSVG(novoIdx); document.getElementById('promocao-texto').textContent = `Parabéns, o senhor foi promovido à patente de ${PATENTES[novoIdx]}. Vamos prosseguir nas missões, senhor(a) ${PATENTES[novoIdx]} ${nomeJogador}.`; document.getElementById('overlay-promocao').classList.add('mostrar'); }
 function fecharPromocao(){ document.getElementById('overlay-promocao').classList.remove('mostrar'); pararAudioObj(audioPromocao); tocarMenuMusica(); }
+
+/* =========================================================
+   FASE 33.2 — APRESENTAÇÃO + ABERTURA SEM FLASH INICIAL
+   - a capa é o estado HTML inicial real da primeira abertura;
+   - um bootstrap síncrono no <head> decide, antes da primeira pintura,
+     se a sessão deve mostrar a capa ou ir direto ao portal;
+   - capa e portal mantêm seus próprios emblemas animados, evitando
+     reparenting tardio e mudanças perceptíveis de layout;
+   - F5 antes de iniciar o vídeo: capa; F5 durante/depois: portal.
+   ========================================================= */
+const ABERTURA_SESSION_KEY='operacao-salvamento:fase33:abertura-exibida';
+const ABERTURA_FADE_MS=650;
+const APRESENTACAO_FADE_MS=480;
+let aberturaEncerrando=false;
+let aberturaEventosRegistrados=false;
+
+function aberturaFoiExibidaNestaSessao(){
+  try{return sessionStorage.getItem(ABERTURA_SESSION_KEY)==='1';}
+  catch(_erro){return false;}
+}
+function marcarAberturaExibidaNestaSessao(){
+  try{sessionStorage.setItem(ABERTURA_SESSION_KEY,'1');}
+  catch(_erro){}
+}
+function limparClassesBootstrapAbertura(){
+  document.documentElement.classList.remove('fase33-apresentacao-pendente','fase33-abertura-ja-iniciada');
+}
+function focarPortalAposAbertura(){
+  const alvo=document.querySelector('#tela-inicial button:not([disabled]),#tela-inicial input:not([disabled]),#tela-inicial [tabindex="0"]');
+  if(alvo&&typeof alvo.focus==='function')setTimeout(()=>alvo.focus({preventScroll:true}),0);
+}
+function ocultarExperienciaInicial(){
+  const apresentacao=document.getElementById('apresentacao-inicial');
+  const overlay=document.getElementById('abertura-cinematografica');
+  if(apresentacao){apresentacao.hidden=true;apresentacao.setAttribute('aria-hidden','true');apresentacao.classList.remove('saindo');}
+  if(overlay){overlay.hidden=true;overlay.setAttribute('aria-hidden','true');overlay.classList.remove('entrando','saindo');}
+  document.body.classList.remove('abertura-ativa');
+  limparClassesBootstrapAbertura();
+}
+function encerrarAberturaCinematografica(){
+  if(aberturaEncerrando)return;
+  aberturaEncerrando=true;
+  marcarAberturaExibidaNestaSessao();
+  const overlay=document.getElementById('abertura-cinematografica');
+  const video=document.getElementById('video-abertura');
+  if(!overlay){document.body.classList.remove('abertura-ativa');aberturaEncerrando=false;focarPortalAposAbertura();return;}
+  overlay.classList.add('saindo');
+  setTimeout(()=>{
+    if(video){video.pause();try{video.currentTime=0;}catch(_erro){}}
+    overlay.hidden=true;
+    overlay.setAttribute('aria-hidden','true');
+    overlay.classList.remove('saindo');
+    document.body.classList.remove('abertura-ativa');
+    aberturaEncerrando=false;
+    focarPortalAposAbertura();
+  },ABERTURA_FADE_MS);
+}
+function reproduzirAberturaCinematografica(){
+  const apresentacao=document.getElementById('apresentacao-inicial');
+  const overlay=document.getElementById('abertura-cinematografica');
+  const video=document.getElementById('video-abertura');
+  const botaoPlay=document.getElementById('abertura-play');
+  if(!overlay||!video){marcarAberturaExibidaNestaSessao();ocultarExperienciaInicial();focarPortalAposAbertura();return false;}
+
+  marcarAberturaExibidaNestaSessao();
+  aberturaEncerrando=false;
+  if(botaoPlay)botaoPlay.hidden=true;
+  try{video.currentTime=0;}catch(_erro){}
+  video.muted=false;
+  video.volume=1;
+
+  overlay.classList.add('entrando');
+  overlay.hidden=false;
+  overlay.setAttribute('aria-hidden','false');
+  document.body.classList.add('abertura-ativa');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>overlay.classList.remove('entrando')));
+  if(apresentacao)apresentacao.classList.add('saindo');
+
+  const tentativa=video.play();
+  if(tentativa&&typeof tentativa.catch==='function'){
+    tentativa.catch(()=>{
+      video.pause();
+      if(botaoPlay)botaoPlay.hidden=false;
+    });
+  }
+  setTimeout(()=>{
+    if(apresentacao){apresentacao.hidden=true;apresentacao.setAttribute('aria-hidden','true');apresentacao.classList.remove('saindo');}
+  },APRESENTACAO_FADE_MS);
+  return true;
+}
+function registrarEventosAbertura(){
+  if(aberturaEventosRegistrados)return;
+  aberturaEventosRegistrados=true;
+  const iniciar=document.getElementById('apresentacao-iniciar');
+  const video=document.getElementById('video-abertura');
+  const botaoPlay=document.getElementById('abertura-play');
+  const botaoPular=document.getElementById('abertura-pular');
+  if(iniciar)iniciar.addEventListener('click',reproduzirAberturaCinematografica);
+  if(video){
+    video.addEventListener('ended',encerrarAberturaCinematografica);
+    video.addEventListener('error',()=>{
+      if(botaoPlay){botaoPlay.hidden=false;const texto=botaoPlay.querySelector('span:last-child');if(texto)texto.textContent='Continuar para o jogo';}
+    });
+  }
+  if(botaoPular)botaoPular.addEventListener('click',encerrarAberturaCinematografica);
+  if(botaoPlay)botaoPlay.addEventListener('click',()=>{
+    if(video?.error){encerrarAberturaCinematografica();return;}
+    botaoPlay.hidden=true;
+    if(video){
+      video.muted=false;
+      const tentativa=video.play();
+      if(tentativa&&typeof tentativa.catch==='function')tentativa.catch(()=>{botaoPlay.hidden=false;});
+    }
+  });
+}
+function iniciarAberturaCinematografica(){
+  const apresentacao=document.getElementById('apresentacao-inicial');
+  const overlay=document.getElementById('abertura-cinematografica');
+  registrarEventosAbertura();
+
+  if(aberturaFoiExibidaNestaSessao()){
+    ocultarExperienciaInicial();
+    return false;
+  }
+
+  if(overlay){overlay.hidden=true;overlay.setAttribute('aria-hidden','true');}
+  if(!apresentacao){limparClassesBootstrapAbertura();return false;}
+  apresentacao.hidden=false;
+  apresentacao.setAttribute('aria-hidden','false');
+  document.body.classList.add('abertura-ativa');
+  limparClassesBootstrapAbertura();
+  const iniciar=document.getElementById('apresentacao-iniciar');
+  if(iniciar&&typeof iniciar.focus==='function')setTimeout(()=>iniciar.focus({preventScroll:true}),0);
+  return true;
+}
+
 
 /* POSICIONAMENTO DECLARATIVO DAS OCORRÊNCIAS — FASE 28D
    As 14 posições de cada nível são geradas pelo catálogo em geometria 7 + 7.
@@ -1953,6 +2092,7 @@ function irParaMapaSemPenalidade(motivoSalvamento='retorno-ao-mapa'){
 
 
 document.addEventListener('DOMContentLoaded',()=>{
+  if(typeof iniciarAberturaCinematografica==='function')iniciarAberturaCinematografica();
   if(typeof iniciarAnimacaoEmblemaLogin==='function')iniciarAnimacaoEmblemaLogin();
   // Fase 31: inicia imediatamente o pequeno pacote otimizado de insígnias.
   if(typeof agendarPrecarregamentoInsigniasCarreira==='function')agendarPrecarregamentoInsigniasCarreira();
