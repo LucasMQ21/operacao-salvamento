@@ -620,6 +620,7 @@ setTimeout(renderInitialScene, 120);
   const MISSION_ID = 3;
   let sucessoJaReportado = false;
   let tentativasPadrao = 0;
+  let audioGlobalMutadoNoSimulador = false;
   function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
   function lerTentativas(){
     for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
@@ -634,13 +635,14 @@ setTimeout(renderInitialScene, 120);
     const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
   };
   window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.audioGlobalEstaMutadoNoSimulador=function(){return !!audioGlobalMutadoNoSimulador;};
   window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
   window.controlarTrilhaSimulacaoPadrao=function(action){
     const acao=String(action||'').toLowerCase();
     if(!['start','pause','resume','stop'].includes(acao))return;
     try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
   };
-  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID&&d.success)sucessoJaReportado=true;});
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='audio-state-sync')audioGlobalMutadoNoSimulador=!!d.muted;if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID){if(d.success)sucessoJaReportado=true;if(Object.prototype.hasOwnProperty.call(d,'audioMuted'))audioGlobalMutadoNoSimulador=!!d.audioMuted;}});
   ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
   setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
 })();

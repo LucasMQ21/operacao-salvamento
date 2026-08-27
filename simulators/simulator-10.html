@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação Salvamento — Autonomia de Ar</title>
+<style>
+:root{--bg:#081017;--panel:#101923;--panel2:#0c151e;--border:#263747;--text:#edf3f8;--muted:#a5b5c4;--orange:#ff8c1a;--yellow:#f4c542;--red:#ef5350;--blue:#69b7ff;--green:#67d391}
+*{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif} body{min-height:100vh}
+header{padding:16px 22px;background:#071019;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30}
+.headerrow{max-width:1400px;margin:auto;display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(22px,3vw,34px)} h1 span{color:var(--orange)} .subtitle{color:var(--muted);font-size:14px;margin-top:4px}
+.steps{display:flex;gap:7px;flex-wrap:wrap} .step{padding:7px 10px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px;font-weight:800} .step.active{color:#081017;background:var(--orange);border-color:var(--orange)} .step.done{color:var(--green);border-color:#356a4c}
+.wrap{max-width:1400px;margin:auto;padding:18px} .screen{display:none} .screen.active{display:block}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px} .card h2{margin:0 0 6px} .lead{color:var(--muted);line-height:1.5;margin:0 0 16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);gap:16px;align-items:start} .grid-op{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+canvas.graph{width:100%;height:auto;background:#071019;border:1px solid var(--border);border-radius:12px}
+.controls{display:grid;gap:12px} .ctrl{padding:12px;background:var(--panel2);border:1px solid var(--border);border-radius:12px} .ctrl label{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px;margin-bottom:8px} input[type=range]{width:100%;cursor:pointer;touch-action:manipulation;padding:8px 0;margin:-8px 0} select,input[type=number]{width:100%;background:#071019;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px}
+button{border:0;border-radius:11px;padding:12px 15px;font-weight:800;font-size:15px;cursor:pointer} button:disabled{opacity:.45;cursor:not-allowed} .primary{background:var(--orange);color:#081017} .secondary{background:#293b4d;color:#fff} .danger{background:var(--red);color:#fff} .success{background:var(--green);color:#071019}
+.feedback{min-height:54px;padding:12px;border-radius:10px;background:#0b141d;border:1px solid var(--border);color:var(--muted);line-height:1.45} .feedback.ok{border-color:#356a4c;color:#baf4ce} .feedback.bad{border-color:#7a3434;color:#ffc0c0}
+.eq{font-family:Cambria,Georgia,serif;font-size:20px;padding:10px 12px;background:#071019;border-radius:10px;border:1px solid var(--border);overflow:auto} .formula-big{font-size:clamp(24px,4vw,38px);font-family:Cambria,Georgia,serif;text-align:center;padding:18px}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:12px 0} .metric{background:#09131c;border:1px solid var(--border);border-radius:12px;padding:12px} .metric span{display:block;color:var(--muted);font-size:12px} .metric b{display:block;font-size:22px;margin-top:5px}
+table{width:100%;border-collapse:collapse;margin-top:12px} th,td{border-bottom:1px solid var(--border);padding:10px;text-align:left;font-size:14px} th{color:var(--muted)}
+.stage{position:relative;width:100%;aspect-ratio:1494/1052;overflow:hidden;border-radius:12px;background:#05090d} .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block} .stage .victim{inset:auto;left:74.9%;top:19.2%;width:9.6%;height:auto;transform:translate(-50%,-50%) rotate(-90deg);transform-origin:center;z-index:2;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));transition:left .1s,top .1s,width .1s,opacity .35s}
+.stage .fx{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none} .stage .routeCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:4} .announce,.finding{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;max-width:75%;padding:18px 24px;border-radius:15px;background:rgba(0,0,0,.84);border:1px solid rgba(255,255,255,.18);box-shadow:0 12px 30px rgba(0,0,0,.5);font-size:clamp(18px,2vw,29px);font-weight:800;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none} .announce.show,.finding.show{opacity:1}
+.opside{display:grid;gap:10px} .opstat{padding:12px;border:1px solid var(--border);background:#0b141d;border-radius:12px} .opstat span{color:var(--muted);font-size:12px;display:block} .opstat b{display:block;margin-top:4px;font-size:24px} .pressurebar{height:18px;background:#071019;border:1px solid var(--border);border-radius:999px;overflow:hidden;margin-top:8px} .pressurefill{height:100%;width:100%;background:linear-gradient(90deg,#ef5350,#f4c542,#67d391);transform-origin:left center}
+.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:8px} .ldot{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--red);border:2px solid white;vertical-align:-2px;margin-right:5px} .lline{display:inline-block;width:28px;height:4px;background:var(--yellow);vertical-align:2px;margin-right:5px} .ldash{display:inline-block;width:32px;height:4px;background:repeating-linear-gradient(90deg,var(--yellow) 0 10px,transparent 10px 17px);vertical-align:2px;margin-right:5px}
+.navrow{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap} .pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#0b1822;border:1px solid var(--border);font-size:12px;color:var(--muted)} .note{padding:12px;border-left:4px solid var(--orange);background:#0b141d;border-radius:8px;color:var(--muted);line-height:1.5}
+@media(max-width:950px){.grid2,.grid-op{grid-template-columns:1fr} .metrics{grid-template-columns:repeat(2,1fr)} header{position:static}} @media(max-width:600px){.metrics{grid-template-columns:1fr} .wrap{padding:10px} .card{padding:12px}}
+
+.strategybox{background:#0b1721;border:1px solid #294052;border-radius:14px;padding:14px;margin-bottom:12px}
+.strategybox .stitle{font-size:12px;color:#9fc9ef;text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+.strategybox .svalue{font-size:28px;font-weight:900;color:#fff;margin:4px 0 8px}
+.strategybox .shelp{font-size:13px;color:#aebfce;line-height:1.45;margin-top:7px}
+.strategy-scale{display:flex;justify-content:space-between;color:#7f96a8;font-size:11px;margin-top:-2px}
+.strategybox input[type=range]{width:100%;cursor:pointer;touch-action:manipulation;padding:9px 0;margin:-4px 0 0}
+
+
+.invest-card{margin-top:14px;padding:14px;background:#0b141d;border:1px solid var(--border);border-radius:12px}
+.invest-head{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+.invest-head h3{margin:0;font-size:18px}
+.phase-tag{display:inline-block;padding:5px 9px;border-radius:999px;background:#102231;border:1px solid #31516b;color:#9fc9ef;font-size:11px;font-weight:900;letter-spacing:.04em}
+.miniinput{width:100%;min-width:86px;background:#071019;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:15px;text-align:center}
+.miniinput:focus{outline:2px solid rgba(255,140,26,.45);border-color:var(--orange)}
+.locked-val{display:inline-block;min-width:86px;text-align:center;padding:8px 10px;border-radius:8px;background:#0a1c16;border:1px solid #315d47;color:#baf4ce;font-weight:800}
+.locked-note{display:block;color:#7fa391;font-size:10px;margin-top:3px}
+.formula-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.formula-mini{padding:11px;background:#071019;border:1px solid var(--border);border-radius:10px;text-align:center;font-family:Cambria,Georgia,serif;font-size:18px}
+.hiddenBlock{display:none}
+.summary-good{margin-top:14px;padding:12px;border:1px solid #356a4c;background:#0a1812;border-radius:10px}
+.summary-good b{color:#baf4ce}
+.compare-table th,.compare-table td{text-align:center;vertical-align:middle}
+.compare-table th:first-child,.compare-table td:first-child{text-align:left}
+@media(max-width:750px){
+  .formula-row{grid-template-columns:1fr}
+  .compare-table{font-size:12px}
+  .compare-table th,.compare-table td{padding:7px 4px}
+  .miniinput,.locked-val{min-width:68px;padding:8px 5px}
+}
+
+
+.reference-box{margin:12px 0 14px;padding:13px 14px;background:#0b1721;border:1px solid #294052;border-radius:12px}
+.reference-box b{color:#bfe2ff}
+.reference-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.reference-item{padding:9px;background:#071019;border:1px solid var(--border);border-radius:9px;text-align:center}
+.reference-item span{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.reference-item b{font-size:18px;color:#fff}
+.graph-tip{margin-top:8px;font-size:12px;color:#9cb2c4}
+@media(max-width:700px){.reference-grid{grid-template-columns:1fr}}
+
+
+/* ---------- V19: UX / JOGABILIDADE ---------- */
+.missionchips{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.mchip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:#0b1822;border:1px solid #294052;color:#c1d0dc;font-size:11px;font-weight:750}
+.mchip strong{color:#fff}
+.briefing-open{background:transparent;color:#d9e5ee;border:1px solid #395064;padding:7px 10px;font-size:12px}
+.briefing-open:hover{border-color:var(--orange);color:#fff}
+.step.done::before{content:"✓ ";font-weight:900}
+.step.active::before{content:"▶ ";font-weight:900}
+.step:not(.active):not(.done)::before{content:"○ "}
+.step:not(.active):not(.done){opacity:.78}
+
+.taskbox{display:grid;grid-template-columns:auto 1fr;gap:12px;margin:12px 0 16px;padding:13px 14px;background:#0b1721;border:1px solid #31516b;border-radius:12px}
+.taskicon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#152a3b;color:#9fd3ff;font-size:20px;font-weight:900}
+.taskbox h3{margin:0 0 5px;font-size:16px}
+.taskbox ol,.taskbox ul{margin:5px 0 0;padding-left:19px;color:#c2d0db;line-height:1.48;font-size:13px}
+.taskbox li+li{margin-top:2px}
+.tasktag{display:inline-block;margin-bottom:4px;color:#81bce8;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+
+.param-help{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0 14px}
+.param-help div{padding:8px 9px;background:#09131c;border:1px solid var(--border);border-radius:9px;font-size:11px;color:var(--muted);line-height:1.35}
+.param-help b{display:block;color:#fff;font-size:15px;margin-bottom:2px}
+
+.section-label{margin:10px 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8fa7ba;font-weight:900}
+.success-criteria{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 15px}
+.criterion{padding:10px 11px;border:1px solid var(--border);border-radius:10px;background:#09131c}
+.criterion span{display:block;color:#8fa7ba;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.criterion b{display:block;margin-top:4px;font-size:14px;color:#fff}
+.criterion.goal{border-color:#3b654f;background:#0a1812}
+
+.briefing-overlay{position:fixed;inset:0;z-index:120;background:rgba(2,7,11,.88);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(5px)}
+.briefing-overlay.hidden{display:none}
+.briefing-card{width:min(860px,100%);max-height:92vh;overflow:auto;background:#0e1923;border:1px solid #385066;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.6);padding:22px}
+.briefing-kicker{font-size:11px;color:#ffb25e;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.briefing-card h2{font-size:clamp(25px,4vw,38px);margin:5px 0 8px}
+.briefing-card h2 span{color:var(--orange)}
+.briefing-lead{font-size:15px;color:#c3d0db;line-height:1.55;margin:0 0 16px}
+.brief-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+.brief-panel{background:#09131c;border:1px solid var(--border);border-radius:12px;padding:14px}
+.brief-panel h3{margin:0 0 8px;font-size:15px;color:#fff}
+.brief-panel p,.brief-panel li{color:#adbdca;font-size:13px;line-height:1.5}
+.brief-panel ul,.brief-panel ol{margin:6px 0 0;padding-left:20px}
+.brief-goal{margin-top:12px;padding:13px 14px;border-left:4px solid var(--orange);background:#10171e;border-radius:9px;color:#d7e0e7;line-height:1.5}
+.brief-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}
+.start-mission{font-size:16px;padding:13px 20px}
+
+.action-hint{font-size:11px;color:#8196a7;margin:6px 0 0}
+.controls button.primary,.invest-card button.primary,.strategybox+button.primary{min-height:46px}
+.metrics-title{margin:11px 0 -4px;font-size:11px;color:#8fa7ba;text-transform:uppercase;letter-spacing:.07em;font-weight:900}
+
+@media(max-width:760px){
+  .param-help,.success-criteria{grid-template-columns:1fr 1fr}
+  .brief-grid{grid-template-columns:1fr}
+  .missionchips{display:none}
+  .taskbox{grid-template-columns:1fr}
+  .taskicon{width:32px;height:32px}
+}
+@media(max-width:480px){
+  .param-help,.success-criteria{grid-template-columns:1fr}
+  .briefing-card{padding:15px}
+}
+
+
+/* Integração Fase 37 */
+.bridge-attempts{display:none!important}
+header{position:sticky;top:0}
+header .headerrow>div:last-child{margin-left:auto}
+@media(max-width:950px){header{position:static}}
+
+
+/* ---------- Fase 37.2: compactação da Etapa 4 ---------- */
+.card-operation{padding:14px}
+.op-intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,420px);gap:12px;align-items:start;margin-bottom:10px}
+.op-copy .lead{margin:4px 0 0;font-size:14px;line-height:1.42}
+.success-criteria.compact{margin:0;align-self:stretch}.success-criteria.compact .criterion{padding:9px 10px}.success-criteria.compact .criterion b{font-size:13px}.success-criteria.compact .criterion span{font-size:10px}
+.taskline{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;background:#0b1721;border:1px solid #31516b;border-radius:12px}.taskline .tasktag{margin:2px 0 0;white-space:nowrap}.taskline p{margin:0;color:#c2d0db;line-height:1.42;font-size:13px;max-width:860px}
+.compact-op{grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start}
+.stage-panel{display:flex;flex-direction:column;min-width:0}.stage-panel .legend{margin-top:6px}
+.opside{display:grid;gap:9px;align-content:start}
+.ops-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ops-grid .opstat{padding:10px;min-height:0}.ops-grid .opstat span{font-size:11px}.ops-grid .opstat b{font-size:clamp(18px,1.5vw,20px);line-height:1.15}.ops-grid .opstat.span-2{grid-column:1/-1}.ops-grid .opstat.pressure b{margin-bottom:4px}
+.opside-actions{display:grid;gap:9px}.opside-actions .primary,.op-back{width:100%}.op-back{margin-top:0}.opside-actions .feedback{min-height:76px}
+#screen3 .stage{box-shadow:0 0 0 1px var(--border) inset}
+@media(min-width:951px){
+  #screen3.active .card-operation{min-height:calc(100vh - 235px);display:flex;flex-direction:column}
+  #screen3.active .compact-op{flex:1;min-height:0}
+  #screen3.active .stage{max-height:calc(100vh - 405px)}
+  #screen3.active .stage-panel,#screen3.active .compact-op{min-height:0}
+  #screen3.active .wrap{padding-top:12px}
+}
+@media(max-width:1180px){
+  .op-intro{grid-template-columns:1fr}
+  .success-criteria.compact{max-width:760px}
+}
+@media(max-width:950px){
+  .compact-op{grid-template-columns:1fr}
+  .op-intro{grid-template-columns:1fr}
+  .taskline{display:grid}
+  .ops-grid{grid-template-columns:1fr 1fr}
+  .card-operation{padding:12px}
+}
+@media(max-width:600px){
+  .ops-grid{grid-template-columns:1fr}
+  .ops-grid .opstat.span-2{grid-column:auto}
+  .taskline .tasktag{white-space:normal}
+}
+
+
+/* ---------- Fase 37.3: Etapa 4 integrada a partir do protótipo v2 ---------- */
+[hidden]{display:none!important}
+body.operation-screen{overflow:hidden;min-height:100dvh}
+body.operation-screen header{padding:8px 16px;position:static;min-height:76px}
+body.operation-screen .headerrow{max-width:none;gap:12px;flex-wrap:nowrap}
+body.operation-screen h1{font-size:clamp(22px,2.2vw,30px)}
+body.operation-screen .subtitle{font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:760px}
+body.operation-screen .missionchips{margin-top:6px;gap:5px;flex-wrap:nowrap}
+body.operation-screen .mchip{font-size:10px;padding:4px 7px}
+body.operation-screen .steps{flex-wrap:nowrap;gap:5px}
+body.operation-screen .step{font-size:10px;padding:6px 8px}
+body.operation-screen .wrap{max-width:none;height:calc(100dvh - 76px);padding:8px 12px;overflow:hidden}
+body.operation-screen #screen3,body.operation-screen #screen3.active{height:100%;min-height:0}
+body.operation-screen .operation-card{height:100%;min-height:0;padding:0;background:transparent;border:0;border-radius:0;display:flex;flex-direction:column;box-shadow:none}
+body.operation-screen .stagehead{height:40px;min-height:40px;border:1px solid var(--border);border-radius:10px;background:#0a1822;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;padding:0 12px;margin-bottom:8px}
+body.operation-screen .stagehead h2{margin:0;font-size:19px;white-space:nowrap}
+body.operation-screen .stagehead h2 span{color:var(--orange)}
+body.operation-screen .stagehead p{margin:0;color:#c6d4de;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.operation-screen .mini-goals{display:flex;gap:6px}
+body.operation-screen .mini-goals span{border:1px solid #2b4558;border-radius:8px;padding:6px 8px;background:#0a151e;font-size:9px;font-weight:800;white-space:nowrap}
+body.operation-screen .mini-goals span:last-child{border-color:#356a4c;background:#0a1a13}
+body.operation-screen .workspace{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 318px;gap:10px;align-items:stretch}
+body.operation-screen .mapcolumn{min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center}
+body.operation-screen .mapbox{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+body.operation-screen .stage{position:relative;aspect-ratio:1494/1052;height:min(100%,calc((100vw - 354px)/1.42015));width:auto;max-width:100%;border-radius:12px;overflow:hidden;background:#03070a;border:2px solid #d8e1e7;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+body.operation-screen .stage>img.base{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:#05090d}
+body.operation-screen .stage .victim{position:absolute;left:74.9%;top:19.2%;width:9.6%;height:auto;transform:translate(-50%,-50%) rotate(-90deg);transform-origin:center;z-index:2;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));transition:left .1s,top .1s,width .1s,opacity .35s}
+body.operation-screen .stage canvas{position:absolute;inset:0;width:100%;height:100%}
+body.operation-screen .legend{height:26px;min-height:26px;width:min(100%,1080px);display:flex;align-items:center;gap:18px;color:#b6c8d4;font-size:11px;margin-top:0}
+body.operation-screen .side{min-height:0;display:flex;flex-direction:column;gap:7px}
+body.operation-screen .strategy,body.operation-screen .strategy-summary{padding:11px 12px;border:1px solid #294052;border-radius:11px;background:#0a1923}
+body.operation-screen .strategy-summary{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;min-height:62px}
+body.operation-screen .summary-time{font-size:25px;font-weight:950;color:#fff}
+body.operation-screen .summary-help{color:#a9bfd0;font-size:10px;margin-top:3px}
+body.operation-screen .kicker{font-size:10px;color:#76c9ff;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+body.operation-screen .strategy p{font-size:11px;line-height:1.38;color:#c3d1db;margin:6px 0}
+body.operation-screen .strategy .big{font-size:28px;font-weight:950;margin:5px 0 7px}
+body.operation-screen .strategy input{width:100%;accent-color:#178df5}
+body.operation-screen .scale{display:flex;justify-content:space-between;font-size:9px;color:#8da5b6}
+body.operation-screen .strategy .primary{width:100%;margin-top:7px;border-radius:9px;padding:11px;background:linear-gradient(90deg,#ff8718,#ff9d1b);color:#071019;font-weight:950;font-size:13px;min-height:0}
+body.operation-screen .operation-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0}
+body.operation-screen .operation-metrics .stat{min-height:62px;padding:8px 9px;border:1px solid #294052;border-radius:9px;background:#0a1720}
+body.operation-screen .operation-metrics .stat.state{grid-column:1/-1;min-height:76px}
+body.operation-screen .operation-metrics .stat.pressure{grid-column:1/-1}
+body.operation-screen .operation-metrics .stat span{display:block;font-size:8px;color:#9fc1da;text-transform:uppercase}
+body.operation-screen .operation-metrics .stat b{display:block;margin-top:4px;font-size:18px;line-height:1.1}
+body.operation-screen .operation-metrics .stat.state b{font-size:16px}
+body.operation-screen .state-detail{margin-top:5px;color:#9fb6c6;font-size:10px;line-height:1.35;text-transform:none}
+body.operation-screen .pressurebar{height:11px;margin-top:6px}
+body.operation-screen .operation-feedback{display:none;padding:9px 10px;min-height:50px;border:1px solid #294052;border-radius:9px;background:#0a1720;color:#b8cad6;font-size:10px;line-height:1.38}
+body.operation-screen .operation-feedback.show{display:block}
+body.operation-screen .operation-feedback.ok{border-color:#356a4c;color:#baf4ce}
+body.operation-screen .operation-feedback.bad{border-color:#7a3434;color:#ffc0c0}
+body.operation-screen .operation-back{width:100%;margin-top:auto;border-radius:9px;padding:9px;background:#263c4f;color:#fff;font-weight:900;font-size:11px;min-height:0}
+@media(max-width:1380px) and (min-width:951px){body.operation-screen .workspace{grid-template-columns:minmax(0,1fr) 300px}body.operation-screen .stage{height:min(100%,calc((100vw - 334px)/1.42015))}body.operation-screen .step{padding:5px 7px;font-size:9px}body.operation-screen .mchip{font-size:9px}}
+@media(max-width:950px), (max-height:690px){body.operation-screen{overflow:auto}body.operation-screen header{min-height:auto;position:static}body.operation-screen .headerrow{flex-wrap:wrap}body.operation-screen .missionchips,body.operation-screen .steps{flex-wrap:wrap}body.operation-screen .wrap{height:auto;min-height:calc(100vh - 76px);overflow:visible}body.operation-screen .workspace{grid-template-columns:1fr}body.operation-screen .stage{width:100%;height:auto}body.operation-screen .side{min-height:auto}body.operation-screen .stagehead{height:auto;min-height:40px;grid-template-columns:1fr;padding:8px 10px}body.operation-screen .stagehead p{white-space:normal}body.operation-screen .mini-goals{flex-wrap:wrap}}
+
+
+/* ---------- Fase 37.4: maximização do croqui na Etapa 4 ---------- */
+@media(min-width:951px) and (min-height:691px){
+  /* Cabeçalho interno da missão fica em uma única faixa curta nesta etapa. */
+  body.operation-screen header{
+    position:static;
+    padding:5px 12px;
+    min-height:46px;
+    border-bottom:1px solid var(--border);
+  }
+  body.operation-screen .headerrow{
+    max-width:none;
+    min-height:34px;
+    display:flex;
+    flex-wrap:nowrap;
+    gap:10px;
+  }
+  body.operation-screen header h1{
+    font-size:22px;
+    line-height:1;
+    white-space:nowrap;
+  }
+  body.operation-screen header .subtitle,
+  body.operation-screen header .missionchips{
+    display:none;
+  }
+  body.operation-screen header .steps{
+    margin-left:auto;
+    flex-wrap:nowrap;
+    gap:5px;
+  }
+  body.operation-screen header .step{
+    padding:5px 8px;
+    font-size:10px;
+    line-height:1;
+  }
+
+  /* Todo o restante da viewport é entregue à operação. */
+  body.operation-screen .wrap{
+    max-width:none;
+    height:calc(100dvh - 46px);
+    padding:6px 10px 5px;
+    overflow:hidden;
+  }
+  body.operation-screen .stagehead{
+    height:36px;
+    min-height:36px;
+    margin-bottom:5px;
+    padding:0 10px;
+    gap:12px;
+  }
+  body.operation-screen .stagehead h2{font-size:18px}
+  body.operation-screen .stagehead p{font-size:11px}
+  body.operation-screen .mini-goals{gap:5px}
+  body.operation-screen .mini-goals span{padding:4px 7px;font-size:8.5px}
+
+  body.operation-screen .workspace{
+    grid-template-columns:minmax(0,1fr) 294px;
+    gap:8px;
+    min-height:0;
+  }
+  body.operation-screen .mapcolumn{
+    align-items:stretch;
+    min-height:0;
+  }
+  body.operation-screen .mapbox{
+    align-items:flex-start;
+    justify-content:center;
+    min-height:0;
+  }
+  /* A altura agora é calculada diretamente pela viewport do simulador.
+     A largura deriva da proporção original 1494:1052. */
+  body.operation-screen .stage{
+    width:auto;
+    height:min(calc(100dvh - 119px),calc((100vw - 322px)/1.420152));
+    max-height:100%;
+    max-width:100%;
+    flex:0 0 auto;
+  }
+  body.operation-screen .legend{
+    width:min(100%,calc((100dvh - 119px)*1.420152));
+    height:22px;
+    min-height:22px;
+    font-size:10px;
+    gap:14px;
+    margin:2px auto 0;
+  }
+
+  /* Painel lateral: todos os comandos permanecem dentro da viewport. */
+  body.operation-screen .side{
+    min-height:0;
+    max-height:100%;
+    gap:5px;
+    overflow:hidden;
+  }
+  body.operation-screen .strategy,
+  body.operation-screen .strategy-summary{
+    padding:8px 10px;
+    border-radius:9px;
+  }
+  body.operation-screen .strategy{flex:0 0 auto}
+  body.operation-screen .strategy p{
+    font-size:10px;
+    line-height:1.28;
+    margin:4px 0;
+  }
+  body.operation-screen .strategy .big{
+    font-size:25px;
+    margin:3px 0 4px;
+  }
+  body.operation-screen .strategy input{
+    margin:0;
+    padding:4px 0;
+  }
+  body.operation-screen .scale{font-size:8px}
+  body.operation-screen .strategy .primary{
+    margin-top:5px;
+    padding:9px 7px;
+    font-size:11px;
+  }
+  body.operation-screen .strategy-summary{
+    min-height:50px;
+  }
+  body.operation-screen .summary-time{font-size:23px}
+  body.operation-screen .summary-help{font-size:9px}
+
+  body.operation-screen .operation-metrics{
+    gap:5px;
+    flex:0 0 auto;
+  }
+  body.operation-screen .operation-metrics .stat{
+    min-height:50px;
+    padding:6px 8px;
+  }
+  body.operation-screen .operation-metrics .stat.state{
+    min-height:60px;
+  }
+  body.operation-screen .operation-metrics .stat span{font-size:7.5px}
+  body.operation-screen .operation-metrics .stat b{
+    margin-top:3px;
+    font-size:16px;
+  }
+  body.operation-screen .operation-metrics .stat.state b{font-size:14px}
+  body.operation-screen .state-detail{
+    margin-top:3px;
+    font-size:8.5px;
+    line-height:1.22;
+  }
+  body.operation-screen .pressurebar{
+    height:9px;
+    margin-top:4px;
+  }
+  body.operation-screen .operation-feedback{
+    padding:7px 8px;
+    min-height:38px;
+    font-size:9px;
+    line-height:1.25;
+    flex:0 0 auto;
+  }
+  body.operation-screen .operation-back{
+    margin-top:auto;
+    padding:8px;
+    font-size:10px;
+    flex:0 0 auto;
+  }
+}
+
+@media(min-width:951px) and (min-height:691px) and (max-width:1380px){
+  body.operation-screen .workspace{grid-template-columns:minmax(0,1fr) 278px}
+  body.operation-screen .stage{height:min(calc(100dvh - 119px),calc((100vw - 306px)/1.420152))}
+}
+
+
+/* ---------- Fase 37.5: croqui ocupa a área útil real ---------- */
+@media(min-width:951px) and (min-height:691px){
+  /* Painel um pouco mais estreito para devolver largura à simulação. */
+  body.operation-screen .workspace{
+    grid-template-columns:minmax(0,1fr) 286px;
+    gap:8px;
+  }
+
+  /* A coluna do mapa deixa de esticar/centralizar uma caixa pequena.
+     O croqui recebe uma largura calculada pela altura útil da viewport
+     e mantém rigorosamente a proporção original 1494:1052. */
+  body.operation-screen .mapcolumn{
+    align-items:center;
+    justify-content:flex-start;
+    min-height:0;
+  }
+  body.operation-screen .mapbox{
+    flex:0 0 auto;
+    width:100%;
+    min-height:0;
+    height:auto;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    overflow:visible;
+  }
+  body.operation-screen .stage{
+    width:min(100%,calc((100dvh - 124px) * 1.420152));
+    height:auto;
+    max-width:none;
+    max-height:none;
+    aspect-ratio:1494/1052;
+    flex:0 0 auto;
+  }
+  body.operation-screen .legend{
+    width:min(100%,calc((100dvh - 124px) * 1.420152));
+    height:22px;
+    min-height:22px;
+    margin:2px auto 0;
+    flex:0 0 auto;
+  }
+
+  /* O painel termina junto dos indicadores, sem jogar a ação secundária
+     para o rodapé da viewport. */
+  body.operation-screen .side{
+    justify-content:flex-start;
+    align-content:start;
+    gap:5px;
+  }
+  body.operation-screen .operation-back{
+    margin-top:0;
+  }
+}
+
+@media(min-width:951px) and (min-height:691px) and (max-width:1380px){
+  body.operation-screen .workspace{
+    grid-template-columns:minmax(0,1fr) 270px;
+  }
+  body.operation-screen .stage,
+  body.operation-screen .legend{
+    width:min(100%,calc((100dvh - 124px) * 1.420152));
+  }
+}
+
+
+/* ---------- Fase 37.6: dimensão proporcional explícita do croqui ---------- */
+@media(min-width:951px) and (min-height:691px){
+  body.operation-screen .mapbox{
+    align-items:flex-start;
+    justify-content:center;
+    overflow:visible;
+  }
+
+  /* O mesmo valor define largura e altura. Isso impede que o flex/grid
+     achate a caixa do simulador. O primeiro limite é a largura disponível;
+     o segundo é a altura disponível convertida para largura na razão 1494:1052. */
+  body.operation-screen .stage{
+    --stage-w:min(calc(100vw - 310px), calc((100dvh - 125px) * 1.4201520913));
+    width:var(--stage-w) !important;
+    height:calc(var(--stage-w) / 1.4201520913) !important;
+    min-width:0;
+    min-height:0;
+    max-width:none !important;
+    max-height:none !important;
+    aspect-ratio:auto !important;
+    flex:0 0 auto !important;
+  }
+  body.operation-screen .stage>img.base{
+    width:100%;
+    height:100%;
+    object-fit:fill;
+  }
+  body.operation-screen .legend{
+    width:var(--stage-w,100%);
+    max-width:100%;
+    margin:2px auto 0;
+  }
+}
+
+@media(min-width:951px) and (min-height:691px) and (max-width:1380px){
+  body.operation-screen .stage{
+    --stage-w:min(calc(100vw - 294px), calc((100dvh - 125px) * 1.4201520913));
+  }
+}
+
+
+/* ---------- Fase 37.7: painel operacional mais amplo ---------- */
+@media(min-width:951px) and (min-height:691px){
+  /* O croqui mantém exatamente a dimensão proporcional já aprovada.
+     O painel aproveita parte do espaço livre ao lado e recebe mais respiro. */
+  body.operation-screen .workspace{
+    grid-template-columns:minmax(0,1fr) 338px;
+    gap:9px;
+  }
+
+  body.operation-screen .side{
+    gap:7px;
+    overflow:hidden;
+  }
+
+  body.operation-screen .strategy,
+  body.operation-screen .strategy-summary{
+    padding:11px 13px;
+    border-radius:10px;
+  }
+  body.operation-screen .strategy p{
+    font-size:10.5px;
+    line-height:1.34;
+    margin:5px 0;
+  }
+  body.operation-screen .strategy .big{
+    font-size:28px;
+    margin:4px 0 6px;
+  }
+  body.operation-screen .strategy .primary{
+    margin-top:7px;
+    padding:10px 8px;
+    font-size:11.5px;
+  }
+  body.operation-screen .strategy-summary{min-height:58px}
+  body.operation-screen .summary-time{font-size:26px}
+  body.operation-screen .summary-help{font-size:9.5px}
+
+  body.operation-screen .operation-metrics{gap:7px}
+  body.operation-screen .operation-metrics .stat{
+    min-height:56px;
+    padding:8px 10px;
+  }
+  body.operation-screen .operation-metrics .stat.state{min-height:67px}
+  body.operation-screen .operation-metrics .stat span{font-size:8.5px}
+  body.operation-screen .operation-metrics .stat b{
+    margin-top:4px;
+    font-size:18px;
+  }
+  body.operation-screen .operation-metrics .stat.state b{font-size:16px}
+  body.operation-screen .state-detail{
+    margin-top:4px;
+    font-size:9px;
+    line-height:1.28;
+  }
+  body.operation-screen .pressurebar{
+    height:10px;
+    margin-top:5px;
+  }
+  body.operation-screen .operation-feedback{
+    padding:9px 10px;
+    min-height:46px;
+    font-size:9.5px;
+    line-height:1.3;
+  }
+  body.operation-screen .operation-back{
+    margin-top:0;
+    padding:9px;
+    font-size:10.5px;
+  }
+
+  /* A dimensão do croqui continua sendo regida pela viewport e pela razão
+     1494:1052; somente o limite horizontal considera a nova coluna lateral. */
+  body.operation-screen .stage{
+    --stage-w:min(calc(100vw - 362px), calc((100dvh - 125px) * 1.4201520913));
+  }
+}
+
+@media(min-width:951px) and (min-height:691px) and (max-width:1380px){
+  body.operation-screen .workspace{
+    grid-template-columns:minmax(0,1fr) 310px;
+  }
+  body.operation-screen .stage{
+    --stage-w:min(calc(100vw - 334px), calc((100dvh - 125px) * 1.4201520913));
+  }
+}
+</style>
+</head>
+<body>
+<span class="bridge-attempts" id="contadorTentativasBridge">0</span>
+<header>
+<div class="headerrow">
+<div>
+<h1>Autonomia de <span>Ar</span></h1>
+<div class="subtitle">Missão 8 · Modele o consumo respiratório e planeje uma busca segura em ambiente com visibilidade zero.</div>
+<div class="missionchips">
+<span class="mchip">🎯 <strong>Localizar a vítima</strong></span>
+<span class="mchip">🔎 Fazer a <strong>maior varredura possível</strong></span>
+<span class="mchip">🫁 Sair com <strong>≥ 3 min de autonomia</strong></span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end">
+<div class="steps">
+<span class="step active" data-step="0">1 · Modelar</span>
+<span class="step" data-step="1">2 · Investigar</span>
+<span class="step" data-step="2">3 · Autonomia</span>
+<span class="step" data-step="3">4 · Estratégia</span>
+</div>
+
+</div>
+</div>
+</header>
+<div class="wrap">
+<section class="screen active" id="screen0"><div class="card"><h2>Etapa 1 — Da função seno ao padrão respiratório</h2><p class="lead">Comece pela função seno de referência <b>f(t)=sen(t)</b>. Depois, use os quatro parâmetros de <b>V(t)=a+b·sen(ct+d)</b> para transformar essa curva até que ela represente o padrão respiratório indicado pelos pontos do gráfico.</p>
+<div class="taskbox">
+<div class="taskicon">1</div>
+<div>
+<span class="tasktag">O que fazer agora · Etapa 1 de 4</span>
+<h3>Faça a curva azul reproduzir os pontos amarelos</h3>
+<ol>
+<li>Observe a função de referência <b>sen(t)</b>.</li>
+<li>Altere os quatro controles até a curva azul coincidir com os pontos observados.</li>
+<li>Acompanhe os dados produzidos pelo seu modelo e clique em <b>Conferir minha função</b>.</li>
+</ol>
+</div>
+</div>
+<div class="param-help">
+<div><b>a</b>move a linha média para cima ou para baixo</div>
+<div><b>b</b>controla a amplitude da oscilação</div>
+<div><b>c</b>altera o período da função</div>
+<div><b>d</b>desloca a curva horizontalmente</div>
+</div>
+<div class="reference-box"><b>Função de referência: f(t)=sen(t)</b><div class="reference-grid"><div class="reference-item"><span>Linha média</span><b>y = 0</b></div><div class="reference-item"><span>Amplitude</span><b>1</b></div><div class="reference-item"><span>Período</span><b>2π</b></div></div><div class="graph-tip">Os controles começam exatamente nessa função: a=0, b=1, c=1 e d=0.</div></div><div class="grid2"><div><canvas class="graph" height="470" id="fitGraph" width="900"></canvas><div class="metrics-title">Dados produzidos pelo seu modelo</div><div class="metrics"><div class="metric"><span>Vmáx</span><b id="mMax">—</b></div><div class="metric"><span>Vmín</span><b id="mMin">—</b></div><div class="metric"><span>Período T</span><b id="mPeriod">—</b></div><div class="metric"><span>Respirações/min</span><b id="mFreq">—</b></div><div class="metric"><span>Consumo</span><b id="mCons">—</b></div></div></div><div class="controls"><div class="ctrl"><label><span>a — linha média</span><b id="aVal">0,0</b></label><input id="aRange" max="6" min="0" step="0.5" type="range" value="0"/></div><div class="ctrl"><label><span>b — amplitude</span><b id="bVal">1,0</b></label><input id="bRange" max="2" min="0.5" step="0.25" type="range" value="1"/></div><div class="ctrl"><label><span>c — frequência angular</span><b id="cVal">1</b></label><input id="cRange" max="5" min="0" step="1" type="range" value="1"/></div><div class="ctrl"><label><span>d — deslocamento de fase</span><b id="dVal">0</b></label><input id="dRange" max="3" min="0" step="1" type="range" value="1"/></div><div class="eq" id="fitEq">V(t)=0,0+1,0·sen(t)</div><button class="primary" id="testFit">CONFERIR MINHA FUNÇÃO</button><div class="feedback" id="fitFeedback">Ajuste a curva azul. Quando ela reproduzir os pontos amarelos, confira sua função.</div></div></div><div class="navrow"><button class="success" disabled="" id="toCompare">ETAPA CONCLUÍDA — INVESTIGAR OS ESTADOS →</button></div></div></section>
+<section class="screen" id="screen1">
+<div class="card">
+<h2>Etapa 2 — Investigue os três estados respiratórios</h2>
+<p class="lead">
+      As três curvas representam diferentes níveis de esforço. Além dos marcadores móveis, o gráfico indica
+      <b>linhas médias e pontos notáveis com suas coordenadas</b>. Use essas informações para determinar amplitude e período
+      e, depois, transforme-as em taxas de consumo de ar.
+    </p>
+<div class="taskbox">
+<div class="taskicon">2</div>
+<div>
+<span class="tasktag">O que fazer agora · Etapa 2 de 4</span>
+<h3>Descubra os dados que determinam o consumo de ar</h3>
+<ol>
+<li>Toque nos pontos destacados para consultar suas coordenadas.</li>
+<li>Calcule amplitude e período dos estados moderado e intenso.</li>
+<li>Depois, transforme esses valores em respirações/min, volume por ciclo e consumo.</li>
+</ol>
+</div>
+</div>
+<p class="graph-tip" style="margin-top:-6px;margin-bottom:12px">
+      Toque ou clique nos pontos destacados dos estados moderado e intenso para visualizar suas coordenadas.
+    </p>
+<canvas class="graph" height="480" id="compareGraph" width="1100"></canvas>
+<div class="invest-card">
+<div class="invest-head">
+<h3>1. Leia amplitude e período no gráfico</h3>
+<span class="phase-tag">FASE 2A</span>
+</div>
+<p class="lead" style="margin-bottom:10px">
+        No estado de baixo esforço, os valores já foram obtidos na etapa anterior. Para os estados moderado e intenso,
+        use as <b>coordenadas dos máximos, mínimos e pontos da linha média</b> indicados no gráfico para calcular
+        a amplitude e o período.
+      </p>
+<table class="compare-table">
+<thead>
+<tr>
+<th>Estado</th>
+<th>Amplitude (L)</th>
+<th>Período (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Baixo</b></td>
+<td>
+<span class="locked-val">1,00</span>
+<span class="locked-note">obtido na Etapa 1</span>
+</td>
+<td>
+<span class="locked-val">3,0</span>
+<span class="locked-note">obtido na Etapa 1</span>
+</td>
+</tr>
+<tr>
+<td><b>Moderado</b></td>
+<td><input autocomplete="off" class="miniinput" id="ampModerado" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input autocomplete="off" class="miniinput" id="perModerado" inputmode="decimal" placeholder="?" type="text"/></td>
+</tr>
+<tr>
+<td><b>Intenso</b></td>
+<td><input autocomplete="off" class="miniinput" id="ampIntenso" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input autocomplete="off" class="miniinput" id="perIntenso" inputmode="decimal" placeholder="?" type="text"/></td>
+</tr>
+</tbody>
+</table>
+<button class="primary" id="checkGraphReading" style="margin-top:12px;width:100%">CONFERIR AMPLITUDE E PERÍODO</button>
+<div class="feedback" id="graphReadFeedback" style="margin-top:10px">
+        Use as coordenadas indicadas: amplitude = (máximo − mínimo)/2; período = diferença entre as abscissas de dois máximos consecutivos.
+      </div>
+</div>
+<div class="invest-card hiddenBlock" id="calcPhase">
+<div class="invest-head">
+<h3>2. Transforme os parâmetros em consumo de ar</h3>
+<span class="phase-tag">FASE 2B</span>
+</div>
+<p class="lead" style="margin-bottom:8px">
+        Com amplitude <b>A</b> e período <b>T</b> identificados, calcule os demais dados de cada padrão respiratório.
+      </p>
+<div class="formula-row">
+<div class="formula-mini">Resp./min = 60 / T</div>
+<div class="formula-mini">Volume/ciclo = 2A</div>
+<div class="formula-mini">Consumo = (2A) · (60/T)</div>
+</div>
+<table class="compare-table">
+<thead>
+<tr>
+<th>Estado</th>
+<th>Resp./min</th>
+<th>Volume/ciclo (L)</th>
+<th>Consumo (L/min)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>Baixo</b></td>
+<td><input class="miniinput" id="respBaixo" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input class="miniinput" id="volBaixo" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input class="miniinput" id="consBaixo" inputmode="decimal" placeholder="?" type="text"/></td>
+</tr>
+<tr>
+<td><b>Moderado</b></td>
+<td><input class="miniinput" id="respModerado" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input class="miniinput" id="volModerado" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input class="miniinput" id="consModerado" inputmode="decimal" placeholder="?" type="text"/></td>
+</tr>
+<tr>
+<td><b>Intenso</b></td>
+<td><input class="miniinput" id="respIntenso" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input class="miniinput" id="volIntenso" inputmode="decimal" placeholder="?" type="text"/></td>
+<td><input class="miniinput" id="consIntenso" inputmode="decimal" placeholder="?" type="text"/></td>
+</tr>
+</tbody>
+</table>
+<button class="primary" id="checkDerived" style="margin-top:12px;width:100%">CONFERIR OS CÁLCULOS</button>
+<div class="feedback" id="derivedFeedback" style="margin-top:10px">
+        Complete os três estados. Você pode usar os valores decimais arredondados para duas casas.
+      </div>
+<div class="summary-good hiddenBlock" id="finalRespSummary">
+<b>Dados operacionais obtidos.</b> A partir das funções periódicas, você determinou os consumos que serão usados na ocorrência:
+        <b>40 L/min</b> (baixo), <b>60 L/min</b> (moderado) e <b>80 L/min</b> (intenso).
+      </div>
+</div>
+<div class="note" style="margin-top:14px">
+      Nesta missão, usamos o modelo didático <b>consumo = volume por ciclo × ciclos por minuto</b>.
+      O objetivo é transformar características de uma função periódica em uma variável operacional para a tomada de decisão.
+    </div>
+<div class="navrow">
+<button class="secondary back" data-target="0">← VOLTAR</button>
+<button class="primary" disabled="" id="toCylinder">ETAPA CONCLUÍDA — CALCULAR A AUTONOMIA →</button>
+</div>
+</div>
+</section>
+<section class="screen" id="screen2"><div class="card"><h2>Etapa 3 — Transforme pressão em autonomia</h2><p class="lead">O equipamento da missão utiliza um cilindro de <b>6,8 L a 300 bar</b>. Para o jogo, use a aproximação linear abaixo.</p>
+<div class="taskbox">
+<div class="taskicon">3</div>
+<div>
+<span class="tasktag">O que fazer agora · Etapa 3 de 4</span>
+<h3>Descubra quanto ar existe no cilindro</h3>
+<ol>
+<li>Use a relação <b>V<sub>ar</sub> ≈ 6,8 · P</b>.</li>
+<li>Calcule o volume de ar disponível quando o cilindro está a 300 bar.</li>
+<li>Guarde dois dados para a ocorrência: <b>apito em 75 bar</b> e <b>reserva mínima de 3 min</b>.</li>
+</ol>
+</div>
+</div>
+<div class="success-criteria">
+<div class="criterion"><span>Cilindro</span><b>6,8 L · 300 bar</b></div>
+<div class="criterion"><span>Alerta do jogo</span><b>75 bar</b></div>
+<div class="criterion goal"><span>Critério de sucesso</span><b>Saída com ≥ 3 min</b></div>
+</div>
+<div class="formula-big">V<sub>ar</sub> ≈ 6,8 · P</div><div class="grid2"><div><div class="eq">Com 300 bar:   V<sub>ar</sub> ≈ 6,8 × 300</div><div class="ctrl" style="margin-top:14px"><label><span>Quantos litros de ar estão disponíveis inicialmente?</span></label><input id="airAnswer" placeholder="Digite o valor em litros" type="number"/><button class="primary" id="checkAir" style="margin-top:10px;width:100%">CONFERIR MEU CÁLCULO</button></div><div class="feedback" id="airFeedback" style="margin-top:12px">Calcule antes de prosseguir.</div></div><div class="controls"><div class="opstat"><span>PRESSÃO INICIAL</span><b>300 bar</b></div><div class="opstat"><span>ALARME DE BAIXA PRESSÃO</span><b>75 bar</b></div><div class="opstat"><span>META DA MISSÃO</span><b>≥ 3 min de reserva</b></div><div class="note">Em esforço intenso (80 L/min), 3 minutos correspondem a aproximadamente <b>240 L</b>, ou cerca de <b>35,3 bar</b>. Para aumentar a tensão da simulação, o alerta desta missão ocorre em <b>75 bar</b> (aprox. 510 L), permanecendo ativo durante a parte final do retorno.</div></div></div><div class="navrow"><button class="secondary back" data-target="1">← VOLTAR</button><button class="success" disabled="" id="toOperation">ETAPA CONCLUÍDA — PLANEJAR A BUSCA →</button></div></div></section>
+<section class="screen" id="screen3"><div class="card operation-card">
+  <div class="stagehead" data-stage-label="Etapa 4 — Busca em apartamento"><h2><span>Etapa 4</span> — Busca em apartamento</h2><p>Defina o maior tempo de avanço antes do retorno automático.</p><div class="mini-goals"><span>🎯 Localizar vítima</span><span>🔎 Maximizar varredura</span><span>🫁 Reserva ≥ 3 min</span></div></div>
+  <div class="workspace">
+    <section class="mapcolumn">
+      <div class="mapbox"><div class="stage" id="stage"><img class="base" alt="Planta do apartamento" src="../assets/embedded/379763ac0f8eb8ea9c9d.webp"/><img alt="Pessoa no interior do apartamento" class="victim" id="victim" src="../assets/embedded/72c5bb444adaa85384d3.webp"/><canvas class="fx" height="1052" id="fx" width="1494"></canvas><div class="announce" id="announceBox">Sua equipe de bombeiros chegou no local e inicia as buscas.</div><div class="finding" id="findingBox">VÍTIMA LOCALIZADA! Retorno automático iniciado.</div><canvas class="routeCanvas" height="1052" id="cv" width="1494"></canvas></div></div>
+      <div class="legend"><span><i class="ldot"></i>bombeiro</span><span><i class="lline"></i>trajeto ainda a retornar</span><span><i class="ldash"></i>trecho já vencido no retorno</span></div>
+    </section>
+    <aside class="side">
+      <div class="strategy" id="strategySetup"><div class="kicker">Sua decisão antes da entrada</div><p>Defina o <b>tempo máximo de avanço</b>. Ao alcançar esse instante, a equipe inicia automaticamente o retorno.</p><div class="big" id="strategyVal">14:00</div><input id="strategyRange" max="17" min="10" step="0.5" type="range" value="14"/><div class="scale"><span>10 min</span><span>17 min</span></div><button class="primary" id="startBtn">▶ TESTAR ESTA ESTRATÉGIA</button></div>
+      <div class="strategy-summary" id="strategySummary" hidden><div><div class="kicker">Estratégia programada</div><div class="summary-help">Retorno automático após o avanço definido.</div></div><div class="summary-time" id="strategySummaryVal">14:00</div></div>
+      <div class="metrics operation-metrics"><div class="stat state"><span>Estado</span><b id="stateTxt">Aguardando estratégia</b><div class="state-detail" id="stateDetail">Escolha o tempo e teste no simulador.</div></div><div class="stat"><span>Tempo de operação</span><b id="timeTxt">00:00</b></div><div class="stat"><span>Tempo estimado até a saída</span><b id="exitTxt">—</b></div><div class="stat pressure"><span>Pressão do cilindro</span><b id="pressureTxt">300 bar</b><div class="pressurebar"><div class="pressurefill" id="pressureFill"></div></div></div><div class="stat"><span>Esforço respiratório</span><b id="effortTxt">Baixo</b></div><div class="stat"><span>Consumo atual</span><b id="consTxt">40 L/min</b></div></div>
+      <div class="feedback operation-feedback" id="opFeedback"></div>
+      <button class="secondary back operation-back" data-target="2" id="backBtn">← REVER AUTONOMIA</button>
+    </aside>
+  </div>
+</div></section>
+</div>
+<script>
+const screens=[...document.querySelectorAll('.screen')], stepEls=[...document.querySelectorAll('.step')];
+function goScreen(n){screens.forEach((s,i)=>s.classList.toggle('active',i===n));stepEls.forEach((e,i)=>{e.classList.toggle('active',i===n);e.classList.toggle('done',i<n)});document.body.classList.toggle('operation-screen',n===3);window.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('.back').forEach(b=>b.onclick=()=>goScreen(+b.dataset.target));
+
+// Integração com o jogo principal: somente decisões da Etapa 4 contam como tentativas.
+let tentativasMissao=0;
+let sucessoReportado=false;
+function registrarTentativaFinal(){
+  tentativasMissao+=1;
+  const contador=document.getElementById('contadorTentativasBridge');
+  if(contador)contador.textContent=String(tentativasMissao);
+  if(typeof window.atualizarTentativasPadrao==='function')window.atualizarTentativasPadrao(tentativasMissao);
+}
+function reportarSucessoAoJogo(){
+  if(sucessoReportado)return;
+  sucessoReportado=true;
+  if(typeof window.reportarSucessoPadrao==='function')window.reportarSucessoPadrao();
+}
+function audioInternoMutado(){
+  return typeof window.audioGlobalEstaMutadoNoSimulador==='function' && window.audioGlobalEstaMutadoNoSimulador();
+}
+
+// ---------- ETAPA 1: AJUSTE DA SENOIDE ----------
+const fg=document.getElementById('fitGraph'), fctx=fg.getContext('2d'); const aR=document.getElementById('aRange'),bR=document.getElementById('bRange'),cS=document.getElementById('cRange'),dS=document.getElementById('dRange');const cOptions=[Math.PI/4,1,Math.PI/2,2*Math.PI/3,Math.PI,3*Math.PI/2],dOptions=[-Math.PI/2,0,Math.PI/2,Math.PI];
+const targetPts=[0,.75,1.5,2.25,3,3.75,4.5,5.25,6,6.75,7.5].map(t=>[t,4+Math.sin((2*Math.PI/3)*t)]);
+function fmt(v,n=1){return v.toFixed(n).replace('.',',')}
+function axes(ctx,w,h,xmax,ymin,ymax){ctx.clearRect(0,0,w,h);ctx.fillStyle='#071019';ctx.fillRect(0,0,w,h);const L=62,R=20,T=20,B=46;ctx.strokeStyle='#304454';ctx.lineWidth=1;ctx.font='12px Segoe UI';ctx.fillStyle='#9fb1c2';for(let y=Math.ceil(ymin);y<=ymax;y++){let py=T+(ymax-y)/(ymax-ymin)*(h-T-B);ctx.beginPath();ctx.moveTo(L,py);ctx.lineTo(w-R,py);ctx.stroke();ctx.fillText(y+' L',14,py+4)}for(let x=0;x<=xmax;x++){let px=L+x/xmax*(w-L-R);ctx.beginPath();ctx.moveTo(px,T);ctx.lineTo(px,h-B);ctx.stroke();ctx.fillText(x+' s',px-8,h-18)}return{L,R,T,B,x:px=>L+px/xmax*(w-L-R),y:py=>T+(ymax-py)/(ymax-ymin)*(h-T-B)}}
+function cLabel(c){if(Math.abs(c-Math.PI/4)<.01)return'π/4';if(Math.abs(c-1)<.01)return'1';if(Math.abs(c-Math.PI/2)<.01)return'π/2';if(Math.abs(c-2*Math.PI/3)<.01)return'2π/3';if(Math.abs(c-Math.PI)<.01)return'π';return'3π/2'} function dLabel(d){if(Math.abs(d)<.01)return'0';if(Math.abs(d+Math.PI/2)<.01)return'−π/2';if(Math.abs(d-Math.PI/2)<.01)return'π/2';return'π'}
+function drawFit(){let a=+aR.value,b=+bR.value,c=cOptions[+cS.value],d=dOptions[+dS.value];document.getElementById('aVal').textContent=fmt(a);document.getElementById('bVal').textContent=fmt(b);document.getElementById('cVal').textContent=cLabel(c);document.getElementById('dVal').textContent=dLabel(d);let cTxt=Math.abs(c-1)<.01?'':cLabel(c);
+document.getElementById('fitEq').textContent=`V(t)=${fmt(a)}+${fmt(b)}·sen(${cTxt}t${d===0?'':(d>0?'+':'')+dLabel(d)})`;let m=axes(fctx,fg.width,fg.height,8,-2,7);fctx.strokeStyle='#69b7ff';fctx.lineWidth=3;fctx.beginPath();for(let i=0;i<=500;i++){let t=8*i/500,v=a+b*Math.sin(c*t+d),x=m.x(t),y=m.y(v);i?fctx.lineTo(x,y):fctx.moveTo(x,y)}fctx.stroke();fctx.fillStyle='#f4c542';for(const [t,v] of targetPts){fctx.beginPath();fctx.arc(m.x(t),m.y(v),6,0,Math.PI*2);fctx.fill()}const T=2*Math.PI/c, bpm=60/T, cyc=2*Math.abs(b), cons=cyc*bpm;document.getElementById('mMax').textContent=fmt(a+Math.abs(b))+' L';document.getElementById('mMin').textContent=fmt(a-Math.abs(b))+' L';document.getElementById('mPeriod').textContent=fmt(T,2)+' s';document.getElementById('mFreq').textContent=fmt(bpm,1);document.getElementById('mCons').textContent=fmt(cons,1)+' L/min'}
+
+[aR,bR,cS,dS].forEach(e=>e.oninput=drawFit);
+
+/*
+  Controle por passos:
+  - toque/clique à direita do marcador => próximo valor válido;
+  - toque/clique à esquerda => valor válido anterior;
+  - não é necessário acertar exatamente o marcador.
+*/
+function habilitarSliderPorPassos(range){
+  range.addEventListener('pointerdown',ev=>{
+    if(ev.pointerType==='mouse' && ev.button!==0) return;
+
+    const rect=range.getBoundingClientRect();
+    const min=Number(range.min);
+    const max=Number(range.max);
+    const step=Number(range.step)||1;
+    const atual=Number(range.value);
+
+    // Aproxima a posição visual do centro do marcador atual.
+    const proporcao=(atual-min)/(max-min || 1);
+    const xMarcador=rect.left + proporcao*rect.width;
+    const tolerancia=3;
+
+    let novo=atual;
+    if(ev.clientX > xMarcador+tolerancia){
+      novo=Math.min(max,atual+step);
+    }else if(ev.clientX < xMarcador-tolerancia){
+      novo=Math.max(min,atual-step);
+    }else{
+      // Clique praticamente sobre o marcador: mantém o valor.
+      ev.preventDefault();
+      return;
+    }
+
+    ev.preventDefault();
+
+    // Evita resíduos de ponto flutuante em passos decimais.
+    const casas=(String(step).split('.')[1]||'').length;
+    novo=Number(novo.toFixed(casas));
+
+    range.value=novo;
+    range.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+
+  // Impede o comportamento nativo de "saltar" diretamente para
+  // a posição clicada depois do pointerdown.
+  range.addEventListener('click',ev=>ev.preventDefault());
+}
+
+[aR,bR,cS,dS].forEach(habilitarSliderPorPassos);
+drawFit();let fitOK=false;document.getElementById('testFit').onclick=()=>{let c=cOptions[+cS.value],d=dOptions[+dS.value];let ok=Math.abs(+aR.value-4)<.01&&Math.abs(+bR.value-1)<.01&&Math.abs(c-2*Math.PI/3)<.01&&Math.abs(d)<.01;let fb=document.getElementById('fitFeedback');if(ok){fitOK=true;fb.className='feedback ok';fb.innerHTML='<b>Modelo validado!</b> V(t)=4+sen(2πt/3). Máximo 5 L, mínimo 3 L, período 3 s, 20 ciclos/min e consumo didático de 40 L/min.';document.getElementById('toCompare').disabled=false}else{fb.className='feedback bad';fb.textContent='A curva ainda não passa por todos os pontos. Observe linha média, amplitude, período e fase.'}};document.getElementById('toCompare').onclick=()=>goScreen(1);
+
+// ---------- ETAPA 2: INVESTIGAÇÃO DOS TRÊS ESTADOS ----------
+const cg=document.getElementById('compareGraph'),cctx=cg.getContext('2d');
+let animT=0,lastAnim=0,selectedNotable=null,hoverNotable=null;
+const curves=[
+  {fn:t=>4+Math.sin((2*Math.PI/3)*t),name:'Baixo',stroke:'#69b7ff'},
+  {fn:t=>4.5+1.25*Math.sin(.8*Math.PI*t),name:'Moderado',stroke:'#f4c542'},
+  {fn:t=>5+(4/3)*Math.sin(Math.PI*t),name:'Intenso',stroke:'#ef5350'}
+];
+
+const compareNotables=[
+  // Moderado
+  {x:0,y:4.5,label:'(0,00; 4,50)',stroke:'#f4c542',dx:8,dy:-8},
+  {x:.625,y:5.75,label:'(0,625; 5,75)',stroke:'#f4c542',dx:8,dy:-10},
+  {x:1.875,y:3.25,label:'(1,875; 3,25)',stroke:'#f4c542',dx:8,dy:18},
+  {x:3.125,y:5.75,label:'(3,125; 5,75)',stroke:'#f4c542',dx:8,dy:-10},
+  // Intenso
+  {x:0,y:5,label:'(0,00; 5,00)',stroke:'#ef5350',dx:8,dy:16},
+  {x:.5,y:6.3333333333,label:'(0,50; 6,33)',stroke:'#ef5350',dx:8,dy:-8},
+  {x:1.5,y:3.6666666667,label:'(1,50; 3,67)',stroke:'#ef5350',dx:8,dy:18},
+  {x:2.5,y:6.3333333333,label:'(2,50; 6,33)',stroke:'#ef5350',dx:8,dy:-8}
+];
+
+function compareAxes(){ return axes(cctx,cg.width,cg.height,8,0,7); }
+
+function hitNotable(canvasX,canvasY){
+  const m=compareAxes();
+  for(let i=0;i<compareNotables.length;i++){
+    const p=compareNotables[i];
+    const px=m.x(p.x), py=m.y(p.y);
+    if(Math.hypot(canvasX-px, canvasY-py)<=13) return i;
+  }
+  return null;
+}
+
+function drawCompare(ts){
+  if(!lastAnim)lastAnim=ts;
+  animT+=(ts-lastAnim)/1000;lastAnim=ts;
+  let m=compareAxes();
+
+  const means=[
+    {y:4,label:'linha média: y = 4,00',stroke:'#69b7ff'},
+    {y:4.5,label:'linha média: y = 4,50',stroke:'#f4c542'},
+    {y:5,label:'linha média: y = 5,00',stroke:'#ef5350'}
+  ];
+  means.forEach(q=>{
+    cctx.save();
+    cctx.strokeStyle=q.stroke;
+    cctx.globalAlpha=.42;
+    cctx.lineWidth=1.5;
+    cctx.setLineDash([8,7]);
+    cctx.beginPath();cctx.moveTo(m.x(0),m.y(q.y));cctx.lineTo(m.x(8),m.y(q.y));cctx.stroke();
+    cctx.setLineDash([]);
+    cctx.globalAlpha=.95;
+    cctx.fillStyle=q.stroke;cctx.font='12px Segoe UI';
+    cctx.fillText(q.label,m.x(5.4),m.y(q.y)-6);
+    cctx.restore();
+  });
+
+  curves.forEach((q,idx)=>{
+    cctx.strokeStyle=q.stroke;cctx.lineWidth=3;cctx.beginPath();
+    for(let i=0;i<=500;i++){
+      let t=8*i/500,v=q.fn(t);
+      i?cctx.lineTo(m.x(t),m.y(v)):cctx.moveTo(m.x(t),m.y(v));
+    }
+    cctx.stroke();
+
+    let tt=animT%8,v=q.fn(tt);
+    cctx.fillStyle=q.stroke;cctx.beginPath();cctx.arc(m.x(tt),m.y(v),7,0,Math.PI*2);cctx.fill();
+    cctx.fillStyle=q.stroke;cctx.font='bold 14px Segoe UI';
+    cctx.fillText(q.name,80,35+idx*22);
+  });
+
+  compareNotables.forEach((p,idx)=>{
+    cctx.save();
+    const isSelected=selectedNotable===idx;
+    const isHover=hoverNotable===idx;
+
+    cctx.fillStyle='#fff';
+    cctx.strokeStyle=p.stroke;
+    cctx.lineWidth=isSelected?4:3;
+    cctx.beginPath();
+    cctx.arc(m.x(p.x),m.y(p.y),isSelected?7:6,0,Math.PI*2);
+    cctx.fill();
+    cctx.stroke();
+
+    if(isHover || isSelected){
+      cctx.strokeStyle=p.stroke;
+      cctx.globalAlpha=.55;
+      cctx.lineWidth=1.5;
+      cctx.beginPath();
+      cctx.arc(m.x(p.x),m.y(p.y),12,0,Math.PI*2);
+      cctx.stroke();
+      cctx.globalAlpha=1;
+    }
+
+    if(isSelected){
+      cctx.font='bold 12px Segoe UI';
+      const text=p.label;
+      const padX=10, boxH=26, radius=8;
+      const textW=cctx.measureText(text).width;
+      let boxX=m.x(p.x)+14;
+      let boxY=m.y(p.y)-34;
+      const boxW=textW+padX*2;
+
+      // Reposiciona automaticamente para evitar que o balão saia do gráfico.
+      if(boxX+boxW > cg.width-12) boxX = m.x(p.x)-boxW-14;
+      if(boxX < 12) boxX = 12;
+      if(boxY < 12) boxY = m.y(p.y)+14;
+      if(boxY+boxH > cg.height-12) boxY = cg.height-boxH-12;
+
+      cctx.fillStyle='rgba(5,12,18,.92)';
+      cctx.strokeStyle=p.stroke;
+      cctx.lineWidth=1.5;
+      cctx.beginPath();
+      cctx.roundRect(boxX, boxY, boxW, boxH, radius);
+      cctx.fill();
+      cctx.stroke();
+
+      cctx.fillStyle=p.stroke;
+      cctx.textBaseline='middle';
+      cctx.fillText(text, boxX+padX, boxY+boxH/2+0.5);
+      cctx.textBaseline='alphabetic';
+    }
+    cctx.restore();
+  });
+
+  requestAnimationFrame(drawCompare);
+}
+requestAnimationFrame(drawCompare);
+
+cg.addEventListener('click',ev=>{
+  const rect=cg.getBoundingClientRect();
+  const x=(ev.clientX-rect.left)*(cg.width/rect.width);
+  const y=(ev.clientY-rect.top)*(cg.height/rect.height);
+  const idx=hitNotable(x,y);
+  selectedNotable = (idx===selectedNotable) ? null : idx;
+});
+
+cg.addEventListener('mousemove',ev=>{
+  const rect=cg.getBoundingClientRect();
+  const x=(ev.clientX-rect.left)*(cg.width/rect.width);
+  const y=(ev.clientY-rect.top)*(cg.height/rect.height);
+  hoverNotable=hitNotable(x,y);
+  cg.style.cursor = hoverNotable!==null ? 'pointer' : 'default';
+});
+
+cg.addEventListener('mouseleave',()=>{
+  hoverNotable=null;
+  cg.style.cursor='default';
+});
+
+function parsePtValue(id){
+  const el=document.getElementById(id);
+  const raw=(el.value||'').trim().replace(',','.');
+  if(raw==='')return NaN;
+  return Number(raw);
+}
+function near(v,target,tol=.03){return Number.isFinite(v)&&Math.abs(v-target)<=tol}
+
+const calcPhase=document.getElementById('calcPhase'),
+graphReadFeedback=document.getElementById('graphReadFeedback'),
+derivedFeedback=document.getElementById('derivedFeedback'),
+finalRespSummary=document.getElementById('finalRespSummary'),
+toCylinderBtn=document.getElementById('toCylinder');
+
+document.getElementById('checkGraphReading').onclick=()=>{
+  const am=parsePtValue('ampModerado');
+  const pm=parsePtValue('perModerado');
+  const ai=parsePtValue('ampIntenso');
+  const pi=parsePtValue('perIntenso');
+
+  const ok=near(am,1.25,.025)&&near(pm,2.5,.025)&&near(ai,4/3,.035)&&near(pi,2,.025);
+
+  if(ok){
+    graphReadFeedback.className='feedback ok';
+    graphReadFeedback.innerHTML='<b>Leitura correta.</b> Moderado: A = 1,25 L e T = 2,5 s. Intenso: A ≈ 1,33 L e T = 2,0 s. Agora use esses parâmetros para obter as taxas respiratórias e os consumos.';
+    calcPhase.classList.remove('hiddenBlock');
+    setTimeout(()=>calcPhase.scrollIntoView({behavior:"smooth",block:"nearest"}),80);
+  }else{
+    graphReadFeedback.className='feedback bad';
+    let dicas=[];
+    if(!near(am,1.25,.025)||!near(ai,4/3,.035))dicas.push('revise a relação entre máximo, mínimo e linha média para obter a amplitude');
+    if(!near(pm,2.5,.025)||!near(pi,2,.025))dicas.push('meça o período pela diferença entre as abscissas de dois máximos consecutivos');
+    graphReadFeedback.innerHTML='<b>Ainda não.</b> '+(dicas.length?dicas.join('; ')+'.':'Observe novamente o gráfico.');
+  }
+};
+
+document.getElementById('checkDerived').onclick=()=>{
+  const vals={
+    rb:parsePtValue('respBaixo'),vb:parsePtValue('volBaixo'),cb:parsePtValue('consBaixo'),
+    rm:parsePtValue('respModerado'),vm:parsePtValue('volModerado'),cm:parsePtValue('consModerado'),
+    ri:parsePtValue('respIntenso'),vi:parsePtValue('volIntenso'),ci:parsePtValue('consIntenso')
+  };
+
+  const checks={
+    rb:near(vals.rb,20,.05), vb:near(vals.vb,2,.03), cb:near(vals.cb,40,.08),
+    rm:near(vals.rm,24,.05), vm:near(vals.vm,2.5,.03), cm:near(vals.cm,60,.08),
+    ri:near(vals.ri,30,.05), vi:near(vals.vi,8/3,.035), ci:near(vals.ci,80,.1)
+  };
+
+  const ok=Object.values(checks).every(Boolean);
+
+  if(ok){
+    derivedFeedback.className='feedback ok';
+    derivedFeedback.innerHTML='<b>Cálculos corretos.</b> Você transformou amplitude e período em taxas de consumo que agora serão usadas no modelo operacional.';
+    finalRespSummary.classList.remove('hiddenBlock');
+    toCylinderBtn.disabled=false;
+  }else{
+    derivedFeedback.className='feedback bad';
+    let grupos=[];
+    if(!(checks.rb&&checks.vb&&checks.cb))grupos.push('baixo');
+    if(!(checks.rm&&checks.vm&&checks.cm))grupos.push('moderado');
+    if(!(checks.ri&&checks.vi&&checks.ci))grupos.push('intenso');
+    derivedFeedback.innerHTML='<b>Revise os cálculos.</b> Há inconsistências no estado '+grupos.join(', ')+'. Use: resp./min = 60/T; volume/ciclo = 2A; consumo = volume/ciclo × resp./min.';
+  }
+};
+
+toCylinderBtn.onclick=()=>goScreen(2);
+
+// ---------- ETAPA 3: CILINDRO ----------
+document.getElementById('checkAir').onclick=()=>{let v=+document.getElementById('airAnswer').value,fb=document.getElementById('airFeedback');if(Math.abs(v-2040)<.5){fb.className='feedback ok';fb.innerHTML='<b>Correto: 2.040 L.</b> Esse volume será consumido dinamicamente na busca e no retorno.';document.getElementById('toOperation').disabled=false}else{fb.className='feedback bad';fb.textContent='Revise: volume do cilindro × pressão = 6,8 × 300.'}};document.getElementById('toOperation').onclick=()=>goScreen(3);
+
+// ---------- ETAPA 4: OCORRÊNCIA ----------
+const route=[[0.13721552878179386, 0.9695817490494296], [0.13721552878179386, 0.9239543726235742], [0.10040160642570281, 0.9239543726235742], [0.040160642570281124, 0.9239543726235742], [0.040160642570281124, 0.8555133079847909], [0.040160642570281124, 0.6653992395437263], [0.040160642570281124, 0.4752851711026616], [0.040160642570281124, 0.28517110266159695], [0.040160642570281124, 0.09505703422053231], [0.040160642570281124, 0.05228136882129278], [0.107095046854083, 0.05228136882129278], [0.20080321285140562, 0.05228136882129278], [0.2878179384203481, 0.05228136882129278], [0.3246318607764391, 0.05228136882129278], [0.3246318607764391, 0.17110266159695817], [0.3246318607764391, 0.3041825095057034], [0.3246318607764391, 0.4230038022813688], [0.3246318607764391, 0.4752851711026616], [0.40160642570281124, 0.4752851711026616], [0.4785809906291834, 0.4752851711026616], [0.5174029451137885, 0.4752851711026616], [0.5174029451137885, 0.4230038022813688], [0.3514056224899598, 0.4230038022813688], [0.3514056224899598, 0.28517110266159695], [0.3514056224899598, 0.1520912547528517], [0.3514056224899598, 0.05228136882129278], [0.4350736278447122, 0.05228136882129278], [0.535475234270415, 0.05228136882129278], [0.5990629183400268, 0.05228136882129278], [0.5990629183400268, 0.17110266159695817], [0.5990629183400268, 0.3041825095057034], [0.5990629183400268, 0.4230038022813688], [0.5575635876840697, 0.4230038022813688], [0.5174029451137885, 0.4230038022813688], [0.5174029451137885, 0.4752851711026616], [0.6024096385542169, 0.4752851711026616], [0.7028112449799196, 0.4752851711026616], [0.7978580990629184, 0.4752851711026616], [0.7978580990629184, 0.4230038022813688], [0.642570281124498, 0.4230038022813688], [0.642570281124498, 0.28517110266159695], [0.642570281124498, 0.1520912547528517], [0.642570281124498, 0.05228136882129278], [0.7362784471218207, 0.05228136882129278], [0.8366800535475234, 0.05228136882129278], [0.9303882195448461, 0.05228136882129278], [0.9303882195448461, 0.17110266159695817], [0.9303882195448461, 0.3041825095057034], [0.9303882195448461, 0.4230038022813688], [0.8353413654618473, 0.4230038022813688], [0.7978580990629184, 0.4230038022813688], [0.7978580990629184, 0.4752851711026616], [0.8835341365461847, 0.4752851711026616], [0.9303882195448461, 0.4752851711026616], [0.9303882195448461, 0.5418250950570342], [0.856760374832664, 0.5418250950570342], [0.8152610441767069, 0.5418250950570342], [0.7724230254350736, 0.5418250950570342], [0.7724230254350736, 0.6102661596958175], [0.8099062918340026, 0.6102661596958175], [0.8768406961178046, 0.6102661596958175], [0.9156626506024096, 0.6102661596958175], [0.9156626506024096, 0.7224334600760456], [0.9156626506024096, 0.841254752851711], [0.9156626506024096, 0.8916349809885932], [0.8333333333333334, 0.8916349809885932], [0.7362784471218207, 0.8916349809885932], [0.6392235609103079, 0.8916349809885932], [0.5589022757697456, 0.8916349809885932], [0.5589022757697456, 0.7747148288973384], [0.5589022757697456, 0.6653992395437263], [0.5589022757697456, 0.6102661596958175], [0.6224899598393574, 0.6102661596958175], [0.7282463186077643, 0.6102661596958175], [0.7724230254350736, 0.6102661596958175], [0.7724230254350736, 0.5418250950570342], [0.6894243641231593, 0.5418250950570342], [0.6024096385542169, 0.5418250950570342], [0.535475234270415, 0.5418250950570342], [0.4979919678714859, 0.5418250950570342], [0.45917001338688085, 0.5418250950570342], [0.45917001338688085, 0.6102661596958175], [0.4859437751004016, 0.6102661596958175], [0.4859437751004016, 0.7224334600760456], [0.4859437751004016, 0.841254752851711], [0.4859437751004016, 0.8916349809885932], [0.4350736278447122, 0.8916349809885932], [0.3748326639892905, 0.8916349809885932], [0.3614457831325301, 0.8916349809885932], [0.3614457831325301, 0.7842205323193916], [0.3614457831325301, 0.6796577946768061], [0.3614457831325301, 0.6102661596958175], [0.4203480589022758, 0.6102661596958175], [0.45917001338688085, 0.6102661596958175], [0.45917001338688085, 0.5418250950570342], [0.4149933065595716, 0.5418250950570342], [0.3748326639892905, 0.5418250950570342]];
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),fx=document.getElementById('fx'),xctx=fx.getContext('2d'),victimEl=document.getElementById('victim');
+const startBtn=document.getElementById('startBtn'),
+stateTxt=document.getElementById('stateTxt'),
+timeTxt=document.getElementById('timeTxt'),
+pressureTxt=document.getElementById('pressureTxt'),
+effortTxt=document.getElementById('effortTxt'),
+consTxt=document.getElementById('consTxt'),
+exitTxt=document.getElementById('exitTxt'),
+pfill=document.getElementById('pressureFill'),
+opFeedback=document.getElementById('opFeedback'),
+announceBox=document.getElementById('announceBox'),
+findingBox=document.getElementById('findingBox'),
+strategyRange=document.getElementById('strategyRange'),
+strategyVal=document.getElementById('strategyVal');
+
+const stateDetail=document.getElementById('stateDetail'),strategySetup=document.getElementById('strategySetup'),strategySummary=document.getElementById('strategySummary'),strategySummaryVal=document.getElementById('strategySummaryVal'),backBtn=document.getElementById('backBtn');
+const pts=route.map(([x,y])=>[x*cv.width,y*cv.height]);
+let cum=[0];
+for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+const total=cum[cum.length-1];
+
+function pointAt(p){
+  let d=Math.max(0,Math.min(1,p))*total,i=1;
+  while(i<cum.length&&cum[i]<d)i++;
+  if(i>=cum.length)return pts.at(-1);
+  let a=pts[i-1],b=pts[i],t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
+  return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]
+}
+
+function drawRange(p0,p1,dash=[]){
+  p0=Math.max(0,Math.min(1,p0));p1=Math.max(0,Math.min(1,p1));
+  if(p1<=p0)return;
+  let d0=p0*total,d1=p1*total,s=pointAt(p0);
+  ctx.save();ctx.beginPath();ctx.moveTo(...s);
+  let i=1;
+  while(i<cum.length&&cum[i]<=d0)i++;
+  while(i<cum.length&&cum[i]<d1){ctx.lineTo(...pts[i]);i++}
+  ctx.lineTo(...pointAt(p1));
+  ctx.strokeStyle='#f4c542';ctx.lineWidth=7;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.setLineDash(dash);ctx.stroke();ctx.restore()
+}
+
+let phase='idle',progress=0,maxProgress=0,opMin=0,air=2040,found=false,
+last=0,hazardT=0,announceT=0,returnedComplete=false,alarmActive=false,
+lastBeep=0,audioCtx=null,strategyMin=14,foundNotice=0,externallyPaused=false;
+
+const FIND_PROGRESS=0.892992952853598,
+TARGET_FIND_MIN=15,
+FULL_OUT_MIN=16.797444987742448,
+FULL_REAL_SEC=44,
+SIM_MIN_PER_REAL_SEC=FULL_OUT_MIN/FULL_REAL_SEC;
+
+function consumption(t){return t<10?40:t<20?60:80}
+function effort(t){return t<10?'Baixo':t<20?'Moderado':'Intenso'}
+
+function airUsedUntil(t){
+  t=Math.max(0,t);
+  let used=0;
+  let a=Math.min(t,10); used+=a*40;
+  if(t>10){let b=Math.min(t-10,10);used+=b*60}
+  if(t>20)used+=(t-20)*80;
+  return used;
+}
+function airAt(t){return Math.max(0,2040-airUsedUntil(t))}
+
+function fmtTime(min){
+  let s=Math.max(0,Math.round(min*60)),m=Math.floor(s/60);s%=60;
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
+}
+
+function beep(){
+  // O apito do EPR é parte do áudio global de acessibilidade da Fase 37.
+  if(audioInternoMutado())return;
+  if(!audioCtx){
+    try{audioCtx=new (window.AudioContext||window.webkitAudioContext)()}catch(_erro){return;}
+  }
+  let o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.frequency.value=1050;
+  g.gain.setValueAtTime(.0001,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.12,audioCtx.currentTime+.02);
+  g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.22);
+  o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.24)
+}
+
+const smokeRooms=[
+  {box:[805,610,1390,955],delay:0},
+  {box:[495,450,1440,610],delay:2.2},
+  {box:[952,55,1390,435],delay:4.2},
+  {box:[520,55,895,435],delay:5.2},
+  {box:[60,55,480,970],delay:6.4},
+  {box:[520,610,740,955],delay:7}
+];
+function ease(t){t=Math.max(0,Math.min(1,t));return 1-Math.pow(1-t,3)}
+
+function drawFlame(){
+  if(hazardT>8.7)return;
+  let x=1035,y=865,f=1+Math.sin(hazardT*12)*.08;
+  xctx.save();
+  let g=xctx.createRadialGradient(x,y,5,x,y,52*f);
+  g.addColorStop(0,'rgba(255,245,180,.95)');
+  g.addColorStop(.4,'rgba(255,140,20,.7)');
+  g.addColorStop(1,'rgba(255,70,0,0)');
+  xctx.fillStyle=g;xctx.beginPath();xctx.arc(x,y,52*f,0,Math.PI*2);xctx.fill();
+  for(let j=0;j<3;j++){
+    xctx.fillStyle=j===1?'#ffd86b':'#ff7817';
+    xctx.beginPath();xctx.moveTo(x+(j-1)*15,y+25);
+    xctx.quadraticCurveTo(x+(j-1)*21,y-5,x+(j-1)*9,y-40*f);
+    xctx.quadraticCurveTo(x+(j-1)*1,y-3,x+(j-1)*15,y+25);xctx.fill()
+  }
+  xctx.restore()
+}
+
+function drawSmoke(){
+  for(const r of smokeRooms){
+    let a=ease((hazardT-r.delay)/4.8);
+    if(a<=0)continue;
+    xctx.fillStyle=`rgba(0,0,0,${(a*.68).toFixed(3)})`;
+    xctx.fillRect(r.box[0],r.box[1],r.box[2]-r.box[0],r.box[3]-r.box[1])
+  }
+  let black=ease((hazardT-6.2)/3.2);
+  if(black>0){
+    xctx.fillStyle=`rgba(0,0,0,${(.18+.82*black).toFixed(3)})`;
+    xctx.fillRect(0,0,fx.width,fx.height)
+  }
+}
+
+function drawOp(){
+  announceBox.classList.toggle('show',phase==='announce');
+  findingBox.classList.toggle('show',foundNotice>0);
+
+  xctx.clearRect(0,0,fx.width,fx.height);
+  if(phase!=='idle'){drawFlame();drawSmoke()}
+
+  ctx.clearRect(0,0,cv.width,cv.height);
+  let show=['search','return','done'].includes(phase);
+  if(show){
+    if(maxProgress>0){
+      if(phase==='return'){
+        drawRange(0,progress,[]);
+        drawRange(progress,maxProgress,[18,12])
+      }else if(returnedComplete){
+        drawRange(0,maxProgress,[18,12])
+      }else{
+        drawRange(0,maxProgress,[])
+      }
+    }
+    let [x,y]=pointAt(progress);
+    ctx.fillStyle='#ef5350';ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke()
+  }
+
+  let p=Math.max(0,air/6.8),c=consumption(opMin);
+  timeTxt.textContent=fmtTime(opMin);
+  pressureTxt.textContent=fmt(p,0)+' bar';
+  effortTxt.textContent=effort(opMin);
+  consTxt.textContent=c+' L/min';
+
+  let exitM=0;
+  if(phase==='search'||phase==='return')exitM=progress*FULL_OUT_MIN;
+  exitTxt.textContent=fmt(exitM,1)+' min';
+
+  pfill.style.transform=`scaleX(${Math.max(0,Math.min(1,p/300))})`;
+  pressureTxt.style.color=p<=75?'#ff7774':''
+}
+
+function predictedOutcome(t){
+  let totalTime=2*t;
+  let remaining=airAt(totalTime);
+  let reserve=remaining/80;
+  return{totalTime,remaining,reserve}
+}
+
+function updateStrategyLabel(){
+  strategyMin=+strategyRange.value;
+  strategyVal.textContent=fmtTime(strategyMin);
+  if(strategySummaryVal)strategySummaryVal.textContent=fmtTime(strategyMin);
+}
+strategyRange.addEventListener('input',updateStrategyLabel);
+habilitarSliderPorPassos(strategyRange);
+updateStrategyLabel();
+
+function setStrategyDisplay(running,locked=false){
+  if(strategySetup)strategySetup.hidden=running||locked;
+  if(strategySummary)strategySummary.hidden=!(running||locked);
+  if(strategySummaryVal)strategySummaryVal.textContent=fmtTime(strategyMin);
+  if(backBtn)backBtn.disabled=running;
+}
+function showOperationFeedback(kind,html){
+  opFeedback.className='feedback operation-feedback show'+(kind?' '+kind:'');
+  opFeedback.innerHTML=html;
+}
+function hideOperationFeedback(){
+  opFeedback.className='feedback operation-feedback';
+  opFeedback.textContent='';
+}
+
+function finishOutcome(){
+  opMin=2*strategyMin; air=airAt(opMin); progress=0; returnedComplete=true; phase='done';
+  stateTxt.textContent='Retorno concluído'; const reserve=air/80; if(backBtn)backBtn.disabled=false;
+  if(!found){
+    stateDetail.textContent='Equipe saiu em segurança, mas a vítima não foi localizada.';
+    setStrategyDisplay(false,false); startBtn.disabled=false; startBtn.textContent='▶ TESTAR NOVA ESTRATÉGIA'; strategyRange.disabled=false;
+    showOperationFeedback('bad',`<b>Vítima não localizada.</b> A equipe retornou após ${fmtTime(strategyMin)} de avanço e terminou com <b>${fmt(reserve,1)} min de autonomia</b>. A busca poderia ser ampliada.`);
+  }else{
+    stateDetail.textContent='Vítima localizada. Reserva mínima preservada na saída.';
+    setStrategyDisplay(false,true); startBtn.disabled=true; strategyRange.disabled=true;
+    showOperationFeedback('ok',`<b>MISSÃO CUMPRIDA.</b> Vítima localizada. A equipe saiu aos ${fmtTime(opMin)} com <b>${fmt(reserve,1)} min de autonomia</b>.`);
+    setTimeout(reportarSucessoAoJogo,650);
+  }
+}
+function resetOp(){
+  phase='idle';progress=maxProgress=opMin=hazardT=announceT=0; air=2040;found=returnedComplete=alarmActive=false;foundNotice=0;
+  victimEl.style.left='74.9%';victimEl.style.top='19.2%';victimEl.style.width='9.6%';victimEl.style.opacity='1';
+  stateTxt.textContent='Aguardando estratégia'; stateDetail.textContent='Escolha o tempo e teste no simulador.'; hideOperationFeedback(); setStrategyDisplay(false,false);
+  strategyRange.disabled=false; startBtn.disabled=false; startBtn.textContent='▶ TESTAR ESTA ESTRATÉGIA'; exitTxt.textContent='—'; if(backBtn)backBtn.disabled=false; drawOp();
+}
+function rejectStrategy(t){
+  const q=predictedOutcome(t); stateTxt.textContent='Estratégia não validada'; stateDetail.textContent='A margem mínima de segurança não seria preservada. Revise o cálculo antes da entrada.';
+  setStrategyDisplay(false,false); strategyRange.disabled=false; startBtn.disabled=false; if(backBtn)backBtn.disabled=false;
+  if(q.remaining<=0){showOperationFeedback('bad',`<b>Recalcule sua estratégia.</b> Com ${fmtTime(t)} de avanço, o cilindro se esgotaria antes da saída. A ocorrência não será iniciada.`)}
+  else{showOperationFeedback('bad',`<b>Recalcule sua estratégia.</b> Com ${fmtTime(t)} de avanço, a saída ocorreria por volta de ${fmtTime(q.totalTime)} e restariam apenas <b>${fmt(q.reserve,1)} min de autonomia</b>, abaixo da margem mínima de 3,0 min.`)}
+}
+startBtn.onclick=()=>{
+  if(phase==='done')resetOp();
+
+  strategyMin=+strategyRange.value;
+  registrarTentativaFinal();
+
+  // Estratégias que excedem o limite seguro são rejeitadas antes da animação.
+  if(strategyMin>TARGET_FIND_MIN+1e-6){
+    rejectStrategy(strategyMin);
+    return;
+  }
+
+  phase='smoke'; stateTxt.textContent='Incêndio em desenvolvimento'; stateDetail.textContent='Fumaça se propagando pelo apartamento.';
+  hideOperationFeedback(); setStrategyDisplay(true,false); startBtn.disabled=true; strategyRange.disabled=true;
+};
+
+function tick(ts){
+  if(!last)last=ts;
+  if(externallyPaused){last=ts;requestAnimationFrame(tick);return;}
+  let dt=Math.min(.05,(ts-last)/1000);last=ts;
+
+  if(foundNotice>0)foundNotice=Math.max(0,foundNotice-dt);
+
+  if(phase==='smoke'){
+    hazardT+=dt;
+    if(hazardT>=9.4){
+      victimEl.style.opacity='0';
+      victimEl.style.left='42.2%';
+      victimEl.style.top='76.5%';
+      victimEl.style.width='7.8%';
+      phase='announce';announceT=0;
+      stateTxt.textContent='Equipe chegou ao local';stateDetail.textContent='Preparação para entrada em ambiente com visibilidade zero.'
+    }
+  }else if(phase==='announce'){
+    hazardT+=dt;announceT+=dt;
+    if(announceT>=2.4){
+      phase='search';
+      opMin=0;air=2040;progress=maxProgress=0;
+      stateTxt.textContent='Busca em andamento'; stateDetail.textContent=`Avanço programado até ${fmtTime(strategyMin)}.`; hideOperationFeedback();
+    }
+  }else if(phase==='search'){
+    let dm=dt*SIM_MIN_PER_REAL_SEC;
+    opMin=Math.min(strategyMin,opMin+dm);
+    air=airAt(opMin);
+    progress=Math.min(FIND_PROGRESS,opMin/FULL_OUT_MIN);
+    maxProgress=progress;
+
+    if(opMin>=strategyMin-1e-9){
+      opMin=strategyMin;
+      air=airAt(opMin);
+      progress=maxProgress=strategyMin/FULL_OUT_MIN;
+
+      if(Math.abs(strategyMin-TARGET_FIND_MIN)<1e-6){
+        progress=maxProgress=FIND_PROGRESS;
+        found=true;
+        foundNotice=3.0;
+        stateTxt.textContent='Vítima localizada — retorno'; stateDetail.textContent=`Limite de ${fmtTime(strategyMin)} atingido. Retorno automático iniciado.`; hideOperationFeedback();
+      }else{
+        stateTxt.textContent='Retorno automático'; stateDetail.textContent=`Limite de ${fmtTime(strategyMin)} atingido. Equipe retornando pela rota de entrada.`; hideOperationFeedback();
+      }
+      phase='return';
+    }
+  }else if(phase==='return'){
+    let dm=dt*SIM_MIN_PER_REAL_SEC;
+    opMin=Math.min(2*strategyMin,opMin+dm);
+    air=airAt(opMin);
+
+    let returnElapsed=opMin-strategyMin;
+    let remaining=Math.max(0,strategyMin-returnElapsed);
+    progress=remaining/FULL_OUT_MIN;
+
+    let p=air/6.8;
+    if(p<=75){
+      alarmActive=true;
+      if(ts-lastBeep>2200){
+        beep();lastBeep=ts; stateDetail.textContent='APITO DE BAIXA PRESSÃO — 75 bar. Retorno em andamento.';
+      }
+    }
+
+    if(opMin>=2*strategyMin-1e-9){
+      finishOutcome()
+    }
+  }
+
+  drawOp();
+  requestAnimationFrame(tick)
+}
+
+window.addEventListener('message',evento=>{
+  const d=evento.data||{};
+  if(d.type==='audio-state-sync'){
+    if(d.muted&&audioCtx){const ctxAtual=audioCtx;audioCtx=null;ctxAtual.close().catch(()=>{});}
+    return;
+  }
+  if(d.type!=='simulation-control')return;
+  if(d.action==='pause')externallyPaused=true;
+  if(d.action==='resume'){externallyPaused=false;last=performance.now();}
+});
+
+requestAnimationFrame(tick);
+resetOp();
+</script>
+<script>
+// Ponte comum entre cada simulador e o jogo principal.
+// O build substitui 7 pelo índice da missão.
+(function () {
+  const MISSION_ID = 7;
+  let sucessoJaReportado = false;
+  let tentativasPadrao = 0;
+  let audioGlobalMutadoNoSimulador = false;
+  function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
+  function lerTentativas(){
+    for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
+      const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
+    }
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):tentativasPadrao;
+  }
+  function reportarEstado(pedirConclusao=false){
+    try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
+  }
+  window.atualizarTentativasPadrao=function(total){
+    const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+  };
+  window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.audioGlobalEstaMutadoNoSimulador=function(){return !!audioGlobalMutadoNoSimulador;};
+  window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.controlarTrilhaSimulacaoPadrao=function(action){
+    const acao=String(action||'').toLowerCase();
+    if(!['start','pause','resume','stop'].includes(acao))return;
+    try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
+  };
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='audio-state-sync')audioGlobalMutadoNoSimulador=!!d.muted;if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID){if(d.success)sucessoJaReportado=true;if(Object.prototype.hasOwnProperty.call(d,'audioMuted'))audioGlobalMutadoNoSimulador=!!d.audioMuted;}});
+  ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
+  setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
+})();
+</script>
+</body>
+</html>

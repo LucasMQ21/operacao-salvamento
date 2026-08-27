@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação Salvamento — Travessia Estratégica na Represa</title>
+<style>:root{
+  --bg:#07131c; --panel:#0d2230; --panel2:#102b3b; --ink:#eef7fb; --muted:#a9c0cc;
+  --accent:#ffcc33; --danger:#e33a3a; --green:#55d18c; --water:#1696c7; --line:#f6f1df;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 30% 0%,#16394e 0,#07131c 46%,#040b10 100%);color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif}
+button,input{font:inherit}
+body{padding:18px}
+.shell{max-width:1480px;margin:0 auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:12px}.brand-badge{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#d51f26,#8f1015);display:grid;place-items:center;font-weight:900;border:2px solid rgba(255,255,255,.6);box-shadow:0 8px 24px #0006}.brand h1{font-size:clamp(18px,2.1vw,28px);margin:0;letter-spacing:.02em}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.status{display:flex;gap:8px;align-items:center}.pill{background:#0b1c28;border:1px solid #2a4658;border-radius:999px;padding:7px 11px;color:#cfe2ec;font-size:12px}
+.layout{display:grid;grid-template-columns:minmax(0,1.82fr) minmax(310px,.78fr);gap:14px;align-items:start}
+.card{background:linear-gradient(180deg,rgba(16,43,59,.96),rgba(8,26,37,.96));border:1px solid #274658;border-radius:18px;box-shadow:0 12px 34px #0007;overflow:hidden}
+.stage-card{padding:10px}.stage-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:3px 4px 10px}.stage-head strong{font-size:15px}.stage-head span{color:var(--muted);font-size:12px}
+.stage{position:relative;width:100%;aspect-ratio:1679/937;overflow:hidden;border-radius:13px;background:#0c4b6a;isolation:isolate;user-select:none}
+.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none}
+.layer{position:absolute;inset:0}.ambient{z-index:2;pointer-events:none}.math{z-index:3;pointer-events:none}.ops{z-index:5;pointer-events:none}.markers{z-index:6;pointer-events:none}.interactive{z-index:7}
+.route-svg{width:100%;height:100%;overflow:visible}.route{fill:none;stroke:#fff6;stroke-width:2.2;stroke-dasharray:7 7;vector-effect:non-scaling-stroke;filter:drop-shadow(0 1px 2px #000)}.route.active{stroke:#ffdd58;stroke-width:3.3;stroke-dasharray:none}.land-route{stroke:#8bf0a9}.dimension{stroke:#fff9;stroke-width:1.5;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}.dim-label{fill:#fff;font-size:17px;font-weight:800;paint-order:stroke;stroke:#0a2230;stroke-width:5px;stroke-linejoin:round}.dim-label.small{font-size:15px}
+.marker{position:absolute;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#d92b32;color:white;border:3px solid #fff;font-weight:900;box-shadow:0 3px 10px #0008}.marker::after{content:"";position:absolute;top:34px;width:3px;height:27px;background:#fff;border-radius:2px;box-shadow:0 1px 3px #0008}.marker::before{content:"";position:absolute;top:59px;width:8px;height:4px;border-radius:50%;background:#fff9}
+.marker.d{width:44px;height:44px;background:#ffc928;color:#14202a;border-color:#fff;cursor:grab;pointer-events:auto;touch-action:none;box-shadow:0 0 0 6px #ffd43b35,0 5px 16px #0009;animation:pulse 1.8s ease-in-out infinite}.marker.d:active{cursor:grabbing}.marker.d::after{height:22px;top:40px}.marker.d::before{top:60px}.marker.d .hint{position:absolute;top:-31px;white-space:nowrap;background:#07131cdd;color:#fff;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #ffffff33;opacity:0;transition:.2s}.marker.d:hover .hint,.marker.d:focus .hint{opacity:1}
+@keyframes pulse{50%{box-shadow:0 0 0 11px #ffd43b12,0 5px 16px #0009}}
+.position-tag{position:absolute;transform:translate(-50%,0);top:calc(18% + 68px);background:#06131bd9;border:1px solid #ffffff32;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:800;color:#fff;white-space:nowrap;z-index:8;pointer-events:none}
+
+/* ===== V4 · operação terrestre mais realista, desembarque explícito e sprites vetoriais refinados ===== */
+.sprite{position:absolute;transform:translate(-50%,-50%);overflow:visible;filter:drop-shadow(0 3px 3px #00101888);will-change:transform,left,top}
+.sprite svg{display:block;width:100%;height:100%;overflow:visible}
+.sprite .skin{fill:#b96f42}.sprite.light .skin{fill:#d59462}.sprite.dark .skin{fill:#87502f}
+.sprite .hair{fill:#302219}.sprite .hair2{fill:#171719}.sprite .shorts{fill:#165b81}.sprite .shorts2{fill:#de6b32}.sprite .shirt{fill:#4e8b55}.sprite .shirt2{fill:#f1b63a}
+.sprite .outline{stroke:#3a241b;stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+.sprite .limb{fill:none;stroke:#b96f42;stroke-width:4;stroke-linecap:round}.sprite.light .limb{stroke:#d59462}.sprite.dark .limb{stroke:#87502f}
+.sprite .ripple{fill:none;stroke:#c9f2ff;stroke-width:1.4;opacity:.62;transform-box:view-box;transform-origin:center;animation:ripple 2.5s ease-out infinite}
+.sprite .ripple.r2{animation-delay:-1.2s}
+@keyframes ripple{0%{transform:scale(.55);opacity:.65}75%,100%{transform:scale(1.15);opacity:0}}
+
+.wader{width:38px;height:58px;animation:waderBob 2.8s ease-in-out infinite alternate}
+.wader .arm-l,.wader .arm-r{transform-box:view-box}.wader .arm-l{transform-origin:16px 29px;animation:wadeArmL 2.3s ease-in-out infinite alternate}.wader .arm-r{transform-origin:32px 29px;animation:wadeArmR 2.6s ease-in-out infinite alternate}
+@keyframes waderBob{to{transform:translate(-50%,-53%)}}
+@keyframes wadeArmL{from{transform:rotate(-7deg)}to{transform:rotate(12deg)}}
+@keyframes wadeArmR{from{transform:rotate(9deg)}to{transform:rotate(-12deg)}}
+
+.swimmer{width:55px;height:35px;animation:swimDrift 5.5s ease-in-out infinite alternate}
+.swimmer .arm-l,.swimmer .arm-r{transform-box:view-box}.swimmer .arm-l{transform-origin:29px 16px;animation:swimArmL 1.15s ease-in-out infinite}.swimmer .arm-r{transform-origin:34px 19px;animation:swimArmR 1.15s ease-in-out infinite -.55s}
+.swimmer .kick{transform-box:view-box;transform-origin:16px 20px;animation:kick .75s ease-in-out infinite alternate}
+@keyframes swimDrift{from{transform:translate(-50%,-50%) translateX(-3px)}to{transform:translate(-50%,-50%) translateX(5px)}}
+@keyframes swimArmL{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(36deg)}}
+@keyframes swimArmR{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-34deg)}}
+@keyframes kick{to{transform:rotate(10deg)}}
+
+.guard{width:38px;height:61px;animation:guardIdle 3.2s ease-in-out infinite alternate}
+.guard .arm-r{transform-box:view-box;transform-origin:31px 29px;animation:guardWave 4s ease-in-out infinite}
+@keyframes guardIdle{to{transform:translate(-50%,-51.5%) rotate(.8deg)}}
+@keyframes guardWave{0%,64%,100%{transform:rotate(0)}72%{transform:rotate(-20deg)}80%{transform:rotate(12deg)}88%{transform:rotate(-14deg)}}
+
+.bystander-sprite{width:36px;height:58px;animation:concernBob 2.9s ease-in-out infinite alternate}.bystander-sprite.wave .arm-r{transform-box:view-box;transform-origin:30px 28px;animation:helpWave 1.35s ease-in-out infinite alternate}.bystander-sprite.kneel{width:43px;height:44px;animation:kneelMove 2.2s ease-in-out infinite alternate}
+@keyframes concernBob{to{transform:translate(-50%,-52%)}}
+@keyframes helpWave{from{transform:rotate(-12deg)}to{transform:rotate(-58deg)}}
+@keyframes kneelMove{to{transform:translate(-50%,-51.5%) rotate(-1.5deg)}}
+
+
+.boat{position:absolute;width:112px;height:74px;transform:translate(-50%,-50%);transform-origin:center center;z-index:10;filter:drop-shadow(0 6px 5px #00101899);will-change:left,top,transform}
+.boat svg{width:100%;height:100%;display:block;overflow:visible}
+.boat .wake{fill:none;stroke:#d9f7ff;stroke-linecap:round;opacity:.62;animation:wakePulse 1.05s ease-in-out infinite alternate}.boat .wake.w2{animation-delay:-.45s}
+.boat .oar-left,.boat .oar-right{transform-box:view-box;animation-timing-function:ease-in-out;animation-iteration-count:infinite;animation-direction:alternate}.boat .oar-left{transform-origin:50px 34px;animation-name:rowLeft;animation-duration:.62s}.boat .oar-right{transform-origin:72px 46px;animation-name:rowRight;animation-duration:.62s;animation-delay:-.31s}
+.boat.idle .oar-left,.boat.idle .oar-right{animation-play-state:paused}.boat.idle .wake{opacity:.18;animation-play-state:paused}
+.boat .crew-body{fill:#c8232b;stroke:#7b151a;stroke-width:1}.boat .helmet{fill:#f5cf2f;stroke:#7b4e12;stroke-width:1}.boat .skin{fill:#c98655}.boat .vest-stripe{stroke:#fff2a8;stroke-width:1.8}.boat .paddle{stroke:#d9a25c;stroke-width:3.2;stroke-linecap:round}.boat .blade{fill:#e1ad62;stroke:#91602c;stroke-width:1}
+@keyframes rowLeft{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+@keyframes rowRight{from{transform:rotate(18deg)}to{transform:rotate(-18deg)}}
+@keyframes wakePulse{to{opacity:.22;transform:translateX(-4px)}}
+
+.runners{position:absolute;width:102px;height:82px;transform:translate(-50%,-50%);z-index:11;filter:drop-shadow(0 4px 4px #00101888);will-change:left,top,transform;transform-origin:50% 88%;pointer-events:none}
+.runners .ground-shadow{position:absolute;left:10px;bottom:3px;width:72px;height:13px;border-radius:50%;background:radial-gradient(ellipse,#07131c88 0,#07131c44 47%,transparent 72%);transform:skewX(-10deg)}
+.runner-unit{position:absolute;width:50px;height:74px;bottom:5px;transform-origin:50% 88%;animation:runnerBob .34s ease-in-out infinite alternate}
+.runner-unit.r1{left:6px}.runner-unit.r2{left:45px;bottom:9px;animation-delay:-.17s;scale:.94}
+.runner-svg{width:50px;height:74px;overflow:visible;display:block}
+.runner-svg .skin{fill:url(#skinGrad);stroke:#77442c;stroke-width:.7}.runner-svg .helmet{fill:url(#helmetGrad);stroke:#7b4e12;stroke-width:1}.runner-svg .visor{fill:#1b2c35;opacity:.9}.runner-svg .uniform{fill:url(#uniformGrad);stroke:#74151a;stroke-width:1}.runner-svg .pants{fill:#8e1720;stroke:#541015;stroke-width:1}.runner-svg .reflect{stroke:#fff1a3;stroke-width:2;stroke-linecap:round}.runner-svg .boot{fill:#17242b;stroke:#081116;stroke-width:1}.runner-svg .pack{fill:#273943;stroke:#0c171d;stroke-width:1}.runner-svg .strap{stroke:#111d23;stroke-width:1.6}.runner-svg .limb{transform-box:view-box}.runner-svg .leg-a{transform-origin:20px 42px;animation:runLegA .34s ease-in-out infinite alternate}.runner-svg .leg-b{transform-origin:27px 42px;animation:runLegB .34s ease-in-out infinite alternate}.runner-svg .arm-a{transform-origin:16px 25px;animation:runArmA .34s ease-in-out infinite alternate}.runner-svg .arm-b{transform-origin:31px 25px;animation:runArmB .34s ease-in-out infinite alternate}.runner-unit.r2 .leg-a,.runner-unit.r2 .leg-b,.runner-unit.r2 .arm-a,.runner-unit.r2 .arm-b{animation-delay:-.17s}
+.runners:not(.running) .runner-unit,.runners:not(.running) .limb{animation-play-state:paused}
+.runners.landing .runner-unit{animation:landBounce .23s ease-in-out 2 alternate}
+.runners.running .dust{opacity:1;animation:dustPuff .68s ease-out infinite}.runners.running .dust.d2{animation-delay:-.34s}
+.dust{position:absolute;width:12px;height:5px;border-radius:50%;background:#caa66c99;filter:blur(.6px);opacity:0;bottom:5px}.dust.d1{left:18px}.dust.d2{left:51px}
+@keyframes runnerBob{to{transform:translateY(-2.2px) rotate(-1deg)}}
+@keyframes runLegA{from{transform:rotate(23deg)}to{transform:rotate(-28deg)}}
+@keyframes runLegB{from{transform:rotate(-23deg)}to{transform:rotate(28deg)}}
+@keyframes runArmA{from{transform:rotate(-28deg)}to{transform:rotate(25deg)}}
+@keyframes runArmB{from{transform:rotate(27deg)}to{transform:rotate(-25deg)}}
+@keyframes landBounce{to{transform:translateY(-4px)}}
+@keyframes dustPuff{0%{transform:translate(0,0) scale(.6);opacity:.5}100%{transform:translate(-10px,3px) scale(1.45);opacity:0}}
+.ambient-note{position:absolute;left:2%;bottom:2%;font-size:10px;color:#fff8;background:#03141c99;border:1px solid #ffffff18;padding:5px 7px;border-radius:7px;backdrop-filter:blur(2px)}
+@media(prefers-reduced-motion:reduce){.sprite,.sprite *,.boat *,.runner-svg *{animation:none!important}}
+
+.side{display:grid;gap:14px}.brief{padding:18px}.eyebrow{font-size:11px;font-weight:900;color:var(--accent);letter-spacing:.12em;text-transform:uppercase}.brief h2{font-size:21px;margin:5px 0 8px}.brief p{margin:0;color:#d5e3ea;line-height:1.45;font-size:14px}.mission-callout{margin-top:12px;padding:11px 12px;background:#071924;border-left:4px solid var(--accent);border-radius:8px;color:#fff;font-weight:800;font-size:13px}
+.data{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}.datum{background:#071924;border:1px solid #234354;border-radius:10px;padding:9px}.datum b{display:block;font-size:17px}.datum span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9fb8c6}
+.controls{padding:16px}.controls h3,.analysis h3{margin:0 0 10px;font-size:15px}.slider-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.slider-row input{width:100%;accent-color:#ffc928}.readout{font-weight:900;min-width:68px;text-align:right}.button-row{display:flex;gap:8px;margin-top:12px}.btn{border:0;border-radius:11px;padding:11px 13px;font-weight:900;cursor:pointer;transition:.15s}.btn.primary{background:linear-gradient(180deg,#ffd84f,#f1b814);color:#17212a;flex:1}.btn.primary:hover{transform:translateY(-1px);filter:brightness(1.04)}.btn.secondary{background:#183545;color:#d6e7ef;border:1px solid #315365}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.clock{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 12px;border-radius:11px;background:#071924;border:1px solid #234354}.clock strong{font-variant-numeric:tabular-nums;font-size:21px;color:#fff}.clock span{color:#9fb8c6;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.result{margin-top:10px;display:none;padding:11px;border-radius:10px;background:#0c2d26;border:1px solid #285e4b}.result.show{display:block}.result b{color:#7af0ad}.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:7px;font-size:12px;color:#cfe3da}.result-grid strong{color:#fff}
+.analysis{padding:16px}.empty{color:#97afbc;font-size:13px;line-height:1.45}.history{width:100%;border-collapse:collapse;font-size:12px;margin-top:9px}.history th,.history td{padding:7px 5px;border-bottom:1px solid #274657;text-align:right}.history th:first-child,.history td:first-child{text-align:left}.history th{color:#9db5c2;font-weight:700}.best{color:#72e9a4;font-weight:900}
+.graph-wrap{margin-top:12px;background:#06151f;border:1px solid #234354;border-radius:12px;padding:8px}.graph{width:100%;height:auto;display:block}.graph text{font-family:inherit;fill:#b7cbd5;font-size:10px}.graph .axis{stroke:#7293a4;stroke-width:1}.graph .grid{stroke:#23404f;stroke-width:1}.graph .pt{fill:#ffd43b;stroke:#fff;stroke-width:1.5}.graph .trend{fill:none;stroke:#55d18c;stroke-width:2}.insight{display:none;margin-top:11px;padding:10px 11px;border-radius:9px;background:#2a2410;border:1px solid #6a5921;color:#f4e9b5;font-size:12px;line-height:1.4}.insight.show{display:block}
+.modal{position:fixed;inset:0;z-index:50;background:#02080cdd;display:grid;place-items:center;padding:18px}.modal.hidden{display:none}.modal-box{max-width:640px;width:100%;background:linear-gradient(180deg,#123449,#081e2b);border:1px solid #376078;border-radius:20px;padding:24px;box-shadow:0 24px 70px #000b}.modal-box h2{font-size:26px;margin:6px 0 10px}.modal-box p{color:#d7e6ed;line-height:1.55}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}.step{background:#071924;border:1px solid #284858;border-radius:12px;padding:11px;font-size:12px}.step b{display:block;color:#ffd43b;margin-bottom:4px}.modal-actions{display:flex;justify-content:flex-end}.toast{position:absolute;left:50%;bottom:16px;transform:translate(-50%,15px);background:#06131be8;border:1px solid #ffffff2c;color:#fff;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:800;opacity:0;transition:.25s;z-index:30;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:1000px){body{padding:10px}.layout{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr}.analysis{grid-column:1/-1}.topbar{align-items:flex-start}.status{display:none}}
+@media(max-width:650px){.side{grid-template-columns:1fr}.data{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr}.marker{width:30px;height:30px;font-size:12px}.marker::after{top:27px;height:20px}.marker::before{top:45px}.marker.d{width:37px;height:37px}.marker.d::after{top:34px;height:17px}.marker.d::before{top:49px}.position-tag{display:none}.boat{scale:.8}.runners{scale:.9}.brand p{display:none}}
+
+/* ===== V2: geometria aderente à margem real da imagem ===== */
+.marker{width:32px;height:32px;font-size:14px;border-width:2.5px}
+.marker::after{top:29px;height:33px;width:2.5px}
+.marker::before{top:60px;width:7px;height:3px}
+.marker.d{width:38px;height:38px;font-size:14px}
+.marker.d::after{top:35px;height:28px}
+.marker.d::before{top:61px}
+.position-tag{top:auto;padding:4px 7px;font-size:10.5px}
+.route.boat-route{stroke:#f5fbff99;stroke-width:2.1;stroke-dasharray:7 7}
+.route.boat-route.active{stroke:#ffda47;stroke-width:3.2;stroke-dasharray:none}
+.land-route{stroke:#f2c84b;stroke-width:3.0;stroke-dasharray:3 7;stroke-linecap:round;stroke-linejoin:round;fill:none;vector-effect:non-scaling-stroke;filter:drop-shadow(0 2px 2px #3a2600)}
+.land-route.active{stroke:#ffd95a;stroke-width:4.0;stroke-dasharray:9 7;animation:landDash .6s linear infinite;filter:drop-shadow(0 2px 3px #442e00)}
+@keyframes landDash{to{stroke-dashoffset:-16}}
+.dimension{stroke:#ffffffb8;stroke-width:1.45;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
+.dimension.cb{stroke:#fffde0cc;stroke-dasharray:5 5}
+.dimension-tick{stroke:#fffde0cc;stroke-width:1.8;vector-effect:non-scaling-stroke}
+.dim-label{font-size:15px}
+.dim-label.cb-label{font-size:15px;fill:#fff7c7}
+.marker-label-note{position:absolute;transform:translate(-50%,-50%);font-size:9px;background:#07131ccc;color:#dcebf1;padding:3px 5px;border-radius:6px;border:1px solid #ffffff22;pointer-events:none;z-index:7;white-space:nowrap}
+.ambient .person,.ambient .victim,.ambient .bystander{filter:drop-shadow(0 2px 2px #0006)}
+.victim{width:30px;height:8px;background:#df623d}
+.bystander:after{background:#516f82}
+@media(max-width:650px){.marker{width:27px;height:27px;font-size:11px}.marker::after{top:24px;height:26px}.marker::before{top:48px}.marker.d{width:32px;height:32px}.marker.d::after{top:29px;height:23px}.marker.d::before{top:50px}}
+
+
+/* === V7 realistic sprite sheets === */
+.boat{width:114px !important;height:92px !important;filter:drop-shadow(0 7px 6px #00101899) !important;overflow:visible}
+.boat svg{display:none !important}
+.boat .boat-sprite{width:114px;height:92px;background-image:url(../assets/embedded/a9069f4425b44d8b7663.png);background-repeat:no-repeat;background-size:912px 92px;animation:boatFrames .92s steps(8) infinite;}
+.runners{width:110px !important;height:80px !important;filter:drop-shadow(0 4px 4px #00101888) !important;}
+.runners svg{display:none !important}
+.runners .ground-shadow{position:absolute;left:16px;bottom:6px;width:74px;height:14px;border-radius:50%;background:radial-gradient(ellipse,#07131c88 0,#07131c44 47%,transparent 72%);transform:skewX(-10deg)}
+.runner-sprite{position:absolute;width:45px;height:62px;bottom:7px;background-image:url(../assets/embedded/e587d17561dbb50a08c4.png);background-repeat:no-repeat;background-size:360px 62px;animation:runFrames .72s steps(8) infinite;transform-origin:50% 100%;}
+.runner-sprite.r1{left:8px}
+.runner-sprite.r2{left:44px;bottom:11px;transform:scale(.95);animation-delay:-.36s}
+@keyframes runFrames{from{background-position:0 0}to{background-position:-360px 0}}
+@keyframes boatFrames{from{background-position:0 0}to{background-position:-912px 0}}
+
+
+/* === V8 sprite refinement === */
+.boat{width:96px !important;height:86px !important;overflow:visible}
+.boat .boat-sprite{width:96px;height:86px;background-image:url(../assets/embedded/f54d4e7b8f2c2e740947.png) !important;background-repeat:no-repeat;background-size:768px 86px !important;animation:boatFramesV8 .92s steps(8) infinite paused;transform-origin:50% 50%;}
+.boat:not(.idle) .boat-sprite{animation-play-state:running}
+.runners{width:92px !important;height:74px !important;overflow:visible;}
+.runner-sprite{width:42px !important;height:64px !important;bottom:6px;background-image:url(../assets/embedded/576d5d2bf0bd82aa8e55.png) !important;background-repeat:no-repeat;background-size:294px 64px !important;animation:runFramesV8 .74s steps(7) infinite paused;}
+.runner-sprite.r1{left:8px}
+.runner-sprite.r2{left:40px;bottom:9px;transform:scale(.95)}
+.runners.running .runner-sprite{animation-play-state:running}
+.runners.arrived .runner-sprite,.runners.landing .runner-sprite{animation-play-state:paused}
+@keyframes runFramesV8{from{background-position:0 0}to{background-position:-294px 0}}
+@keyframes boatFramesV8{from{background-position:0 0}to{background-position:-768px 0}}
+
+
+/* === V10: sprites técnicos normalizados; estrutura visual preservada da V8 === */
+.boat{width:100px !important;height:78px !important;overflow:visible !important;opacity:1;}
+.boat svg,.boat .boat-sprite{display:none !important;}
+.boat-frame{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none;}
+.runners{width:96px !important;height:76px !important;overflow:visible !important;opacity:1;}
+.runners svg,.runner-sprite{display:none !important;}
+.runner-frame{position:absolute;width:43px;height:68px;bottom:5px;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none;transform-origin:50% 100%;}
+.runner-frame.r1{left:7px}.runner-frame.r2{left:43px;bottom:8px;transform:scale(.95)}
+.runners.arrived .ground-shadow{opacity:.65}
+
+
+/* === V11: correções exclusivamente na animação do bote === */
+.boat-frame{transition:opacity .06s linear;}
+
+/* === V12: normalização fina dos sprites, sem alterar a estrutura da tela === */
+.boat-frame{object-position:50% 50%;}
+.runners{width:108px !important;}
+.runner-frame{width:46px;height:70px;object-fit:contain;object-position:50% 100%;}
+.runner-frame.r1{left:5px;z-index:2;}
+.runner-frame.r2{left:57px;bottom:8px;transform:scale(.95);z-index:1;}
+
+
+/* === V13: refinamentos finais de sprites e remoção das animações ambientais === */
+.marker.d{animation:none !important;}
+.sprite,.sprite *,.victim-sprite,.victim-sprite *{animation:none !important;}
+.runners.crouch .dust{opacity:0 !important;animation:none !important;}
+.runners.crouch .ground-shadow{opacity:.82;transform:scale(1.08,1.15) skewX(-10deg);}
+.runners.crouch .runner-frame{transition:transform .34s ease, left .34s ease, bottom .34s ease, width .34s ease, height .34s ease;}
+.runners.crouch .runner-frame.r1{left:10px;bottom:3px;width:48px;height:66px;transform:translateY(9px) scale(1.05,.84) rotate(7deg);z-index:2;}
+.runners.crouch .runner-frame.r2{left:53px;bottom:5px;width:44px;height:62px;transform:translateY(10px) scale(.98,.80) rotate(-8deg);z-index:1;}
+
+
+/* === V14: cenário limpo, bote vazio em D e pose final ajoelhada === */
+.empty-boat{position:absolute;width:88px;height:68px;transform:translate(-50%,-50%);transform-origin:center center;z-index:9;filter:drop-shadow(0 5px 4px #00101888);pointer-events:none;}
+.empty-boat img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none;}
+.kneel-pair{position:absolute;width:118px;height:76px;transform:translate(-50%,-50%);z-index:12;pointer-events:none;}
+.kneel-pair .kp.pairframe{position:absolute;left:0;bottom:0;width:118px;height:76px;display:block;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 4px 3px #00101888);transform-origin:50% 100%;}
+
+/* === V15: manter padrão visual dos sprites, sem balão de posição nem vítima/bonecos finais === */
+.position-tag{display:none !important;}
+.runners.crouch{display:block !important;}
+.runners.crouch .dust{opacity:0 !important;animation:none !important;}
+.runners.crouch .ground-shadow{display:none !important;}
+.runners.crouch .runner-frame{transition:transform .22s ease,left .22s ease,bottom .22s ease,width .22s ease,height .22s ease;object-position:50% 100%;}
+.runners.crouch .runner-frame.r1{left:10px;bottom:2px;width:44px;height:62px;transform:translateY(8px) scale(1.00,.82) rotate(6deg);z-index:2;}
+.runners.crouch .runner-frame.r2{left:56px;bottom:4px;width:42px;height:60px;transform:translateY(9px) scale(.96,.82) rotate(-6deg);z-index:1;}
+
+
+/* === V21: personagens ambientais individuais, normalizados e fora do corredor do bote === */
+.ambient{z-index:2;pointer-events:none;overflow:hidden}
+.ambient-char{position:absolute;pointer-events:none;user-select:none;-webkit-user-select:none;will-change:transform,opacity;filter:drop-shadow(0 2px 2px #00101855)}
+.ambient-char img{display:block;width:100%;height:auto;object-fit:contain;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.ambient-char.stand{transform:translate(-50%,-100%)}
+.ambient-char.ground,.ambient-char.water{transform:translate(-50%,-50%)}
+.ambient-char.water{filter:drop-shadow(0 1px 1px #00101835)}
+#marginIncidentGroup{position:absolute;inset:0;opacity:1;transition:opacity .24s ease;pointer-events:none}
+#marginIncidentGroup.hidden{opacity:0;display:block!important}
+
+
+/* === V23: estados ambientais controlados pelo botão e escala operacional coerente === */
+/* Bombeiros aproximados à escala visual dos civis da margem. */
+.runners{scale:.86 !important;}
+.kneel-pair{scale:.86 !important;transform-origin:50% 50%;}
+/* O nadador em crawl também se desloca; a inversão horizontal ocorre só no retorno. */
+#ambientCrawl img{transform-origin:50% 50%;will-change:transform;}
+
+
+/* V24: o grupo de incidente em B permanece visível durante o atendimento. */
+/* V25: aproximação final refinada e bote visualmente deslocado para a esquerda quando D está junto de B. */
+
+
+/* ===== Integração Fase 38 ===== */
+.bridge-attempts{display:none!important}
+body{padding:10px}
+.shell{max-width:1500px}
+.layout{grid-template-columns:minmax(0,1.72fr) minmax(330px,.72fr)}
+.brief{padding:14px}.brief h2{font-size:18px}.brief p{font-size:12.5px}.mission-callout{margin-top:9px}.data{margin-top:9px}.datum{padding:7px}.datum b{font-size:15px}
+.mode-card{padding:10px 12px}.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px}.mode-btn{border:1px solid #315365;background:#102b3b;color:#cfe2ec;padding:9px 8px;border-radius:10px;font-weight:900;cursor:pointer}.mode-btn.active{background:#ffd43b;color:#15212a;border-color:#ffd43b}.mode-note{margin:7px 2px 0;color:#9fb8c6;font-size:11px;line-height:1.35}
+.panel-stack{display:grid;gap:14px}.panel-stack[hidden],.math-lab[hidden]{display:none!important}
+.exact-choice{margin-top:10px;padding:10px;background:#071924;border:1px solid #234354;border-radius:10px}.exact-choice label{display:block;color:#bcd1dc;font-size:11px;font-weight:800;margin-bottom:6px}.exact-input-row{display:grid;grid-template-columns:1fr auto;gap:7px}.exact-input-row input{min-width:0;background:#05131c;color:#fff;border:1px solid #315365;border-radius:9px;padding:10px 11px;font-weight:800}.exact-help{font-size:10.5px;color:#8eacba;margin-top:5px}.exact-help.bad{color:#ff9c9c}
+.math-lab{padding:16px}.math-lab h3{margin:5px 0 6px;font-size:19px}.math-intro{color:#b8cbd5;font-size:12.5px;line-height:1.45}.math-step{margin-top:12px;padding:13px;background:#071924;border:1px solid #28495b;border-radius:12px}.math-step-tag{color:#ffd43b;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.math-step h4{margin:5px 0 10px;font-size:15px}.math-step label{display:block;color:#c9d9e1;font-size:12px;margin:9px 0}.math-step select,.math-step input{width:100%;margin-top:5px;background:#05131c;color:#fff;border:1px solid #315365;border-radius:8px;padding:9px}.math-action{width:100%;margin-top:8px}.math-feedback{min-height:0;margin-top:8px;padding:0;font-size:11.5px;line-height:1.4}.math-feedback.ok{padding:8px;background:#0c2d26;border:1px solid #285e4b;border-radius:8px;color:#8df3b8}.math-feedback.bad{padding:8px;background:#321719;border:1px solid #7a3338;border-radius:8px;color:#ffb0b0}.proof-choices{margin-top:12px}.proof-choice-head{font-size:12px;color:#cfe0e8;margin-bottom:7px}.proof-choice-buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px}.proof-choice.active{border-color:#ffd43b;color:#ffd95c}.derivation{font-family:Cambria,Georgia,serif;font-size:14px;line-height:1.65;padding:10px;background:#04111a;border:1px solid #234354;border-radius:9px;overflow:auto}.answer-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.answer-grid label span{display:flex;align-items:center;gap:5px}.math-success{margin-top:12px;padding:12px;background:#0b3128;border:1px solid #3b795f;border-radius:10px}.math-success b{color:#82efad}.math-success p{margin:5px 0 0;color:#d5eee0;font-size:12px;line-height:1.45}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}.side{grid-template-columns:1fr}.analysis{grid-column:auto}.proof-choice-buttons,.answer-grid{grid-template-columns:1fr}}</style>
+</head>
+<body>
+<span class="bridge-attempts" id="contadorTentativasBridge">0</span><span class="bridge-attempts" id="attemptPill">0 tentativas</span><div class="shell">
+
+<main class="layout">
+<section class="card stage-card">
+<div class="stage-head"><strong>Cenário operacional</strong><span>Arraste D ou informe a distância exata</span></div>
+<div class="stage" id="stage">
+<img alt="Represa e posto-base de prevenção aquática" class="bg" src="../assets/embedded/10b9a28fefcb7b18ea28.png"/>
+<!-- CAMADA 2: personagens ambientais individuais normalizados -->
+<div aria-hidden="true" class="layer ambient" id="ambientLayer">
+<div id="marginIncidentGroup">
+<div class="ambient-char stand" id="ambientMarginMan" style="left:89.4%;top:18.0%;width:3.5%"><img alt="" draggable="false"/></div>
+<div class="ambient-char stand" id="ambientMarginWoman" style="left:92.6%;top:18.1%;width:3.1%"><img alt="" draggable="false"/></div>
+<div class="ambient-char ground" id="ambientVictim" style="left:91.0%;top:20.0%;width:5.1%"><img alt="" draggable="false" src="../assets/embedded/810f0bf35a686dc76f29.png"/></div>
+</div>
+<!-- Banhistas concentrados na faixa inferior/direita, abaixo do leque possível A→D -->
+<div class="ambient-char water" id="ambientCrawl" style="left:69.5%;top:56.5%;width:5.8%"><img alt="" draggable="false"/></div>
+<div class="ambient-char water" id="ambientFloat" style="left:87.5%;top:63.0%;width:4.5%"><img alt="" draggable="false"/></div>
+<div class="ambient-char water" id="ambientNoodle" style="left:63.5%;top:74.5%;width:4.7%"><img alt="" draggable="false"/></div>
+<div class="ambient-char water" id="ambientFemale" style="left:79.0%;top:73.5%;width:4.0%"><img alt="" draggable="false"/></div>
+<div class="ambient-char water" id="ambientMale" style="left:55.0%;top:80.5%;width:3.9%"><img alt="" draggable="false"/></div>
+</div>
+<!-- CAMADA 3: geometria matemática e trajetórias -->
+<div class="layer math">
+<svg aria-hidden="true" class="route-svg" preserveAspectRatio="none" viewBox="0 0 1000 558.07">
+<!-- A→D: trajetória aquática escolhida -->
+<line class="route boat-route" id="routeBoat" x1="278" x2="560" y1="435.3" y2="103"></line>
+<!-- D→B: trajetória terrestre aderente à trilha/margem real -->
+<polyline class="land-route" id="routeLand" points=""></polyline>
+<!-- AC = 400 m: referência geométrica da largura -->
+<line class="dimension" id="dimAC" x1="278" x2="278" y1="435.3" y2="102"></line>
+<text class="dim-label" id="labelAC" x="286" y="276">400 m</text>
+<!-- CB = 800 m: cota desenhada acima da trilha, nunca sobre a água -->
+<polyline class="dimension cb" id="dimCB" points=""></polyline>
+<line class="dimension-tick" id="tickC" x1="0" x2="0" y1="0" y2="0"></line>
+<line class="dimension-tick" id="tickB" x1="0" x2="0" y1="0" y2="0"></line>
+<text class="dim-label cb-label" id="labelCB" x="560" y="54">800 m</text>
+</svg>
+</div>
+<!-- CAMADA 4: operação animada — bote, desembarque e dupla de bombeiros correndo em terra -->
+<div aria-hidden="true" class="layer ops">
+<div class="boat idle" id="boat" style="left:27.8%;top:78%"><img alt="" class="boat-frame" draggable="false" id="boatFrame"/></div>
+<div class="empty-boat" id="emptyBoat" style="display:none">
+<img alt="" draggable="false" src="../assets/embedded/112d93465984d944e217.png"/>
+</div>
+<div class="runners" id="runners" style="display:none"><div class="ground-shadow"></div><span class="dust d1"></span><span class="dust d2"></span><img alt="" class="runner-frame r1" draggable="false" id="runnerFrame1"/><img alt="" class="runner-frame r2" draggable="false" id="runnerFrame2"/></div>
+<div class="kneel-pair" id="kneelPair" style="display:none">
+<img alt="" class="kp pairframe" draggable="false" id="kneelPairImg" src="../assets/embedded/22b38916701e413e720f.png"/>
+</div>
+</div>
+<!-- CAMADA 5: marcadores. Os círculos ficam em terra; as hastes apontam para os pontos geométricos -->
+<div aria-hidden="true" class="layer markers">
+<div class="marker" id="markerA">A</div>
+<div class="marker" id="markerC">C</div>
+<div class="marker" id="markerB">B</div>
+</div>
+<div aria-label="Ponto de desembarque D" aria-valuemax="800" aria-valuemin="0" aria-valuenow="400" class="marker d interactive" id="pointD" role="slider" tabindex="0"><span class="hint">Arraste pela margem</span>D</div>
+<div class="position-tag" id="positionTag">D: 400 m após C</div>
+<div class="toast" id="toast"></div>
+</div>
+</section>
+<aside class="side">
+<section class="card brief">
+<div class="eyebrow">Dados operacionais</div>
+<h2>Travessia Estratégica</h2>
+<p>Escolha <b>D</b> entre C e B. Você pode experimentar no mapa ou partir diretamente para a modelagem matemática.</p>
+<div class="mission-callout">Objetivo: minimizar o tempo total e justificar o mínimo.</div>
+<div class="data">
+<div class="datum"><b>400 m</b><span>largura A–C</span></div>
+<div class="datum"><b>800 m</b><span>distância C–B</span></div>
+<div class="datum"><b>6 km/h</b><span>velocidade do bote</span></div>
+<div class="datum"><b>10 km/h</b><span>corrida em terra</span></div>
+</div>
+</section><section class="card mode-card"><div class="mode-tabs"><button class="mode-btn active" id="modeExperiment" type="button">🌊 Simular estratégias</button><button class="mode-btn" id="modeMath" type="button">🧮 Modelar e justificar</button></div><p class="mode-note">Você pode alternar entre os caminhos a qualquer momento. Experimentar ajuda a formular uma conjectura; a missão só é concluída com uma justificativa matemática.</p></section>
+<div class="panel-stack" id="experimentPanel"><section class="card controls">
+<h3>Escolha o ponto de desembarque</h3>
+<div class="slider-row"><input aria-label="Distância de C até D em metros" id="dSlider" max="800" min="0" step="1" type="range" value="400"/><div class="readout"><span id="dReadout">400</span> m</div></div><div class="exact-choice"><label for="dExactInput">Ou informe CD com precisão</label><div class="exact-input-row"><input aria-label="Distância exata de C até D em metros" autocomplete="off" id="dExactInput" inputmode="decimal" placeholder="0 a 800 m" type="text"/><button class="btn secondary" id="applyExactBtn" type="button">Aplicar</button></div><div class="exact-help" id="exactHelp">Aceita valores inteiros ou decimais, com vírgula ou ponto.</div></div>
+<div class="button-row"><button class="btn primary" id="runBtn">▶ Executar estratégia</button><button class="btn secondary" id="resetBtn" title="Reposicionar equipe">↺</button></div>
+<div class="clock"><div><span>cronômetro da missão</span><strong id="clock">00:00</strong></div><div class="pill" id="phase">Pronto</div></div>
+<div class="result" id="result"><b id="resultTitle">Estratégia concluída</b><div class="result-grid"><span>Bote: <strong id="boatDist">—</strong></span><span>Terra: <strong id="landDist">—</strong></span><span>Remando: <strong id="boatTime">—</strong></span><span>Correndo: <strong id="landTime">—</strong></span><span style="grid-column:1/-1">Tempo total: <strong id="totalTime">—</strong></span></div></div>
+</section><section class="card analysis">
+<h3>Laboratório de tentativas</h3>
+<div class="empty" id="empty">Execute estratégias diferentes. Cada tentativa ficará registrada para você comparar os resultados e formular uma conjectura sobre o melhor ponto.</div>
+<table class="history" id="history" style="display:none"><thead><tr><th>#</th><th>D após C</th><th>Tempo</th></tr></thead><tbody></tbody></table>
+<div class="graph-wrap">
+<svg aria-label="Gráfico experimental de tempo por posição de desembarque" class="graph" id="graph" viewBox="0 0 440 190">
+<line class="grid" x1="42" x2="426" y1="32" y2="32"></line><line class="grid" x1="42" x2="426" y1="78" y2="78"></line><line class="grid" x1="42" x2="426" y1="124" y2="124"></line>
+<line class="axis" x1="42" x2="426" y1="160" y2="160"></line><line class="axis" x1="42" x2="42" y1="20" y2="160"></line>
+<text x="39" y="176">0</text><text x="226" y="176">400</text><text x="407" y="176">800 m</text>
+<text x="4" y="35">9,0</text><text x="4" y="81">8,5</text><text x="4" y="127">8,0</text><text x="4" y="15">tempo (min)</text>
+<polyline class="trend" id="trend" points=""></polyline><g id="points"></g>
+</svg>
+</div>
+<div class="insight" id="insight"><b>Questão de investigação:</b> seus testes sugerem uma região de mínimo. Mas como garantir que não existe um valor real, como 299,7 m, ainda melhor? Use o caminho “Modelar e justificar” para verificar matematicamente se sua conjectura é realmente exata — sem derivadas.</div>
+</section></div><section class="card math-lab" hidden="" id="mathPanel">
+<div class="eyebrow">Laboratório matemático</div>
+<h3>Modele e justifique o ponto ótimo</h3>
+<p class="math-intro">Você não precisa ter realizado tentativas no simulador. Construa o modelo e escolha uma das duas formas de validação algébrica.</p>
+<div class="math-step" id="modelStep"><span class="math-step-tag">1 · Modelagem</span><h4>Represente as distâncias e o tempo</h4>
+<label>AD, em quilômetros:<select id="modelAD"><option value="">Selecione…</option><option value="correct">√(x² + 0,16)</option><option value="wrong1">0,4 + x</option><option value="wrong2">√(0,4 + x)</option></select></label>
+<label>DB, em quilômetros:<select id="modelDB"><option value="">Selecione…</option><option value="wrong1">0,8 + x</option><option value="correct">0,8 − x</option><option value="wrong2">x − 0,8</option></select></label>
+<label>Tempo total em minutos:<select id="modelT"><option value="">Selecione…</option><option value="wrong1">6√(x²+0,16) + 10(0,8−x)</option><option value="correct">10√(x²+0,16) + 6(0,8−x)</option><option value="wrong2">√(x²+0,16)/6 + (0,8−x)/10</option></select></label>
+<button class="btn primary math-action" id="validateModel">Validar modelo</button><div class="math-feedback" id="modelFeedback"></div></div>
+<div class="proof-choices" hidden="" id="proofChoices"><div class="proof-choice-head"><b>Modelo validado.</b> Escolha como deseja justificar o mínimo:</div><div class="proof-choice-buttons"><button class="btn secondary proof-choice active" data-proof="a">Provar o menor tempo</button><button class="btn secondary proof-choice" data-proof="b">Encontrar o ótimo diretamente</button></div></div>
+<div class="math-step proof-panel" hidden="" id="proofA"><span class="math-step-tag">Caminho A</span><h4>Prove que nenhum tempo pode ser menor que 8 minutos</h4><p>Partindo de T(x) ≥ 8 min, a desigualdade pode ser transformada em:</p><div class="derivation">25√(x² + 0,16) ≥ 15x + 8<br/>625(x² + 0,16) ≥ (15x + 8)²<br/>400x² − 240x + 36 ≥ 0<br/><strong>4(10x − 3)² ≥ 0</strong></div><p>Como todo quadrado é não negativo, a igualdade identifica o único ponto em que o limite inferior é atingido.</p><div class="answer-grid"><label>Em que ponto ocorre a igualdade?<span><input id="proofAX" inputmode="decimal" placeholder="distância após C"/> m</span></label><label>Qual é o tempo mínimo?<span><input id="proofAT" inputmode="decimal" placeholder="tempo"/> min</span></label></div><button class="btn primary math-action" id="validateProofA">Validar demonstração</button><div class="math-feedback" id="proofAFeedback"></div></div>
+<div class="math-step proof-panel" hidden="" id="proofB"><span class="math-step-tag">Caminho B</span><h4>Determine diretamente o ponto ótimo</h4><p>Defina r = AD = √(x² + 0,16). Como 30T = 2,4 + 5r − 3x, basta minimizar 5r − 3x. Use:</p><div class="derivation">(5r − 3x)² = 16(r² − x²) + (3r − 5x)²<br/>r² − x² = 0,16<br/><strong>(5r − 3x)² = 2,56 + (3r − 5x)²</strong></div><p>O menor valor ocorre quando o quadrado adicional é zero. Complete a solução:</p><label>Da condição 3r = 5x, a razão x/r é:<select id="proofBRatio"><option value="">Selecione…</option><option value="wrong1">4/5</option><option value="correct">3/5</option><option value="wrong2">5/3</option></select></label><div class="answer-grid"><label>CD = x<span><input id="proofBX" inputmode="decimal" placeholder="x"/> m</span></label><label>AD = r<span><input id="proofBR" inputmode="decimal" placeholder="r"/> m</span></label></div><button class="btn primary math-action" id="validateProofB">Validar solução direta</button><div class="math-feedback" id="proofBFeedback"></div></div>
+<div class="math-success" hidden="" id="mathSuccess"><b>✓ Solução matematicamente justificada</b><p>O ponto ótimo está 300 m após C. O bote percorre 500 m em 5 minutos e a equipe corre 500 m em 3 minutos: tempo mínimo total de 8 minutos.</p></div>
+</section>
+
+</aside>
+</main>
+</div>
+<script>(() => {
+  /*
+    V4 — geometria preservada + transição explícita água/terra e corredores vetoriais mais realistas:
+    1) shorePath: linha real de desembarque, aderente à borda da água na ilustração.
+    2) trailPath: rota em terra, aderente à trilha acima da margem.
+
+    O parâmetro m (0 a 800 m) continua sendo a variável matemática x do problema.
+    A posição visual é interpolada ao longo dessas curvas sem alterar o modelo:
+      AD = sqrt(400² + m²)  e  DB = 800 - m.
+  */
+
+  // V21 — sequências ambientais individuais (data URI embutido no HTML)
+  const AMBIENT_FRAMES={
+    marginMan:["../assets/embedded/67c12e35c9f555e00f72.png","../assets/embedded/69cc737ef5e76d32aac1.png","../assets/embedded/67c12e35c9f555e00f72.png","../assets/embedded/69cc737ef5e76d32aac1.png","../assets/embedded/67c12e35c9f555e00f72.png","../assets/embedded/69cc737ef5e76d32aac1.png"],
+    marginWoman:["../assets/embedded/c198b5f928c314d2435f.png","../assets/embedded/680f4083891a1d153240.png","../assets/embedded/b5b0f53b6517939cf1d7.png","../assets/embedded/680f4083891a1d153240.png","../assets/embedded/c198b5f928c314d2435f.png","../assets/embedded/680f4083891a1d153240.png"],
+    crawl:["../assets/embedded/8b42b9d739ec3ac852e9.png","../assets/embedded/b5919f3a3390e712c121.png","../assets/embedded/aa1558df6bc38732f608.png","../assets/embedded/2a135f25557b752ea993.png","../assets/embedded/aa1558df6bc38732f608.png","../assets/embedded/b5919f3a3390e712c121.png"],
+    float:["../assets/embedded/4256952c985c223f85e8.png","../assets/embedded/e86af602b2368356dc54.png","../assets/embedded/d300ed115bf1bbee2437.png","../assets/embedded/1f4244072d11641f9f5d.png","../assets/embedded/d300ed115bf1bbee2437.png","../assets/embedded/e86af602b2368356dc54.png"],
+    noodle:["../assets/embedded/6ec52cfebfbb66bafb2d.png","../assets/embedded/50b2c460da6d9f3155e9.png","../assets/embedded/0909827551fd968160a0.png","../assets/embedded/e1b9c67c3e7b48272d60.png","../assets/embedded/0909827551fd968160a0.png","../assets/embedded/50b2c460da6d9f3155e9.png"],
+    female:["../assets/embedded/71c83b35d1fc20aff994.png","../assets/embedded/220f1a72060068f781b2.png","../assets/embedded/af948f4b0795e4aff794.png","../assets/embedded/220f1a72060068f781b2.png","../assets/embedded/71c83b35d1fc20aff994.png","../assets/embedded/220f1a72060068f781b2.png"],
+    male:["../assets/embedded/59f3da563550b048f99c.png","../assets/embedded/e9e56e5d1c9f4bc83c8e.png","../assets/embedded/6c96c338e887d9ad3de9.png","../assets/embedded/e9e56e5d1c9f4bc83c8e.png","../assets/embedded/59f3da563550b048f99c.png","../assets/embedded/e9e56e5d1c9f4bc83c8e.png"],
+  };
+  const AMBIENT_ANIMS=[
+    {id:'ambientMarginMan',key:'marginMan',ms:280,offset:0},
+    {id:'ambientMarginWoman',key:'marginWoman',ms:270,offset:125},
+    {id:'ambientCrawl',key:'crawl',ms:175,offset:40},
+    {id:'ambientFloat',key:'float',ms:330,offset:160},
+    {id:'ambientNoodle',key:'noodle',ms:340,offset:230},
+    {id:'ambientFemale',key:'female',ms:310,offset:90},
+    {id:'ambientMale',key:'male',ms:325,offset:245}
+  ];
+  let ambientRaf=null,ambientT0=null;
+  let incidentCalling=true; // V24: civis em B permanecem visíveis; apenas o gesto de chamada congela na chegada
+  const CRAWL_MOTION={x0:69.5,y0:56.5,x1:77.2,y1:53.5,period:11800};
+  function setMarginIncidentVisible(show){
+    const g=document.getElementById('marginIncidentGroup');
+    if(g)g.classList.toggle('hidden',!show);
+  }
+  function stopAmbientLoops(){
+    if(ambientRaf){cancelAnimationFrame(ambientRaf);ambientRaf=null;}
+    ambientT0=null;
+  }
+  function setAmbientFirstFrames(){
+    for(const a of AMBIENT_ANIMS){
+      const el=document.getElementById(a.id),arr=AMBIENT_FRAMES[a.key];
+      if(!el||!arr||!arr.length)continue;
+      const im=el.querySelector('img');
+      if(im){im.src=arr[0];im.style.transform='scaleX(1)';}
+    }
+  }
+  function resetAmbientScene(){
+    stopAmbientLoops();
+    incidentCalling=true;
+    setMarginIncidentVisible(true);
+    setAmbientFirstFrames();
+    const crawl=document.getElementById('ambientCrawl');
+    if(crawl){crawl.style.left=CRAWL_MOTION.x0+'%';crawl.style.top=CRAWL_MOTION.y0+'%';}
+  }
+  function startAmbientLoops(){
+    stopAmbientLoops();
+    incidentCalling=true;
+    setMarginIncidentVisible(true);
+    setAmbientFirstFrames();
+    ambientT0=null;
+    const state=AMBIENT_ANIMS.map(a=>({...a,el:document.getElementById(a.id),last:0}));
+    const crawl=document.getElementById('ambientCrawl');
+    const crawlImg=crawl?crawl.querySelector('img'):null;
+    function easeInOut(u){return .5-.5*Math.cos(Math.PI*u)}
+    function tick(now){
+      if(ambientT0===null)ambientT0=now;
+      const elapsed=now-ambientT0;
+      for(const a of state){
+        if(!a.el)continue;
+        if(!incidentCalling && (a.key==='marginMan' || a.key==='marginWoman'))continue;
+        const arr=AMBIENT_FRAMES[a.key];
+        const idx=Math.floor((elapsed+a.offset)/a.ms)%arr.length;
+        if(idx!==a.last){const im=a.el.querySelector('img');if(im)im.src=arr[idx];a.last=idx;}
+      }
+      // Crawl: braçada + deslocamento real, em trajeto curto e fora do corredor A→D.
+      if(crawl){
+        const phase=(elapsed%CRAWL_MOTION.period)/CRAWL_MOTION.period;
+        let u,progress,dir;
+        if(phase<.5){u=phase*2;progress=easeInOut(u);dir=1;}
+        else{u=(phase-.5)*2;progress=1-easeInOut(u);dir=-1;}
+        crawl.style.left=(CRAWL_MOTION.x0+(CRAWL_MOTION.x1-CRAWL_MOTION.x0)*progress)+'%';
+        crawl.style.top=(CRAWL_MOTION.y0+(CRAWL_MOTION.y1-CRAWL_MOTION.y0)*progress)+'%';
+        if(crawlImg)crawlImg.style.transform=dir>0?'scaleX(1)':'scaleX(-1)';
+      }
+      ambientRaf=requestAnimationFrame(tick);
+    }
+    ambientRaf=requestAnimationFrame(tick);
+  }
+
+  const A={x:27.8,y:78.0};
+  // Posição visual do bote: já dentro d'água, junto ao píer. A geometria matemática continua usando A.
+  const BOAT_START={x:30.45,y:74.65};
+  // Apenas quadros nos quais os dois bombeiros permanecem claramente visíveis.
+  const BOAT_SEQUENCE=[0,1,7,1];
+  const shorePath=[
+    {m:0,x:27.8,y:18.20},
+    {m:100,x:34.9,y:18.02},
+    {m:200,x:42.0,y:18.05},
+    {m:300,x:49.1,y:18.28},
+    {m:400,x:56.2,y:18.50},
+    {m:500,x:63.4,y:18.58},
+    {m:600,x:70.6,y:18.78},
+    {m:700,x:77.9,y:19.22},
+    {m:800,x:85.2,y:20.12}
+  ];
+  const trailPath=[
+    {m:0,x:27.8,y:10.55},
+    {m:100,x:34.9,y:10.35},
+    {m:200,x:42.0,y:10.34},
+    {m:300,x:49.1,y:10.42},
+    {m:400,x:56.2,y:10.58},
+    {m:500,x:63.4,y:10.78},
+    {m:600,x:70.6,y:11.04},
+    {m:700,x:77.9,y:11.48},
+    {m:800,x:85.2,y:12.30}
+  ];
+  const C=shorePath[0], B=shorePath[shorePath.length-1];
+
+  const stage=document.getElementById('stage'), D=document.getElementById('pointD'), slider=document.getElementById('dSlider'), readout=document.getElementById('dReadout'), tag=document.getElementById('positionTag');
+  const exactInput=document.getElementById('dExactInput'),applyExactBtn=document.getElementById('applyExactBtn'),exactHelp=document.getElementById('exactHelp');
+  const markerA=document.getElementById('markerA'), markerC=document.getElementById('markerC'), markerB=document.getElementById('markerB');
+  const boat=document.getElementById('boat'), emptyBoat=document.getElementById('emptyBoat'), runners=document.getElementById('runners'), kneelPair=document.getElementById('kneelPair'), kneelPairImg=document.getElementById('kneelPairImg'), routeBoat=document.getElementById('routeBoat'), routeLand=document.getElementById('routeLand');
+  const BOAT_FRAMES=["../assets/embedded/13c99a8b7d8f803d0409.png", "../assets/embedded/68e691866aff146cbc9b.png", "../assets/embedded/95bc0797f8538e2aa545.png"];
+  const KNEEL_FRAMES=["../assets/embedded/22b38916701e413e720f.png","../assets/embedded/a85ae7d312db0ae19216.png","../assets/embedded/e57dbf744c11a73b2f75.png","../assets/embedded/5269a3f189d1721ec1c9.png"];
+  const RUN_FRAMES=["../assets/embedded/f510f4d494b64fef7bcc.png", "../assets/embedded/9f335b05ddd14055fec1.png", "../assets/embedded/75c06b82dae96e50a7a1.png"];
+  const boatFrame=document.getElementById('boatFrame'),runnerFrame1=document.getElementById('runnerFrame1'),runnerFrame2=document.getElementById('runnerFrame2');
+  function setBoatFrame(i){const n=BOAT_FRAMES.length;boatFrame.src=BOAT_FRAMES[((i%n)+n)%n]}
+  function setBoatCycleFrame(i){setBoatFrame(BOAT_SEQUENCE[((i%BOAT_SEQUENCE.length)+BOAT_SEQUENCE.length)%BOAT_SEQUENCE.length])}
+  const RUN_SEQUENCE=[0,1,2,1];
+  function setRunFrame(i){
+    const s=RUN_SEQUENCE,n=s.length;
+    const a=s[((i%n)+n)%n], b=s[(((i+2)%n)+n)%n];
+    runnerFrame1.src=RUN_FRAMES[a];runnerFrame2.src=RUN_FRAMES[b];
+  }
+  let kneelAnimTimer=null;
+  function setKneelFrame(i){
+    const n=KNEEL_FRAMES.length;
+    const idx=Math.max(0,Math.min(n-1,i));
+    if(kneelPairImg) kneelPairImg.src=KNEEL_FRAMES[idx];
+  }
+  function stopKneelAnimation(){
+    if(kneelAnimTimer!==null){clearInterval(kneelAnimTimer);kneelAnimTimer=null;}
+  }
+  function playKneelAnimation(){
+    stopKneelAnimation();
+    let i=0;
+    setKneelFrame(0);
+    kneelAnimTimer=setInterval(()=>{
+      i+=1;
+      if(i>=KNEEL_FRAMES.length){stopKneelAnimation();setKneelFrame(KNEEL_FRAMES.length-1);return;}
+      setKneelFrame(i);
+    },170);
+  }
+  [...BOAT_FRAMES,...RUN_FRAMES,...KNEEL_FRAMES].forEach(src=>{const im=new Image();im.src=src});
+  setBoatFrame(0);setRunFrame(0);setKneelFrame(0);
+
+  const dimAC=document.getElementById('dimAC'), dimCB=document.getElementById('dimCB'), tickC=document.getElementById('tickC'), tickB=document.getElementById('tickB'), labelAC=document.getElementById('labelAC'), labelCB=document.getElementById('labelCB');
+  const clock=document.getElementById('clock'), phase=document.getElementById('phase'), runBtn=document.getElementById('runBtn'), resetBtn=document.getElementById('resetBtn');
+  const result=document.getElementById('result'), historyBody=document.querySelector('#history tbody'), history=document.getElementById('history'), empty=document.getElementById('empty'), pointsG=document.getElementById('points'), trend=document.getElementById('trend'), insight=document.getElementById('insight'), attemptPill=document.getElementById('attemptPill');
+  let dMeters=400, running=false, raf=null, attempts=[];
+  const simMsPerSecond=12;
+
+  function interpByM(path,m){
+    m=Math.max(path[0].m,Math.min(path[path.length-1].m,m));
+    for(let i=0;i<path.length-1;i++){
+      const a=path[i],b=path[i+1];
+      if(m>=a.m && m<=b.m){
+        const t=(m-a.m)/(b.m-a.m || 1);
+        return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,m};
+      }
+    }
+    return {...path[path.length-1]};
+  }
+  function mFromStageX(px){
+    px=Math.max(C.x,Math.min(B.x,px));
+    for(let i=0;i<shorePath.length-1;i++){
+      const a=shorePath[i],b=shorePath[i+1];
+      if(px>=a.x && px<=b.x){
+        const t=(px-a.x)/(b.x-a.x || 1);
+        return a.m+(b.m-a.m)*t;
+      }
+    }
+    return 800;
+  }
+  function svgPos(p){return{x:p.x*10,y:p.y*5.5807}}
+  function svgPoints(points){return points.map(p=>{const s=svgPos(p);return `${s.x.toFixed(2)},${s.y.toFixed(2)}`}).join(' ')}
+  function markerCenter(anchor,kind='top'){
+    if(kind==='A') return {x:anchor.x,y:anchor.y-5.4};
+    return {x:anchor.x,y:anchor.y-6.1};
+  }
+  function placeMarker(el,p){el.style.left=p.x+'%';el.style.top=p.y+'%'}
+
+  function suffixPath(path,m){
+    const first=interpByM(path,m);
+    const out=[first];
+    for(const p of path){if(p.m>m) out.push({x:p.x,y:p.y,m:p.m})}
+    return out;
+  }
+  function landVisualPath(m){
+    const shoreD=interpByM(shorePath,m), trailD=interpByM(trailPath,m);
+    const pts=[shoreD,trailD,...suffixPath(trailPath,m).slice(1)];
+    // chegada na área da vítima, sempre em solo firme
+    pts.push({x:B.x+0.55,y:13.65});
+    return pts;
+  }
+  const CARE_POINT={x:88.85,y:16.85}; // V25: bombeiros terminam mais próximos da vítima, sem sobrepor o corpo
+  function runningVisualPath(m){
+    const trailD=interpByM(trailPath,m);
+    const pts=[trailD,...suffixPath(trailPath,m).slice(1)];
+    pts.push(CARE_POINT);
+    return pts;
+  }
+  function visualDockPoint(m,shoreD){
+    // V25: perto de B, desloca somente a representação visual do bote para a esquerda,
+    // preservando D e a geometria matemática no ponto escolhido.
+    const t=Math.max(0,Math.min(1,(m-680)/120));
+    return {x:shoreD.x-2.35*t,y:shoreD.y+0.10*t};
+  }
+  function pointAlongPolyline(points,t){
+    const rect=stage.getBoundingClientRect();
+    const lens=[]; let total=0;
+    for(let i=0;i<points.length-1;i++){
+      const dx=(points[i+1].x-points[i].x)*rect.width/100;
+      const dy=(points[i+1].y-points[i].y)*rect.height/100;
+      const l=Math.hypot(dx,dy);lens.push(l);total+=l;
+    }
+    if(total===0)return points[0];
+    let target=t*total,acc=0;
+    for(let i=0;i<lens.length;i++){
+      if(target<=acc+lens[i]){
+        const u=(target-acc)/(lens[i]||1),a=points[i],b=points[i+1];
+        return{x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u};
+      }
+      acc+=lens[i];
+    }
+    return points[points.length-1];
+  }
+
+  function configureStaticGeometry(){
+    const cm=markerCenter(C), bm=markerCenter(B), am=markerCenter(A,'A');
+    placeMarker(markerA,am);placeMarker(markerC,cm);placeMarker(markerB,bm);
+
+    // AC — do ponto de referência A até a margem em C
+    const as=svgPos(A),cs=svgPos(C);
+    dimAC.setAttribute('x1',as.x);dimAC.setAttribute('y1',as.y);dimAC.setAttribute('x2',cs.x);dimAC.setAttribute('y2',cs.y);
+    labelAC.setAttribute('x',as.x+10);labelAC.setAttribute('y',(as.y+cs.y)/2+5);
+
+    // CB — cota deslocada para cima da trilha
+    const dimPts=trailPath.map(p=>({x:p.x,y:p.y-3.15}));
+    dimCB.setAttribute('points',svgPoints(dimPts));
+    const dc=svgPos(dimPts[0]),db=svgPos(dimPts[dimPts.length-1]);
+    tickC.setAttribute('x1',dc.x);tickC.setAttribute('x2',dc.x);tickC.setAttribute('y1',dc.y-7);tickC.setAttribute('y2',dc.y+7);
+    tickB.setAttribute('x1',db.x);tickB.setAttribute('x2',db.x);tickB.setAttribute('y1',db.y-7);tickB.setAttribute('y2',db.y+7);
+    const mid=interpByM(dimPts.map((p,i)=>({...p,m:trailPath[i].m})),400),ms=svgPos(mid);
+    labelCB.setAttribute('x',ms.x-25);labelCB.setAttribute('y',ms.y-7);
+  }
+
+  function setD(m){
+    if(running)return;
+    dMeters=Math.max(0,Math.min(800,Math.round(Number(m)*10)/10));
+    slider.value=Math.round(dMeters);readout.textContent=Number.isInteger(dMeters)?String(dMeters):dMeters.toFixed(1).replace('.',',');if(exactInput)exactInput.value=Number.isInteger(dMeters)?String(dMeters):dMeters.toFixed(1).replace('.',',');D.setAttribute('aria-valuenow',dMeters);
+    const shoreD=interpByM(shorePath,dMeters), dm=markerCenter(shoreD);
+    placeMarker(D,dm);
+    tag.style.left=dm.x+'%';tag.style.top=(dm.y+3.7)+'%';tag.textContent=`D: ${Number.isInteger(dMeters)?dMeters:dMeters.toFixed(1).replace('.',',')} m após C`;
+
+    const ds=svgPos(shoreD),as=svgPos(A);
+    routeBoat.setAttribute('x1',as.x);routeBoat.setAttribute('y1',as.y);routeBoat.setAttribute('x2',ds.x);routeBoat.setAttribute('y2',ds.y);
+    routeLand.setAttribute('points',svgPoints(landVisualPath(dMeters)));
+
+    setBoatFrame(0);setRunFrame(0);setKneelFrame(0);stopKneelAnimation();boat.style.opacity='1';runners.style.opacity='1';emptyBoat.style.display='none';kneelPair.style.display='none';boat.classList.add('idle');boat.style.display='block';placeBoat(BOAT_START,angleBetween(BOAT_START,shoreD));runners.style.display='none';runners.classList.remove('landing','running','arrived','crouch');kneelPair.style.display='none';result.classList.remove('show');clock.textContent='00:00';phase.textContent='Pronto';
+  }
+  function placeBoat(p,angle=0){const corrected=angle+45;boat.style.left=p.x+'%';boat.style.top=p.y+'%';boat.style.transform=`translate(-50%,-50%) rotate(${corrected}deg)`}
+  function placeRunners(p,angle=0){const tilt=Math.max(-7,Math.min(7,angle));runners.style.left=p.x+'%';runners.style.top=p.y+'%';runners.style.transform=`translate(-50%,-50%) rotate(${tilt}deg)`}
+  function placeEmptyBoat(p,angle=0){const corrected=angle+45;emptyBoat.style.left=p.x+'%';emptyBoat.style.top=p.y+'%';emptyBoat.style.transform=`translate(-50%,-50%) rotate(${corrected}deg)`}
+  function placeKneelPair(p){kneelPair.style.left=p.x+'%';kneelPair.style.top=p.y+'%';kneelPair.style.transform='translate(-50%,-50%)'}
+  function metrics(m=dMeters){
+    const x=m/1000;
+    const boatKm=Math.sqrt(.4*.4+x*x),landKm=(800-m)/1000;
+    const boatSec=boatKm/6*3600,landSec=landKm/10*3600;
+    return{boatKm,landKm,boatSec,landSec,totalSec:boatSec+landSec,totalMin:(boatSec+landSec)/60};
+  }
+  const fmtClock=s=>{s=Math.max(0,Math.round(s));return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`};
+  const fmtDist=km=>`${Math.round(km*1000)} m`;
+  const fmtDur=s=>`${Math.floor(s/60)} min ${String(Math.round(s%60)).padStart(2,'0')} s`;
+  function angleBetween(p1,p2){const rect=stage.getBoundingClientRect();const dx=(p2.x-p1.x)*rect.width/100,dy=(p2.y-p1.y)*rect.height/100;return Math.atan2(dy,dx)*180/Math.PI}
+
+  function tween(durationMs,update,onDone,easing='ease'){
+    const start=performance.now();
+    function frame(now){const t=Math.min(1,(now-start)/durationMs);const v=easing==='linear'?t:(t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2);update(v,t,now-start);if(t<1){raf=requestAnimationFrame(frame)}else{raf=null;onDone&&onDone()}}
+    raf=requestAnimationFrame(frame);
+  }
+  function run(){
+    if(running)return;
+    running=true;runBtn.disabled=true;slider.disabled=true;if(exactInput)exactInput.disabled=true;if(applyExactBtn)applyExactBtn.disabled=true;D.style.pointerEvents='none';result.classList.remove('show');setMarginIncidentVisible(true);startAmbientLoops();
+    const chosen=dMeters,shoreD=interpByM(shorePath,chosen),dockD=visualDockPoint(chosen,shoreD),trailD=interpByM(trailPath,chosen),m=metrics(chosen),boatAngle=angleBetween(BOAT_START,dockD),runPts=runningVisualPath(chosen);
+    const finalRunPoint=CARE_POINT;
+    setBoatFrame(0);setRunFrame(0);setKneelFrame(0);stopKneelAnimation();boat.style.opacity='1';runners.style.opacity='1';
+    boat.classList.remove('idle');boat.style.display='block';runners.style.display='none';runners.classList.remove('landing','running','arrived','crouch');kneelPair.style.display='none';routeBoat.classList.add('active');routeLand.classList.remove('active');phase.textContent='Remando';clock.textContent='00:00';
+
+    // Deslocamento global contínuo e independente da troca de quadros da remada.
+    tween(m.boatSec*simMsPerSecond,(e,t,elapsed)=>{
+      setBoatCycleFrame(Math.floor(elapsed/150));
+      placeBoat({x:BOAT_START.x+(dockD.x-BOAT_START.x)*e,y:BOAT_START.y+(dockD.y-BOAT_START.y)*e},boatAngle);
+      clock.textContent=fmtClock(m.boatSec*e);
+    },()=>{
+      setBoatFrame(0);placeBoat(dockD,boatAngle);routeBoat.classList.remove('active');boat.classList.add('idle');phase.textContent='Desembarcando';clock.textContent=fmtClock(m.boatSec);
+
+      // Pequena pausa de chegada. Depois ocorre crossfade entre bote e equipe em terra.
+      setTimeout(()=>{
+        runners.style.display='block';runners.classList.add('landing');setRunFrame(0);placeRunners(dockD,0);runners.style.opacity='0';
+        tween(190,(e)=>{boat.style.opacity=String(1-e);runners.style.opacity=String(e)},()=>{
+          boat.style.display='none';boat.style.opacity='1';runners.style.opacity='1';placeEmptyBoat(dockD,boatAngle);emptyBoat.style.display='block';
+          // Subida curta da margem até a trilha, sem ciclo de corrida.
+          tween(300,(e)=>{placeRunners({x:dockD.x+(trailD.x-dockD.x)*e,y:dockD.y+(trailD.y-dockD.y)*e},0)},()=>{
+            runners.classList.remove('landing');runners.classList.add('running');routeLand.classList.add('active');phase.textContent='Correndo pela trilha';
+            tween(m.landSec*simMsPerSecond,(e,t,elapsed)=>{
+              setRunFrame(Math.floor(elapsed/92));
+              const progress=e*.91;
+              const p=pointAlongPolyline(runPts,progress),q=pointAlongPolyline(runPts,Math.min(.91,progress+.018));
+              placeRunners(p,angleBetween(p,q));clock.textContent=fmtClock(m.boatSec+m.landSec*e);
+            },()=>{
+              setRunFrame(1);placeRunners(finalRunPoint,0);clock.textContent=fmtClock(m.totalSec);phase.textContent='Vítima alcançada';routeLand.classList.remove('active');runners.classList.remove('running');runners.classList.add('arrived');
+              // A execução operacional terminou: congela TODO o ambiente no frame/posição atual.
+              // Isso preserva banhistas, nadador em crawl e pessoas em B exatamente onde estavam.
+              stopAmbientLoops();
+              setTimeout(()=>{incidentCalling=false;setMarginIncidentVisible(true);runners.style.display='none';kneelPair.style.display='block';placeKneelPair(finalRunPoint);setKneelFrame(0);playKneelAnimation();phase.textContent='Atendimento inicial';},180);finish(chosen,m);
+            },'linear');
+          },'linear');
+        },'linear');
+      },150);
+    },'linear');
+  }
+  function finish(chosen,m){
+    // Garantia de estado: fora de uma execução, nenhuma animação ambiental permanece ativa.
+    stopAmbientLoops();
+    running=false;runBtn.disabled=false;slider.disabled=false;if(exactInput)exactInput.disabled=false;if(applyExactBtn)applyExactBtn.disabled=false;D.style.pointerEvents='auto';
+    document.getElementById('boatDist').textContent=fmtDist(m.boatKm);document.getElementById('landDist').textContent=fmtDist(m.landKm);
+    document.getElementById('boatTime').textContent=fmtDur(m.boatSec);document.getElementById('landTime').textContent=fmtDur(m.landSec);document.getElementById('totalTime').textContent=fmtDur(m.totalSec);
+    result.classList.add('show');attempts.push({d:chosen,min:m.totalMin,sec:m.totalSec});renderAttempts();toastMsg('Tentativa registrada no laboratório');
+  }
+  function resetScene(){if(raf)cancelAnimationFrame(raf);stopKneelAnimation();resetAmbientScene();running=false;runBtn.disabled=false;slider.disabled=false;if(exactInput)exactInput.disabled=false;if(applyExactBtn)applyExactBtn.disabled=false;D.style.pointerEvents='auto';boat.classList.add('idle');boat.style.display='block';boat.style.opacity='1';emptyBoat.style.display='none';kneelPair.style.display='none';setBoatFrame(0);const shoreD=interpByM(shorePath,dMeters);placeBoat(BOAT_START,angleBetween(BOAT_START,shoreD));runners.style.display='none';runners.style.opacity='1';runners.classList.remove('landing','running','arrived','crouch');setRunFrame(0);routeBoat.classList.remove('active');routeLand.classList.remove('active');clock.textContent='00:00';phase.textContent='Pronto'}
+  function renderAttempts(){
+    attemptPill.textContent=`${attempts.length} tentativa${attempts.length===1?'':'s'}`;empty.style.display=attempts.length?'none':'block';history.style.display=attempts.length?'table':'none';historyBody.innerHTML='';
+    const best=Math.min(...attempts.map(a=>a.sec));attempts.forEach((a,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td>${Number.isInteger(a.d)?a.d:a.d.toFixed(1).replace('.',',')} m</td><td class="${Math.abs(a.sec-best)<.01?'best':''}">${fmtClock(a.sec)}</td>`;historyBody.appendChild(tr)});
+    const sorted=[...attempts].sort((a,b)=>a.d-b.d),coords=sorted.map(a=>graphCoord(a.d,a.min));trend.setAttribute('points',coords.map(p=>`${p.x},${p.y}`).join(' '));pointsG.innerHTML='';
+    attempts.forEach((a,i)=>{const p=graphCoord(a.d,a.min),c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('class','pt');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r','5');const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=`Tentativa ${i+1}: D=${a.d} m, ${a.min.toFixed(2)} min`;c.appendChild(title);pointsG.appendChild(c)});
+    insight.classList.toggle('show',attempts.length>=3);
+  }
+  function graphCoord(d,min){const x=42+(d/800)*384,minY=7.8,maxY=9.2,y=160-((min-minY)/(maxY-minY))*140;return{x,y:Math.max(20,Math.min(160,y))}}
+  function toastMsg(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700)}
+
+  function aplicarValorExato(){
+    if(running)return;
+    const raw=String(exactInput?.value||'').trim().replace(',','.');
+    const valor=Number(raw);
+    if(!Number.isFinite(valor)||valor<0||valor>800){
+      exactHelp.textContent='Informe um valor entre 0 e 800 m.';exactHelp.classList.add('bad');return;
+    }
+    exactHelp.textContent='Ponto D posicionado exatamente no valor informado.';exactHelp.classList.remove('bad');setD(valor);
+  }
+  applyExactBtn?.addEventListener('click',aplicarValorExato);
+  exactInput?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();aplicarValorExato();}});
+  slider.addEventListener('input',e=>setD(+e.target.value));
+  D.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowDown'){e.preventDefault();setD(dMeters-5)}if(e.key==='ArrowRight'||e.key==='ArrowUp'){e.preventDefault();setD(dMeters+5)}});
+  D.addEventListener('pointerdown',e=>{if(running)return;D.setPointerCapture(e.pointerId)});
+  D.addEventListener('pointermove',e=>{if(running||!D.hasPointerCapture(e.pointerId))return;const r=stage.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*100;setD(mFromStageX(px))});
+  runBtn.addEventListener('click',()=>{resetScene();run()});
+  resetBtn.addEventListener('click',()=>{resetScene();setD(dMeters)});
+
+
+  // ===== Fase 38: caminhos não lineares de modelagem e validação =====
+  const modeExperiment=document.getElementById('modeExperiment'),modeMath=document.getElementById('modeMath'),experimentPanel=document.getElementById('experimentPanel'),mathPanel=document.getElementById('mathPanel');
+  function trocarModoMath(modo){const matematica=modo==='math';experimentPanel.hidden=matematica;mathPanel.hidden=!matematica;modeExperiment.classList.toggle('active',!matematica);modeMath.classList.toggle('active',matematica);if(matematica)mathPanel.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  modeExperiment?.addEventListener('click',()=>trocarModoMath('experiment'));
+  modeMath?.addEventListener('click',()=>trocarModoMath('math'));
+  const parseNum=v=>Number(String(v??'').trim().replace(',','.'));
+  const near=(v,target,tol=.02)=>Number.isFinite(v)&&Math.abs(v-target)<=tol;
+  const modelFeedback=document.getElementById('modelFeedback'),proofChoices=document.getElementById('proofChoices'),proofA=document.getElementById('proofA'),proofB=document.getElementById('proofB'),mathSuccess=document.getElementById('mathSuccess');
+  let modeloValidado=false,provaValidada=false;
+  document.getElementById('validateModel')?.addEventListener('click',()=>{
+    const ok=document.getElementById('modelAD').value==='correct'&&document.getElementById('modelDB').value==='correct'&&document.getElementById('modelT').value==='correct';
+    modelFeedback.textContent=ok?'Modelo correto. Agora escolha uma forma de justificar o mínimo.':'Revise as três expressões. Use Pitágoras em AD e some tempo no bote + tempo em terra.';modelFeedback.className='math-feedback '+(ok?'ok':'bad');modeloValidado=ok;proofChoices.hidden=!ok;if(ok){proofA.hidden=false;proofB.hidden=true;}
+  });
+  document.querySelectorAll('.proof-choice').forEach(btn=>btn.addEventListener('click',()=>{if(!modeloValidado)return;document.querySelectorAll('.proof-choice').forEach(b=>b.classList.toggle('active',b===btn));const a=btn.dataset.proof==='a';proofA.hidden=!a;proofB.hidden=a;}));
+  function concluirJustificativa(feedback,msg){if(provaValidada)return;provaValidada=true;feedback.textContent=msg;feedback.className='math-feedback ok';mathSuccess.hidden=false;try{window.reportarSucessoPadrao?.();}catch(_){ }toastMsg('Solução matemática validada — missão pronta para conclusão');}
+  document.getElementById('validateProofA')?.addEventListener('click',()=>{const x=parseNum(document.getElementById('proofAX').value),t=parseNum(document.getElementById('proofAT').value),fb=document.getElementById('proofAFeedback');if(near(x,300,.11)&&near(t,8,.011))concluirJustificativa(fb,'Correto: a igualdade ocorre em x = 300 m e o limite inferior é 8 min.');else{fb.textContent='Ainda não. Resolva 10x − 3 = 0 lembrando que x está em quilômetros e identifique o limite de tempo usado na desigualdade.';fb.className='math-feedback bad';}});
+  document.getElementById('validateProofB')?.addEventListener('click',()=>{const ratio=document.getElementById('proofBRatio').value,x=parseNum(document.getElementById('proofBX').value),r=parseNum(document.getElementById('proofBR').value),fb=document.getElementById('proofBFeedback');if(ratio==='correct'&&near(x,300,.11)&&near(r,500,.11))concluirJustificativa(fb,'Correto: x/r = 3/5 produz o triângulo 300–400–500 e determina o ponto ótimo diretamente.');else{fb.textContent='Revise a condição 3r = 5x e combine-a com r² − x² = 0,16. A largura fixa da represa é 400 m.';fb.className='math-feedback bad';}});
+  // Sair da tela durante uma execução cancela a animação ativa, evitando avanço oculto.
+  window.addEventListener('message',ev=>{const d=ev.data||{};if(d.type==='simulation-control'&&d.action==='pause'&&running)resetScene();});
+
+  configureStaticGeometry();setD(400);
+  resetAmbientScene();
+})();</script>
+<script>
+// Ponte comum entre cada simulador e o jogo principal.
+// O build substitui 8 pelo índice da missão.
+(function () {
+  const MISSION_ID = 8;
+  let sucessoJaReportado = false;
+  let tentativasPadrao = 0;
+  let audioGlobalMutadoNoSimulador = false;
+  function texto(seletor){const e=document.querySelector(seletor);return e?(e.textContent||'').trim():'';}
+  function lerTentativas(){
+    for(const seletor of ['#tentativas','#attemptCount','#hud-tentativas','#contadorTentativas','#contadorTentativasBridge']){
+      const valor=parseInt(texto(seletor).replace(/\D+/g,''),10);if(!Number.isNaN(valor))return valor;
+    }
+    const m=texto('#attempts-display').match(/(\d+)/);return m?parseInt(m[1],10):tentativasPadrao;
+  }
+  function reportarEstado(pedirConclusao=false){
+    try{parent.postMessage({type:pedirConclusao?'mission-complete-request':'mission-status',missionId:MISSION_ID,attempts:lerTentativas(),success:sucessoJaReportado},'*');}catch(_){}
+  }
+  window.atualizarTentativasPadrao=function(total){
+    const valor=Math.max(0,Math.floor(Number(total)||0));tentativasPadrao=valor;const contador=document.getElementById('contadorTentativasBridge');if(contador)contador.textContent=String(valor);reportarEstado(false);
+  };
+  window.reportarSucessoPadrao=function(){sucessoJaReportado=true;reportarEstado(false);};
+  window.audioGlobalEstaMutadoNoSimulador=function(){return !!audioGlobalMutadoNoSimulador;};
+  window.solicitarConclusaoPadrao=function(){reportarEstado(true);};
+  window.controlarTrilhaSimulacaoPadrao=function(action){
+    const acao=String(action||'').toLowerCase();
+    if(!['start','pause','resume','stop'].includes(acao))return;
+    try{parent.postMessage({type:'simulation-audio',missionId:MISSION_ID,action:acao},'*');}catch(_){}
+  };
+  window.addEventListener('message',evento=>{const d=evento.data||{};if(d.type==='audio-state-sync')audioGlobalMutadoNoSimulador=!!d.muted;if(d.type==='mission-state-sync'&&Number(d.missionId)===MISSION_ID){if(d.success)sucessoJaReportado=true;if(Object.prototype.hasOwnProperty.call(d,'audioMuted'))audioGlobalMutadoNoSimulador=!!d.audioMuted;}});
+  ['click','keyup','change','input'].forEach(evento=>document.addEventListener(evento,()=>setTimeout(()=>reportarEstado(false),100),true));
+  setInterval(()=>reportarEstado(false),600);setTimeout(()=>reportarEstado(false),250);
+})();
+</script>
+</body>
+</html>
