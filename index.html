@@ -12,19 +12,6 @@
   try{if(localStorage.getItem('operacao-salvamento:preferencia-audio-mutado')==='1')document.documentElement.classList.add('audio-global-mutado');}catch(_erro){}
 })();
 </script>
-<link rel="preload" as="image" href="./assets/embedded/802e4bf957152df4c1c3.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/2958c1528a341184ab2d.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/98372c121463f498cabf.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/676f3d09119825b3b9db.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/296aab74a497ac4280ff.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/0730a0e6f047009bc077.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/afb2d2e7e67c50b5a7df.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/02ec900608f2fd1393c7.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/bc8f89fe4114e55aa2b8.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/2052752740aad044522f.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/ebe904c8d1075864b368.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/c4963ea62a87d061efdb.webp" type="image/webp" fetchpriority="high">
-<link rel="preload" as="image" href="./assets/embedded/bc64d903cf8ca136a4e1.webp" type="image/webp" fetchpriority="high">
 <link rel="stylesheet" href="./css/game.css">
 </head>
 <body><section id="apresentacao-inicial" class="apresentacao-inicial" aria-hidden="false" aria-labelledby="apresentacao-titulo">
@@ -409,6 +396,7 @@
           <span class="briefing-hero-icon" id="briefingHeroIcon">🚒</span>
           <span class="briefing-hero-label" id="briefingHeroLabel"></span>
         </div>
+        <button class="briefing-hero-expand" id="briefingHeroExpand" type="button" aria-label="Ampliar imagem da ocorrência" onclick="abrirImagemBriefing()"></button>
       </div>
 
       <nav class="briefing-tabs" aria-label="Seções do briefing" role="tablist">
@@ -475,6 +463,10 @@
       </div>
     </footer>
   </main>
+</div>
+<div id="briefing-image-modal" class="briefing-image-modal" role="dialog" aria-modal="true" aria-label="Imagem ampliada da ocorrência" hidden>
+  <button class="briefing-image-close" type="button" aria-label="Fechar imagem ampliada" onclick="fecharImagemBriefing()">✕ Fechar</button>
+  <img id="briefing-image-full" alt="Ilustração ampliada da ocorrência">
 </div>
 <div id="tela-missao">
   <div class="mission-toolbar">
