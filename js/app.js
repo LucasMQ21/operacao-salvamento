@@ -2484,6 +2484,8 @@ window.addEventListener('keydown',ev=>{
 
 /* API pública necessária aos atributos HTML e integrações legadas. */
 if (typeof abrirAbaBriefing === 'function') globalThis.abrirAbaBriefing = abrirAbaBriefing;
+if (typeof abrirImagemBriefing === 'function') globalThis.abrirImagemBriefing = abrirImagemBriefing;
+if (typeof fecharImagemBriefing === 'function') globalThis.fecharImagemBriefing = fecharImagemBriefing;
 if (typeof abrirAbaOrientacaoPedagogica === 'function') globalThis.abrirAbaOrientacaoPedagogica = abrirAbaOrientacaoPedagogica;
 if (typeof abrirAbaRelatorio === 'function') globalThis.abrirAbaRelatorio = abrirAbaRelatorio;
 if (typeof abrirAjudaFormaAplicacao === 'function') globalThis.abrirAjudaFormaAplicacao = abrirAjudaFormaAplicacao;
