@@ -3,4 +3,4 @@ Operação Salvamento é um jogo educacional inspirado em operações reais do C
 
 
 
-Versão de referência: fase 44 — missão 12, Vistoria no talude, no Ensino Médio, integrada sobre a fase 43.
+Versão de referência: fase 45 — missão 13, Transbordo de carga, no Ensino Médio, integrada sobre a fase 44.
