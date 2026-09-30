@@ -1,11 +1,6 @@
 /**
- * Operacao Salvamento - Gerador oficial de HTML unico (Fase 3.2)
- *
- * Objetivo:
- * - retornar a estabilidade da Fase 2;
- * - preservar ordem original de scripts;
- * - evitar que simuladores interfiram na inicializacao;
- * - incorporar simuladores apenas como dados isolados.
+ * Operacao Salvamento - Gerador oficial de HTML unico (Fase 3.2.1)
+ * Correcao: evita quebra de script por ocorrencias de </script> dentro de JS incorporado.
  */
 
 const fs = require('fs');
@@ -19,10 +14,9 @@ function lerArquivo(p) {
 
 function mimeType(ext) {
   const tipos = {
-    '.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg',
-    '.webp':'image/webp','.gif':'image/gif','.svg':'image/svg+xml',
-    '.mp3':'audio/mpeg','.wav':'audio/wav','.ogg':'audio/ogg',
-    '.mp4':'video/mp4','.webm':'video/webm'
+    '.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp',
+    '.gif':'image/gif','.svg':'image/svg+xml','.mp3':'audio/mpeg','.wav':'audio/wav',
+    '.ogg':'audio/ogg','.mp4':'video/mp4','.webm':'video/webm'
   };
   return tipos[ext.toLowerCase()] || 'application/octet-stream';
 }
@@ -45,12 +39,15 @@ function incorporarCss(html) {
   return html.replace(/<link[^>]*href=["']\.\/css\/game\.css["'][^>]*>/i, `<style>\n${css}\n</style>`);
 }
 
+function protegerScript(conteudo) {
+  return conteudo.replace(/<\/script/gi, '<\\/script');
+}
+
 function incorporarScripts(html) {
-  // Mantém a posição original dos scripts no HTML.
   return html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,(m,src)=>{
     const arquivo = path.join(raiz,src.replace(/^\.\//,''));
     if (!fs.existsSync(arquivo)) return m;
-    return `<script data-build-incorporated="${src}">\n${lerArquivo(arquivo)}\n</script>`;
+    return `<script data-build-incorporated="${src}">\n${protegerScript(lerArquivo(arquivo))}\n</script>`;
   });
 }
 
@@ -58,30 +55,24 @@ function coletarSimuladores() {
   const pasta = path.join(raiz,'simulators');
   const dados = {};
   if (!fs.existsSync(pasta)) return dados;
-
-  fs.readdirSync(pasta)
-    .filter(nome => nome.endsWith('.html'))
-    .forEach(nome => {
-      dados[nome] = Buffer.from(lerArquivo(path.join(pasta,nome))).toString('base64');
-    });
-
+  fs.readdirSync(pasta).filter(n=>n.endsWith('.html')).forEach(n=>{
+    dados[n] = Buffer.from(lerArquivo(path.join(pasta,n))).toString('base64');
+  });
   return dados;
 }
 
 function inserirDiagnostico(html) {
-  const bloco = `<script id="build-debug">\nwindow.addEventListener('error', function(e){ console.error('[BUILD ERROR]', e.message, e.filename, e.lineno); });\n</script>`;
-  return html.replace('</head>', `${bloco}\n</head>`);
+  const bloco = `<script id="build-debug">window.addEventListener('error',function(e){console.error('[BUILD ERROR]',e.message,e.filename,e.lineno);});<\\/script>`;
+  return html.replace('</head>', bloco+'</head>');
 }
 
 function incorporarSimuladoresIsolados(html) {
-  const simuladores = JSON.stringify(coletarSimuladores());
-  const bloco = `<script id="simuladores-build-data">\nwindow.simuladoresIncorporadosBase64 = ${simuladores};\n</script>`;
-  return html.replace('</body>', `${bloco}\n</body>`);
+  const bloco = `<script id="simuladores-build-data">window.simuladoresIncorporadosBase64 = ${JSON.stringify(coletarSimuladores())};<\\/script>`;
+  return html.replace('</body>', bloco+'</body>');
 }
 
-function gerarBuild() {
+function gerarBuild(){
   let html = lerArquivo(path.join(raiz,'index.html'));
-
   html = inserirDiagnostico(html);
   html = incorporarCss(html);
   html = incorporarScripts(html);
@@ -89,13 +80,9 @@ function gerarBuild() {
   html = incorporarSimuladoresIsolados(html);
 
   const pasta = path.join(raiz,'builds');
-  if (!fs.existsSync(pasta)) fs.mkdirSync(pasta);
-
-  const saida = path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_2.html');
-  fs.writeFileSync(saida, html, 'utf8');
-
-  console.log('Build criada:');
-  console.log(saida);
+  if(!fs.existsSync(pasta)) fs.mkdirSync(pasta);
+  fs.writeFileSync(path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_2.html'),html,'utf8');
+  console.log('Build criada:',path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_2.html'));
 }
 
 gerarBuild();
