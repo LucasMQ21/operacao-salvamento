@@ -1,6 +1,8 @@
 /**
- * Operacao Salvamento - Gerador oficial de HTML unico (Fase 3.2.1)
- * Correcao: evita quebra de script por ocorrencias de </script> dentro de JS incorporado.
+ * Operacao Salvamento - Gerador oficial de HTML unico
+ * Fase 3.3 - Base estavel
+ * Objetivo: preservar a inicializacao original do jogo.
+ * Simuladores permanecem fora desta etapa.
  */
 
 const fs = require('fs');
@@ -8,81 +10,62 @@ const path = require('path');
 
 const raiz = path.resolve(__dirname, '..');
 
-function lerArquivo(p) {
-  return fs.readFileSync(p, 'utf8');
+function lerArquivo(caminho) {
+  return fs.readFileSync(caminho, 'utf8');
 }
 
 function mimeType(ext) {
   const tipos = {
-    '.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp',
-    '.gif':'image/gif','.svg':'image/svg+xml','.mp3':'audio/mpeg','.wav':'audio/wav',
-    '.ogg':'audio/ogg','.mp4':'video/mp4','.webm':'video/webm'
+    '.png':'image/png',
+    '.jpg':'image/jpeg',
+    '.jpeg':'image/jpeg',
+    '.webp':'image/webp',
+    '.gif':'image/gif',
+    '.svg':'image/svg+xml',
+    '.mp3':'audio/mpeg',
+    '.wav':'audio/wav',
+    '.ogg':'audio/ogg',
+    '.mp4':'video/mp4',
+    '.webm':'video/webm'
   };
   return tipos[ext.toLowerCase()] || 'application/octet-stream';
 }
 
-function arquivoBase64(relativo) {
-  const absoluto = path.join(raiz, relativo.replace(/^\.\//,''));
-  if (!fs.existsSync(absoluto)) return null;
-  return `data:${mimeType(path.extname(absoluto))};base64,${fs.readFileSync(absoluto).toString('base64')}`;
+function converterAsset(caminhoRelativo) {
+  const caminho = path.join(raiz, caminhoRelativo.replace(/^\.\//,''));
+  if (!fs.existsSync(caminho)) return null;
+  return `data:${mimeType(path.extname(caminho))};base64,${fs.readFileSync(caminho).toString('base64')}`;
 }
 
 function incorporarAssets(html) {
-  return html.replace(/(["'(])((?:\.\/)?assets\/[^"')\s]+)/g,(m,i,a)=>{
-    const b = arquivoBase64(a);
-    return b ? `${i}${b}` : m;
+  return html.replace(/(["'(])((?:\.\/)?assets\/[^"')\s]+)/g, (m, inicio, arquivo) => {
+    const base64 = converterAsset(arquivo);
+    return base64 ? `${inicio}${base64}` : m;
   });
 }
 
 function incorporarCss(html) {
-  const css = lerArquivo(path.join(raiz,'css','game.css'));
-  return html.replace(/<link[^>]*href=["']\.\/css\/game\.css["'][^>]*>/i, `<style>\n${css}\n</style>`);
+  const css = path.join(raiz, 'css', 'game.css');
+  if (!fs.existsSync(css)) return html;
+  return html.replace(/<link[^>]*href=["']\.\/css\/game\.css["'][^>]*>/i, `<style>\n${lerArquivo(css)}\n</style>`);
 }
 
-function protegerScript(conteudo) {
-  return conteudo.replace(/<\/script/gi, '<\\/script');
-}
+function gerarBuild() {
+  let html = lerArquivo(path.join(raiz, 'index.html'));
 
-function incorporarScripts(html) {
-  return html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,(m,src)=>{
-    const arquivo = path.join(raiz,src.replace(/^\.\//,''));
-    if (!fs.existsSync(arquivo)) return m;
-    return `<script data-build-incorporated="${src}">\n${protegerScript(lerArquivo(arquivo))}\n</script>`;
-  });
-}
-
-function coletarSimuladores() {
-  const pasta = path.join(raiz,'simulators');
-  const dados = {};
-  if (!fs.existsSync(pasta)) return dados;
-  fs.readdirSync(pasta).filter(n=>n.endsWith('.html')).forEach(n=>{
-    dados[n] = Buffer.from(lerArquivo(path.join(pasta,n))).toString('base64');
-  });
-  return dados;
-}
-
-function inserirDiagnostico(html) {
-  const bloco = `<script id="build-debug">window.addEventListener('error',function(e){console.error('[BUILD ERROR]',e.message,e.filename,e.lineno);});<\\/script>`;
-  return html.replace('</head>', bloco+'</head>');
-}
-
-function incorporarSimuladoresIsolados(html) {
-  const bloco = `<script id="simuladores-build-data">window.simuladoresIncorporadosBase64 = ${JSON.stringify(coletarSimuladores())};<\\/script>`;
-  return html.replace('</body>', bloco+'</body>');
-}
-
-function gerarBuild(){
-  let html = lerArquivo(path.join(raiz,'index.html'));
-  html = inserirDiagnostico(html);
   html = incorporarCss(html);
-  html = incorporarScripts(html);
   html = incorporarAssets(html);
-  html = incorporarSimuladoresIsolados(html);
 
-  const pasta = path.join(raiz,'builds');
-  if(!fs.existsSync(pasta)) fs.mkdirSync(pasta);
-  fs.writeFileSync(path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_2.html'),html,'utf8');
-  console.log('Build criada:',path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_2.html'));
+  const pasta = path.join(raiz, 'builds');
+  if (!fs.existsSync(pasta)) fs.mkdirSync(pasta);
+
+  fs.writeFileSync(
+    path.join(pasta, 'Operacao_Salvamento_BUILD_FASE3_3.html'),
+    html,
+    'utf8'
+  );
+
+  console.log('Build criada com base estavel:', path.join(pasta, 'Operacao_Salvamento_BUILD_FASE3_3.html'));
 }
 
 gerarBuild();
