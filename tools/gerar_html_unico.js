@@ -1,14 +1,10 @@
 /**
- * Operacao Salvamento - Gerador oficial de HTML unico (Fase 3)
+ * Operacao Salvamento - Gerador oficial de HTML unico (Fase 3.1)
  *
- * Evolucao:
- * - incorpora CSS;
- * - incorpora scripts;
- * - incorpora assets;
- * - incorpora simuladores HTML independentes.
- *
- * Uso:
- * node tools/gerar_html_unico.js
+ * Correção:
+ * - simuladores não são mais inseridos como HTML executável dentro do app;
+ * - são armazenados isoladamente como dados JSON escapados;
+ * - evita quebra da inicialização do jogo principal.
  */
 
 const fs = require('fs');
@@ -17,7 +13,6 @@ const path = require('path');
 const raiz = path.resolve(__dirname, '..');
 
 function lerArquivo(p) {
-  if (!fs.existsSync(p)) throw new Error(`Arquivo nao encontrado: ${p}`);
   return fs.readFileSync(p, 'utf8');
 }
 
@@ -34,8 +29,7 @@ function mimeType(ext) {
 function arquivoBase64(relativo) {
   const absoluto = path.join(raiz, relativo.replace(/^\.\//,''));
   if (!fs.existsSync(absoluto)) return null;
-  const dados = fs.readFileSync(absoluto).toString('base64');
-  return `data:${mimeType(path.extname(absoluto))};base64,${dados}`;
+  return `data:${mimeType(path.extname(absoluto))};base64,${fs.readFileSync(absoluto).toString('base64')}`;
 }
 
 function incorporarAssets(html) {
@@ -54,42 +48,43 @@ function incorporarScripts(html) {
   return html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,(m,src)=>{
     const arquivo = path.join(raiz,src.replace(/^\.\//,''));
     if (!fs.existsSync(arquivo)) return m;
-    return `<script>\n${fs.readFileSync(arquivo,'utf8')}\n</script>`;
+    return `<script>\n${lerArquivo(arquivo)}\n</script>`;
   });
 }
 
-function incorporarSimuladores(html) {
+function coletarSimuladores() {
   const pasta = path.join(raiz,'simulators');
-  if (!fs.existsSync(pasta)) return html;
+  if (!fs.existsSync(pasta)) return {};
 
-  const simuladores = {};
-
+  const dados = {};
   fs.readdirSync(pasta)
     .filter(nome => nome.endsWith('.html'))
     .forEach(nome => {
-      simuladores[nome] = fs.readFileSync(path.join(pasta,nome),'utf8');
+      dados[nome] = Buffer.from(lerArquivo(path.join(pasta,nome))).toString('base64');
     });
+  return dados;
+}
 
-  const bloco = `<script id="simuladores-incorporados">\nwindow.simuladoresIncorporados = ${JSON.stringify(simuladores)};\n</script>`;
-
+function incorporarSimuladoresIsolados(html) {
+  const simuladores = JSON.stringify(coletarSimuladores());
+  const bloco = `<script id="simuladores-build-data">\nwindow.simuladoresIncorporadosBase64 = ${simuladores};\n</script>`;
   return html.replace('</body>', `${bloco}\n</body>`);
 }
 
 function gerarBuild() {
   let html = lerArquivo(path.join(raiz,'index.html'));
-
   html = incorporarCss(html);
   html = incorporarScripts(html);
   html = incorporarAssets(html);
-  html = incorporarSimuladores(html);
+  html = incorporarSimuladoresIsolados(html);
 
   const pasta = path.join(raiz,'builds');
   if (!fs.existsSync(pasta)) fs.mkdirSync(pasta);
 
-  const saida = path.join(pasta,'Operacao_Salvamento_BUILD_FASE3.html');
+  const saida = path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_1.html');
   fs.writeFileSync(saida,html,'utf8');
 
-  console.log('Build criada com sucesso:');
+  console.log('Build criada:');
   console.log(saida);
 }
 
