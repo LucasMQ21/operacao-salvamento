@@ -1,10 +1,11 @@
 /**
- * Operacao Salvamento - Gerador oficial de HTML unico (Fase 3.1)
+ * Operacao Salvamento - Gerador oficial de HTML unico (Fase 3.2)
  *
- * Correção:
- * - simuladores não são mais inseridos como HTML executável dentro do app;
- * - são armazenados isoladamente como dados JSON escapados;
- * - evita quebra da inicialização do jogo principal.
+ * Objetivo:
+ * - retornar a estabilidade da Fase 2;
+ * - preservar ordem original de scripts;
+ * - evitar que simuladores interfiram na inicializacao;
+ * - incorporar simuladores apenas como dados isolados.
  */
 
 const fs = require('fs');
@@ -45,24 +46,31 @@ function incorporarCss(html) {
 }
 
 function incorporarScripts(html) {
+  // Mantém a posição original dos scripts no HTML.
   return html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi,(m,src)=>{
     const arquivo = path.join(raiz,src.replace(/^\.\//,''));
     if (!fs.existsSync(arquivo)) return m;
-    return `<script>\n${lerArquivo(arquivo)}\n</script>`;
+    return `<script data-build-incorporated="${src}">\n${lerArquivo(arquivo)}\n</script>`;
   });
 }
 
 function coletarSimuladores() {
   const pasta = path.join(raiz,'simulators');
-  if (!fs.existsSync(pasta)) return {};
-
   const dados = {};
+  if (!fs.existsSync(pasta)) return dados;
+
   fs.readdirSync(pasta)
     .filter(nome => nome.endsWith('.html'))
     .forEach(nome => {
       dados[nome] = Buffer.from(lerArquivo(path.join(pasta,nome))).toString('base64');
     });
+
   return dados;
+}
+
+function inserirDiagnostico(html) {
+  const bloco = `<script id="build-debug">\nwindow.addEventListener('error', function(e){ console.error('[BUILD ERROR]', e.message, e.filename, e.lineno); });\n</script>`;
+  return html.replace('</head>', `${bloco}\n</head>`);
 }
 
 function incorporarSimuladoresIsolados(html) {
@@ -73,6 +81,8 @@ function incorporarSimuladoresIsolados(html) {
 
 function gerarBuild() {
   let html = lerArquivo(path.join(raiz,'index.html'));
+
+  html = inserirDiagnostico(html);
   html = incorporarCss(html);
   html = incorporarScripts(html);
   html = incorporarAssets(html);
@@ -81,8 +91,8 @@ function gerarBuild() {
   const pasta = path.join(raiz,'builds');
   if (!fs.existsSync(pasta)) fs.mkdirSync(pasta);
 
-  const saida = path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_1.html');
-  fs.writeFileSync(saida,html,'utf8');
+  const saida = path.join(pasta,'Operacao_Salvamento_BUILD_FASE3_2.html');
+  fs.writeFileSync(saida, html, 'utf8');
 
   console.log('Build criada:');
   console.log(saida);
