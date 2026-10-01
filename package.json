@@ -1,0 +1,10 @@
+{
+  "name": "operacao-salvamento",
+  "private": true,
+  "description": "Operação Salvamento — jogo educacional (ProfMat/CEFET-MG)",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build:html": "node tools/gerar_html_unico.js",
+    "build:html:estrito": "node tools/gerar_html_unico.js --estrito"
+  }
+}
