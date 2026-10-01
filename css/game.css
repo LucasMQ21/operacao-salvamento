@@ -2325,3 +2325,69 @@ html.fase33-abertura-ja-iniciada .apresentacao-inicial{display:none!important}
 .briefing-image-close:focus-visible { outline:3px solid #ffbe65; }
 
 .briefing-hero-expand::after { content:"🔎 Ampliar imagem"; position:absolute; right:12px; bottom:10px; padding:6px 10px; border-radius:8px; background:rgba(4,12,22,.78); color:#fff; font:700 .76rem/1.1 system-ui,sans-serif; }
+
+/* ==== Cenário vivo do menu principal: camada de efeitos sobre o fundo ====
+   Fica acima do fundo da #tela-mapa e abaixo do HUD (.top-bar z-index 30) e do
+   mapa de ocorrências (.mapa-wrapper z-index 1). Não captura cliques. */
+#cenario-vivo {
+  position:absolute; inset:0; width:100%; height:100%;
+  display:block; pointer-events:none; z-index:0;
+}
+
+/* ==== Quartel animado (vídeo sem fundo branco + contorno branco) ====
+   O vídeo já traz o contorno branco desenhado (estilo da moldura das
+   ocorrências); a máscara recorta tudo que está fora dele. O brilho vermelho
+   e a sombra seguem a silhueta (drop-shadow), não mais um círculo.
+   O tamanho da caixa .quartel continua vindo das regras anteriores. */
+#tela-mapa .quartel {
+  display:flex !important; align-items:center; justify-content:center;
+  border-radius:0 !important; box-shadow:none !important; background:none !important;
+  filter:drop-shadow(0 0 16px rgba(255,46,46,.42)) drop-shadow(0 10px 16px rgba(0,0,0,.55));
+}
+#tela-mapa .quartel .quartel-video {
+  display:block; height:100%; width:auto; max-width:100%; aspect-ratio:446 / 504;
+  object-fit:contain; border-radius:0 !important; pointer-events:none; user-select:none;
+  -webkit-mask:url('../assets/embedded/quartel_mascara.webp') center / 100% 100% no-repeat;
+          mask:url('../assets/embedded/quartel_mascara.webp') center / 100% 100% no-repeat;
+}
+
+/* ==== Mapa animado do menu principal ====
+   Tracejado quartel→ocorrência em movimento, com destaque no hover/seleção
+   (js/mapa-animado.js). Discreto de propósito: a informação principal é a
+   escolha da missão. */
+
+/* Tracejado em movimento: fluxo do quartel (centro) para o ícone.
+   A linha nasce no quartel, então deslocar o tracejado "para frente" (offset
+   negativo) faz os pontos irem do quartel ao ícone. Período = 5 + 7 = 12. */
+.ruas-fluxo-svg { z-index:1; }
+@keyframes fluxo-rua { to { stroke-dashoffset:-12; } }
+@keyframes brilho-rua { from { stroke-opacity:.55; } to { stroke-opacity:1; } }
+.ruas-svg .rua-borda,
+.ruas-svg .rua,
+.ruas-svg .rua-faixa { transition:stroke .22s ease, stroke-width .22s ease, opacity .3s ease; }
+.ruas-svg .rua-faixa { stroke-dasharray:5 7 !important; }
+.ruas-svg .rua-faixa.disponivel { animation:fluxo-rua 2.2s linear infinite; }
+.ruas-svg .rua-faixa.concluida  { animation:fluxo-rua 5.5s linear infinite; }   /* verde: bem mais calmo */
+/* "Em breve" (.pendente): parado, como hoje. */
+
+/* Hover: ícone sob o cursor */
+.ruas-svg .rua-borda.destaque:not(.pendente) { stroke:rgba(255,72,60,.30) !important; stroke-width:17px !important; }
+.ruas-svg .rua.destaque:not(.pendente)       { stroke:rgba(255,125,105,.46) !important; stroke-width:8px !important; }
+.ruas-svg .rua-faixa.destaque:not(.pendente) { stroke:rgba(255,226,210,.98) !important; stroke-width:4.6px !important; animation-duration:1s; }
+.ruas-svg .rua-borda.concluida.destaque { stroke:rgba(70,200,110,.28) !important; }
+.ruas-svg .rua.concluida.destaque       { stroke:rgba(105,220,130,.40) !important; }
+.ruas-svg .rua-faixa.concluida.destaque { stroke:rgba(160,255,178,.96) !important; animation-duration:2.6s; }
+
+/* Seleção (a viatura está saindo): brilho maior e as demais linhas recuam */
+.ruas-svg .rua-borda.selecionada:not(.pendente) { stroke:rgba(255,60,50,.42) !important; stroke-width:22px !important; animation:brilho-rua 1.1s ease-in-out infinite alternate; }
+.ruas-svg .rua.selecionada:not(.pendente) { stroke:rgba(255,150,130,.62) !important; stroke-width:9px !important; }
+.ruas-svg .rua-faixa.selecionada:not(.pendente) { stroke:#fff4ea !important; stroke-width:5.6px !important; animation-duration:.6s; }
+.ruas-svg.tem-selecao .rua-borda:not(.selecionada),
+.ruas-svg.tem-selecao .rua:not(.selecionada),
+.ruas-svg.tem-selecao .rua-faixa:not(.selecionada) { opacity:.3; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ruas-svg .rua-faixa,
+  .ruas-svg .rua-borda.selecionada { animation:none !important; }
+}
+
