@@ -40,7 +40,7 @@ function cancelarDespacho(){
   audioChamadaProsseguirAtual=null;limparEsperaChamadaAtual();pararAudioObj(audioChamadaAtual);
   pararSireneAudio();desligarSireneVisual();
   document.getElementById('caminhao')?.classList.remove('visivel');
-  document.querySelectorAll('.ocorrencia').forEach(o=>{o.style.pointerEvents='';o.style.opacity='';});
+  document.querySelectorAll('.ocorrencia').forEach(o=>{o.style.pointerEvents='';o.style.opacity='';});globalThis.__mapaAnimado?.limparSelecao?.();
   if(elementoEstaVisivel(document.getElementById('tela-mapa')))tocarMenuMusica();
 }
 let sireneAudioCtx=null;
@@ -124,12 +124,13 @@ function iniciarUmaAnimacaoEmblema(svgId,prefixo){
     innerGroup.setAttribute('transform',`rotate(${innerAngle.toFixed(4)} ${CX} ${CY})`);
   }
   if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){drawAtTime(0);return;}
-  function animate(ts){drawAtTime(ts);requestAnimationFrame(animate);}
+  function animate(ts){if(svg.getClientRects().length)drawAtTime(ts);requestAnimationFrame(animate);}
   requestAnimationFrame(animate);
 }
 function iniciarAnimacaoEmblemaLogin(){
   iniciarUmaAnimacaoEmblema('emblema-apresentacao-svg','apresentacaoEmblema');
   iniciarUmaAnimacaoEmblema('emblema-login-svg','loginEmblema');
+  iniciarUmaAnimacaoEmblema('emblema-header-svg','headerEmblema');
 }
 
 /* =========================================================
@@ -1349,10 +1350,26 @@ function agendarResolucaoRotulosMapa(){
   frameResolucaoRotulosMapa=requestAnimationFrame(()=>requestAnimationFrame(resolverRotulosMapa));
 }
 
+function obterSvgFluxoRuas(svg){
+  let fluxo=document.getElementById('ruas-fluxo-svg');
+  if(!fluxo){
+    fluxo=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    fluxo.setAttribute('class','ruas-svg ruas-fluxo-svg');
+    fluxo.setAttribute('id','ruas-fluxo-svg');
+    fluxo.setAttribute('viewBox','0 0 900 900');
+    fluxo.setAttribute('preserveAspectRatio','xMidYMid meet');
+    fluxo.setAttribute('aria-hidden','true');
+    svg.insertAdjacentElement('afterend',fluxo);
+  }
+  return fluxo;
+}
+
 function desenharRuas(){
   const svg=document.getElementById('ruas-svg');
   if(!svg)return;
+  const fluxo=obterSvgFluxoRuas(svg);
   svg.innerHTML='';
+  fluxo.innerHTML='';
   MISSOES.forEach((missao,index)=>{
     const coordenadas=coordenadasMapaDaOcorrencia(index);
     if(!coordenadas)return;
@@ -1364,7 +1381,8 @@ function desenharRuas(){
       linha.setAttribute('x2',coordenadas.xSvg);
       linha.setAttribute('y2',coordenadas.ySvg);
       linha.setAttribute('class',`${classe} ${estado}`);
-      svg.appendChild(linha);
+      linha.dataset.missao=index;
+      (classe==='rua-faixa'?fluxo:svg).appendChild(linha);
     });
   });
 }
@@ -1419,6 +1437,7 @@ function iniciarSelecaoMissao(id){
   animando=true;
   const geracao=++despachoGeracao;
   missaoAtual=id;
+  globalThis.__mapaAnimado?.selecionar?.(id);
   document.querySelectorAll('.ocorrencia').forEach(ocorrencia=>{
     if(Number.parseInt(ocorrencia.dataset.missao,10)!==id){
       ocorrencia.style.pointerEvents='none';
@@ -2448,7 +2467,7 @@ function irParaMapaSemPenalidade(motivoSalvamento='retorno-ao-mapa'){
   if(missaoAtual!==null){const e=obterEstadoMissao();if(e&&e.runningSince!==null)pausarTimerMissao(missaoAtual);pausarSimulacaoNoFrame(missaoAtual);}
   pararMusicaMissao();tocarMenuMusica();esconderTodas();
   const mapa=document.getElementById('tela-mapa');mapa.style.display='block';mapa.classList.add('fade-in');setTimeout(()=>mapa.classList.remove('fade-in'),TEMPO_FADE_TELA_MS);
-  document.querySelectorAll('.ocorrencia').forEach(o=>{o.style.pointerEvents='';o.style.opacity='';});
+  document.querySelectorAll('.ocorrencia').forEach(o=>{o.style.pointerEvents='';o.style.opacity='';});globalThis.__mapaAnimado?.limparSelecao?.();
   missaoAtual=null;
   salvarProgressoLocal(motivoSalvamento);
 }
