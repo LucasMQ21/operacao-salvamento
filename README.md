@@ -3,7 +3,7 @@ Operação Salvamento é um jogo educacional inspirado em operações reais do C
 
 
 
-Versão de referência: fase 45 — missão 13, Transbordo de carga, no Ensino Médio, integrada sobre a fase 44.
+Versão de referência: fase 46 — missão 14, Prevenção em eventos (última do Ensino Médio), integrada sobre a fase 45.
 
 ## Gerar o HTML único
 Na raiz do projeto: `node tools/gerar_html_unico.js` (saída em `builds/`). Veja `tools/gerar_html_unico.js`.
