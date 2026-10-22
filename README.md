@@ -3,7 +3,7 @@ Operação Salvamento é um jogo educacional inspirado em operações reais do C
 
 
 
-Versão de referência: fase 47 — missão 4 do Ensino Fundamental, Combate em Aglomerados (linha de mangueiras de 25 m e 40 m), integrada sobre a fase 46 (missão 14, Prevenção em eventos, última do Ensino Médio).
+Versão de referência: fase 48 — missão 5 do Ensino Fundamental, Entre Coberturas (tirolesa e Teorema de Pitágoras), integrada sobre a fase 47 (missão 4 do Fundamental, Combate em Aglomerados).
 
 ## Gerar o HTML único
 Na raiz do projeto: `node tools/gerar_html_unico.js` (saída em `builds/`). Veja `tools/gerar_html_unico.js`.
