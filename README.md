@@ -3,7 +3,7 @@ Operação Salvamento é um jogo educacional inspirado em operações reais do C
 
 
 
-Versão de referência: fase 50 — missão 7 do Ensino Fundamental, À Sombra da Árvore (semelhança de triângulos), com mixagem entre a trilha e os efeitos sonoros do simulador (mensagem audio-duck), integrada sobre a fase 49 (missão 6 do Fundamental, Área Queimada).
+Versão de referência: fase 52 — missão 8 do Ensino Fundamental, Combate Aéreo (plano cartesiano, helicóptero e coordenadas), com áudio por fases (trilha em destaque no planejamento; efeitos do simulador em destaque na animação, via audio-duck), integrada sobre a fase 51 (missão 7, Corte de Árvore).
 
 ## Gerar o HTML único
 Na raiz do projeto: `node tools/gerar_html_unico.js` (saída em `builds/`). Veja `tools/gerar_html_unico.js`.
